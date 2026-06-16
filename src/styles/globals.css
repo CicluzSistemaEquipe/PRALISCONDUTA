@@ -1,0 +1,127 @@
+@import './pralis.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--pralis-marrom-dk);
+    color: var(--pralis-creme);
+    font-family: 'Montserrat', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+  }
+
+  /* impede zoom de input no iOS e seleção acidental durante gestos */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'MadeByDillan', Georgia, serif;
+    font-weight: 700;
+    line-height: 1.05;
+  }
+}
+
+@layer components {
+  /* Container mobile-first centralizado — simula um app nativo no desktop */
+  .app-shell {
+    @apply mx-auto flex min-h-screen w-full max-w-[480px] flex-col;
+    background: var(--bg-base);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-laranja {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill bg-pralis-laranja px-6 py-3.5
+           font-body font-semibold text-white transition-transform;
+    box-shadow: 0 4px 20px rgba(243, 116, 53, 0.35);
+  }
+  .btn-laranja:active {
+    transform: scale(0.97);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill px-6 py-3
+           font-body font-semibold text-pralis-creme transition-colors;
+    background: var(--gold-muted);
+    border: 1px solid var(--border-gold);
+  }
+
+  .tag-chip {
+    @apply inline-flex items-center gap-1.5 rounded-pill bg-pralis-laranja/15 px-3 py-1
+           font-body text-xs font-semibold uppercase tracking-wide text-pralis-laranja-lt;
+  }
+
+  /* skeleton com shimmer dourado */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(184, 134, 11, 0.08) 25%,
+      rgba(212, 168, 106, 0.22) 50%,
+      rgba(184, 134, 11, 0.08) 75%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer rounded-lg;
+  }
+
+  .glass {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* superfície marrom elevada sobre o preto */
+  .surface {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-gold);
+  }
+
+  .input-dash {
+    @apply w-full rounded-xl border border-pralis-ouro/30 bg-pralis-marrom/50 px-4 py-3
+           font-body text-pralis-branco placeholder:text-pralis-creme/40
+           focus:border-pralis-laranja focus:outline-none;
+  }
+}
+
+@layer utilities {
+  .snap-y-mandatory {
+    scroll-snap-type: y mandatory;
+  }
+  .snap-center-card {
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .pt-safe {
+    padding-top: var(--safe-top);
+  }
+  .pb-safe {
+    padding-bottom: var(--safe-bottom);
+  }
+}

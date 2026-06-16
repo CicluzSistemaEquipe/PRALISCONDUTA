@@ -1,0 +1,219 @@
+/* ============================================================
+   PRALIS — Tipografia da marca
+   (URLs relativas para que o Vite empacote e versione as fontes
+    corretamente no build de produção)
+   ============================================================ */
+
+@font-face {
+  font-family: 'MadeByDillan';
+  src: url('../assets/fonts/MadeByDillan.otf') format('opentype');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../assets/fonts/Montserrat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../assets/fonts/Montserrat-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../assets/fonts/Montserrat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TR Freehand';
+  src: url('../assets/fonts/TRFreehand.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* ============================================================
+   PRALIS — Tema dark premium (padaria artesanal à noite)
+   ============================================================ */
+
+:root {
+  /* BASE QUENTE — não preto puro, marrom escuríssimo */
+  --bg-base: #0d0800; /* fundo geral do app */
+  --bg-deep: #080400; /* overlays, modais */
+
+  /* GLASS — substituem --bg-surface e --bg-elevated */
+  --glass-bg: rgba(255, 245, 220, 0.07); /* cards base */
+  --glass-bg-warm: rgba(184, 134, 11, 0.1); /* cards gold */
+  --glass-border: rgba(255, 245, 220, 0.13);
+  --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+  /* BRAND COLORS — idênticos ao manual da marca */
+  --gold: #b8860b;
+  --gold-light: #d4a017;
+  --gold-vivid: #e8a820;
+  --gold-muted: rgba(184, 134, 11, 0.2);
+  --orange: #f37435;
+  --orange-light: #ff8f5a;
+  --orange-muted: rgba(243, 116, 53, 0.18);
+  --brown: #5e3731;
+  --cream: #e8cfa0;
+  --cream-muted: rgba(232, 207, 160, 0.65);
+  --green: #4ade80;
+  --red: #c0392b;
+  --purple: #8e44ad;
+
+  /* BORDAS */
+  --border-gold: rgba(184, 134, 11, 0.38);
+  --border-white: rgba(255, 255, 255, 0.12);
+  --border-warm: rgba(232, 207, 160, 0.12);
+
+  /* TEXTO */
+  --text-primary: #ffffff;
+  --text-secondary: #e8cfa0;
+  --text-muted: rgba(255, 255, 255, 0.55);
+  --text-locked: rgba(255, 255, 255, 0.3);
+
+  /* NAV / SHADOWS (defaults dark — sobrescritos no white mode) */
+  --nav-bg: rgba(8, 4, 0, 0.92);
+  --nav-border: rgba(184, 134, 11, 0.3);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-glow: 0 0 40px rgba(243, 116, 53, 0.25);
+
+  /* SAFE AREA */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* ALIASES legados */
+  --bg-surface: var(--glass-bg);
+  --bg-elevated: rgba(255, 245, 220, 0.11);
+  --pralis-ouro: var(--gold);
+  --pralis-ouro-lt: var(--cream);
+  --pralis-laranja: var(--orange);
+  --pralis-laranja-lt: var(--orange-light);
+  --pralis-creme: var(--cream);
+  --pralis-verde: var(--green);
+  --pralis-marrom: var(--brown);
+  --pralis-marrom-dk: var(--bg-deep);
+  --pralis-marrom-lk: var(--bg-elevated);
+  --pralis-vermelho: var(--red);
+  --pralis-branco: #ffffff;
+  --pralis-accent: var(--orange);
+}
+
+@property --pralis-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f37435;
+}
+
+/* Fundo base do app — quente, não preto */
+.app-shell {
+  background: var(--bg-base) !important;
+}
+
+/* ============================================================
+   Glass utilities
+   ============================================================ */
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-gold {
+  background: var(--glass-bg-warm);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45), 0 0 20px rgba(184, 134, 11, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.glass-orange {
+  background: rgba(243, 116, 53, 0.12);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(243, 116, 53, 0.32);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(243, 116, 53, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.btn-glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.2s ease;
+}
+.btn-glass:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* ============================================================
+   ── WHITE MODE ──  (override por [data-theme="light"] no <html>)
+   Tons quentes da marca — não branco puro. Fallback é dark.
+   ============================================================ */
+[data-theme='light'] {
+  /* NB: --bg-base NÃO é alterado de propósito — o fundo creme das telas do
+     colaborador vem do AnimatedBackground (camada fixa). Manter --bg-base dark
+     evita que telas não adaptadas (Login, Onboarding, Conclusão, Progresso),
+     que usam .app-shell, fiquem com texto claro sobre fundo claro. */
+  --bg-surface: #ffffff;
+  --bg-surface-2: #faf2e6;
+  --bg-card: rgba(255, 248, 235, 0.9);
+
+  --text-primary: #1a0e00;
+  --text-secondary: #5e3731;
+  --text-muted: #8a6a50;
+
+  --glass-bg: rgba(255, 248, 235, 0.72);
+  --glass-border: rgba(184, 134, 11, 0.22);
+  --glass-shadow: 0 4px 24px rgba(94, 55, 49, 0.1), 0 1px 4px rgba(184, 134, 11, 0.08);
+
+  --stroke: rgba(184, 134, 11, 0.2);
+  --stroke-soft: rgba(94, 55, 49, 0.1);
+  --shadow-card: 0 4px 24px rgba(94, 55, 49, 0.1), 0 1px 4px rgba(184, 134, 11, 0.08);
+  --shadow-glow: 0 0 32px rgba(184, 134, 11, 0.12);
+  --nav-bg: rgba(253, 246, 236, 0.94);
+  --nav-border: rgba(184, 134, 11, 0.18);
+
+  /* aliases legados usados por componentes antigos */
+  --cream-muted: rgba(94, 55, 49, 0.7);
+  --text-locked: rgba(94, 55, 49, 0.35);
+}
+
+/* ------------------------------------------------------------
+   BLINDAGEM DO ADMIN — o painel /admin permanece SEMPRE dark,
+   mesmo com o app em white mode. Reapresenta os tokens dark
+   dentro de qualquer .adm-root, sem tocar em arquivos de src/admin/.
+   ------------------------------------------------------------ */
+[data-theme='light'] .adm-root {
+  --bg-base: #0d0800;
+  --bg-deep: #080400;
+  --glass-bg: rgba(255, 245, 220, 0.07);
+  --glass-border: rgba(255, 245, 220, 0.13);
+  --text-primary: #ffffff;
+  --text-secondary: #e8cfa0;
+  --text-muted: rgba(255, 255, 255, 0.55);
+  --cream: #e8cfa0;
+  --cream-muted: rgba(232, 207, 160, 0.65);
+  --gold: #b8860b;
+  --gold-light: #d4a017;
+  --orange: #f37435;
+  --stroke: rgba(184, 134, 11, 0.3);
+  --stroke-soft: rgba(255, 255, 255, 0.1);
+  --text-locked: rgba(255, 255, 255, 0.3);
+}
+[data-theme='light'] .adm-root,
+[data-theme='light'] .adm-root * {
+  color-scheme: dark;
+}

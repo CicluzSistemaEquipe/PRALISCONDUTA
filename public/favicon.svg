@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 130" fill="none">
+  <!-- Espiga de trigo Pralís -->
+  <line x1="50" y1="105" x2="50" y2="20" stroke="#f37435" stroke-width="4" stroke-linecap="round"/>
+  <ellipse cx="50" cy="18" rx="8" ry="12" fill="#f37435"/>
+  <ellipse cx="33" cy="46" rx="15" ry="8" transform="rotate(-20 33 46)" fill="#b8860b"/>
+  <ellipse cx="67" cy="46" rx="15" ry="8" transform="rotate(20 67 46)" fill="#b8860b"/>
+  <ellipse cx="30" cy="70" rx="16" ry="9" transform="rotate(-30 30 70)" fill="#f37435"/>
+  <ellipse cx="70" cy="70" rx="16" ry="9" transform="rotate(30 70 70)" fill="#f37435"/>
+  <ellipse cx="35" cy="95" rx="16" ry="9" transform="rotate(-35 35 95)" fill="#d4a86a"/>
+  <ellipse cx="65" cy="95" rx="16" ry="9" transform="rotate(35 65 95)" fill="#d4a86a"/>
+</svg>

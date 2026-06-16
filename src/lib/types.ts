@@ -1,0 +1,135 @@
+// ============================================================
+// Tipos de domínio — Pralis Conduta
+// ============================================================
+
+export type Role =
+  | 'Preparo de alimentos'
+  | 'Atendimento ao cliente'
+  | 'Caixa'
+  | 'Limpeza'
+  | 'Função externa'
+
+export const ROLES: Role[] = [
+  'Preparo de alimentos',
+  'Atendimento ao cliente',
+  'Caixa',
+  'Limpeza',
+  'Função externa',
+]
+
+export interface Employee {
+  id: string
+  name: string
+  phone: string
+  role: Role
+  token: string
+  created_at: string
+}
+
+export interface ModuleProgress {
+  module_id: string
+  story_index: number
+  completed: boolean
+  completed_at: string | null
+}
+
+export interface QuizAnswerRecord {
+  module_id: string
+  question_id: string
+  answer: string
+  correct: boolean
+  answered_at: string
+}
+
+export interface SignatureRecord {
+  signed_at: string
+  ip_address: string | null
+  confirmed: boolean
+  terms: string[]
+}
+
+export interface VideoView {
+  module_id: string
+  video_id: string
+  watched_at: string
+}
+
+// ---------- Conteúdo dos módulos ----------
+
+export type LisState =
+  | 'neutral'
+  | 'idle'
+  | 'talking'
+  | 'celebrating'
+  | 'thinking'
+  | 'alert'
+  | 'correct'
+  | 'wrong'
+
+export interface QuizQuestion {
+  id: string
+  prompt: string
+  options: string[]
+  correctIndex: number
+  /** explicação da Lis quando o colaborador erra/acerta */
+  explain: string
+}
+
+export type Story =
+  | { type: 'lis'; text: string; state?: LisState }
+  | {
+      type: 'text'
+      title: string
+      tag: string
+      paragraphs: string[]
+      highlight?: string
+      highlights?: string[] // palavras a destacar em laranja
+      keywords?: string[] // chips de conceito (opcional)
+    }
+  | {
+      type: 'video'
+      videoId: string
+      title: string
+      description?: string
+      duration?: string
+      src?: string // URL opcional; se ausente vira placeholder
+    }
+  | { type: 'summary'; title: string; bullets: string[] }
+  | { type: 'quiz'; questions: QuizQuestion[] }
+  | { type: 'completion'; badge: string; message: string }
+
+export type ModuleIconType = 'flower' | 'sprout' | 'grain' | 'wheat'
+
+export interface Module {
+  id: string
+  title: string
+  /** nome de ícone do lucide-react (legado) */
+  icon: string
+  color: string
+  estimatedMinutes: number
+  mandatory: boolean
+  /** 'all' = todos os cargos, ou lista de cargos específicos */
+  roles: 'all' | Role[]
+  /** 'final' agrupa penalidades/assinatura ao final do feed */
+  section?: 'geral' | 'cargo' | 'final'
+  description: string
+  stories: Story[]
+
+  // --- metadados visuais (estilo rede social) ---
+  /** número de ordem exibido no card ("01".."12") */
+  number: string
+  /** gradiente do card no feed [topo, base] */
+  gradient: [string, string]
+  /** cor de acento do módulo (header dos stories, quiz, etc.) */
+  accent: string
+  /** um dos 4 símbolos da marca */
+  iconType: ModuleIconType
+  /** etiqueta curta (FUNDAMENTOS, CARREIRA…) */
+  tag: string
+  /** subtítulo curto do card */
+  subtitle: string
+  /** rota especial: 'signature' abre a tela de assinatura no lugar dos stories */
+  kind?: 'stories' | 'signature'
+  /** módulo visível no app (editável no admin). undefined === ativo */
+  active?: boolean
+}

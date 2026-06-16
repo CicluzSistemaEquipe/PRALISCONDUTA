@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="110" fill="#5e3731"/>
+  <g transform="translate(160, 120) scale(3)">
+    <rect x="26" y="26" width="12" height="34" rx="6" fill="#f37435"/>
+    <path d="M30 28 C18 24 10 16 12 6 C24 8 32 16 30 28 Z" fill="#f37435"/>
+    <path d="M34 28 C46 24 54 16 52 6 C40 8 32 16 34 28 Z" fill="#b8860b"/>
+  </g>
+  <text x="256" y="410" font-family="Georgia, serif" font-size="92" font-weight="700" fill="#f37435" text-anchor="middle">pralís</text>
+</svg>

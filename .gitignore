@@ -1,0 +1,32 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.*
+!.env.example
+
+# editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# temporários
+_*.png
+_*.pdf
+_*.txt
+
+# material de referência / design (não faz parte do build do sistema)
+Sistema.rar
+LIS(PRALIS)/
+Design SVG/
+Design/
+Referencias/
+*.rar
+*.zip
