@@ -17,12 +17,22 @@
 
   body {
     margin: 0;
-    background: var(--pralis-marrom-dk);
-    color: var(--pralis-creme);
+    background: var(--bg-base);
+    color: var(--text-primary);
     font-family: 'Montserrat', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overscroll-behavior-y: none;
+  }
+
+  ::selection {
+    background: var(--orange);
+    color: #ffffff;
+  }
+
+  [data-theme='light'] ::selection {
+    background: var(--gold);
+    color: #000000;
   }
 
   /* impede zoom de input no iOS e seleção acidental durante gestos */
@@ -48,43 +58,92 @@
     overflow: hidden;
   }
 
+  .app-shell button,
+  .app-shell a,
+  .app-shell p,
+  .app-shell h1,
+  .app-shell h2,
+  .app-shell h3,
+  .app-shell span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .btn-laranja {
-    @apply inline-flex items-center justify-center gap-2 rounded-pill bg-pralis-laranja px-6 py-3.5
+    @apply inline-flex items-center justify-center gap-2 rounded-pill px-6 py-3.5
            font-body font-semibold text-white transition-transform;
-    box-shadow: 0 4px 20px rgba(243, 116, 53, 0.35);
+    background: linear-gradient(110deg, #f37435 0%, #f37435 34%, #b8860b 52%, #f37435 72%, #f37435 100%);
+    background-size: 240% 100%;
+    animation: pralis-button-flow 4.8s linear infinite;
+    box-shadow: 0 10px 22px rgba(243, 116, 53, 0.18);
+    font-size: clamp(14px, 4vw, 16px);
+    line-height: 1.2;
+    min-height: 52px;
+    text-align: center;
   }
   .btn-laranja:active {
+    transform: scale(0.97);
+  }
+
+  .btn-next-white {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill px-6 py-3.5
+           font-body font-bold transition-transform;
+    position: relative;
+    min-height: 54px;
+    overflow: hidden;
+    background: #ffffff;
+    color: #2b160f;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    box-shadow: 0 12px 28px rgba(43, 22, 15, 0.18);
+    font-size: clamp(14px, 4vw, 16px);
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .btn-next-white::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 0%, transparent 34%, rgba(243, 116, 53, 0.18) 48%, rgba(184, 134, 11, 0.16) 58%, transparent 72%);
+    background-size: 240% 100%;
+    animation: pralis-button-flow 4.2s linear infinite;
+  }
+
+  .btn-next-white > * {
+    position: relative;
+  }
+
+  .btn-next-white:active {
     transform: scale(0.97);
   }
 
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-pill px-6 py-3
            font-body font-semibold text-pralis-creme transition-colors;
-    background: var(--gold-muted);
-    border: 1px solid var(--border-gold);
+    background: var(--bg-surface);
+    border: 1px solid var(--stroke);
+    color: var(--text-on-surface);
   }
 
   .tag-chip {
-    @apply inline-flex items-center gap-1.5 rounded-pill bg-pralis-laranja/15 px-3 py-1
-           font-body text-xs font-semibold uppercase tracking-wide text-pralis-laranja-lt;
+    @apply inline-flex items-center gap-1.5 rounded-pill px-3 py-1
+           font-body text-xs font-semibold uppercase tracking-wide;
+    background: var(--orange);
+    border: 1px solid var(--orange);
+    color: #ffffff;
   }
 
   /* skeleton com shimmer dourado */
   .skeleton {
-    background: linear-gradient(
-      90deg,
-      rgba(184, 134, 11, 0.08) 25%,
-      rgba(212, 168, 106, 0.22) 50%,
-      rgba(184, 134, 11, 0.08) 75%
-    );
+    background: var(--bg-surface-2);
     background-size: 200% 100%;
     @apply animate-shimmer rounded-lg;
   }
 
   .glass {
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: var(--bg-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   /* superfície marrom elevada sobre o preto */
@@ -97,6 +156,15 @@
     @apply w-full rounded-xl border border-pralis-ouro/30 bg-pralis-marrom/50 px-4 py-3
            font-body text-pralis-branco placeholder:text-pralis-creme/40
            focus:border-pralis-laranja focus:outline-none;
+  }
+}
+
+@keyframes pralis-button-flow {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
   }
 }
 

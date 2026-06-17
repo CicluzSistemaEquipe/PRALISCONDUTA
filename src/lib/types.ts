@@ -39,6 +39,8 @@ export interface QuizAnswerRecord {
   answer: string
   correct: boolean
   answered_at: string
+  reviewed?: boolean
+  reviewed_at?: string
 }
 
 export interface SignatureRecord {
@@ -71,8 +73,23 @@ export interface QuizQuestion {
   prompt: string
   options: string[]
   correctIndex: number
-  /** explicação da Lis quando o colaborador erra/acerta */
+  /** explicação geral exibida depois da resposta */
   explain: string
+  /** explicação específica por alternativa; se ausente, usa explain */
+  optionExplanations?: string[]
+  /** trecho recomendado para revisão quando a pessoa erra */
+  reviewTarget?: {
+    storyIndex: number
+    label?: string
+  }
+}
+
+export interface QuizConfig {
+  questions: QuizQuestion[]
+  /** quantidade sorteada a partir do banco de perguntas */
+  sampleSize?: number
+  /** quando true, sorteia de forma estável por colaborador/módulo */
+  randomize?: boolean
 }
 
 export type Story =
@@ -95,7 +112,7 @@ export type Story =
       src?: string // URL opcional; se ausente vira placeholder
     }
   | { type: 'summary'; title: string; bullets: string[] }
-  | { type: 'quiz'; questions: QuizQuestion[] }
+  | ({ type: 'quiz' } & QuizConfig)
   | { type: 'completion'; badge: string; message: string }
 
 export type ModuleIconType = 'flower' | 'sprout' | 'grain' | 'wheat'

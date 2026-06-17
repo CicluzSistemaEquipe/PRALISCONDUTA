@@ -1,43 +1,53 @@
 import { motion } from 'framer-motion'
-import { brand } from '@/lib/brand'
+import { brand, FILTER_WHITE } from '@/lib/brand'
 import { useTheme, type Theme } from '../context/ThemeContext'
 
-/**
- * Fundo Pralís — 2 camadas: um gradiente base quente (glow do módulo +
- * glows de canto) e o padrão de espigas em drift lento.
- *
- * Adapta-se ao tema (dark/light) mantendo TODAS as animações idênticas —
- * muda apenas cores e opacidades. `theme` permite forçar um tema (ex.: o
- * login do admin, que permanece sempre dark).
- */
 export function AnimatedBackground({ theme }: { accent?: string; theme?: Theme }) {
   const ctx = useTheme()
   const isLight = (theme ?? ctx.theme) === 'light'
 
   return (
-    <>
-      {/* 1 — base sólida quente */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{ background: isLight ? '#fdf8f2' : '#150900' }}
+    <div className="pointer-events-none fixed inset-0 z-0" style={{ background: isLight ? '#ffffff' : '#5e3731' }}>
+      <motion.img
+        src={brand.simboloEspiga}
+        alt=""
+        aria-hidden="true"
+        className="absolute"
+        style={{
+          width: 260,
+          right: -92,
+          top: 92,
+          opacity: isLight ? 0.045 : 0.055,
+          filter: isLight ? 'none' : FILTER_WHITE,
+          mixBlendMode: isLight ? 'multiply' : 'screen',
+        }}
+        animate={{ y: [0, 14, 0], rotate: [-4, -1, -4], opacity: isLight ? [0.035, 0.05, 0.035] : [0.04, 0.06, 0.04] }}
+        transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
       />
-
-      {/* 2 — padrão de espigas — apenas no light mode, muito sutil */}
-      {isLight && (
-        <motion.div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-0 motion-reduce:animate-none"
-          style={{
-            backgroundImage: `url(${brand.patternBrand})`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '140px 140px',
-            opacity: 0.03,
-            filter: 'brightness(0) saturate(0%)',
-          }}
-          animate={{ backgroundPosition: ['0px 0px', '140px 140px'] }}
-          transition={{ duration: 32, repeat: Infinity, ease: 'linear' }}
-        />
-      )}
-    </>
+      <motion.img
+        src={brand.simboloPar}
+        alt=""
+        aria-hidden="true"
+        className="absolute"
+        style={{
+          width: 190,
+          left: -72,
+          bottom: 118,
+          opacity: isLight ? 0.04 : 0.052,
+          filter: isLight ? 'none' : FILTER_WHITE,
+          mixBlendMode: isLight ? 'multiply' : 'screen',
+        }}
+        animate={{ y: [0, -12, 0], rotate: [6, 2, 6], opacity: isLight ? [0.03, 0.05, 0.03] : [0.035, 0.058, 0.035] }}
+        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: isLight
+            ? 'radial-gradient(circle at 18% 10%, rgba(243,116,53,0.08), transparent 30%), radial-gradient(circle at 88% 26%, rgba(184,134,11,0.08), transparent 34%)'
+            : 'radial-gradient(circle at 18% 10%, rgba(243,116,53,0.18), transparent 30%), radial-gradient(circle at 88% 26%, rgba(184,134,11,0.16), transparent 34%)',
+        }}
+      />
+    </div>
   )
 }

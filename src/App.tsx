@@ -5,6 +5,7 @@ import { SessionProvider, useSession } from './app/context/SessionContext'
 import { Loading } from './app/components/Loading'
 import { DevToolbar } from './app/components/DevToolbar'
 import { isDevMode } from './lib/devMode'
+import { hasRequiredOnboarding } from './lib/onboarding'
 
 // code splitting por rota
 const Splash = lazy(() => import('./app/pages/Splash'))
@@ -39,8 +40,12 @@ const Reports = lazy(() => import('./dashboard/pages/Reports'))
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { employee, loading } = useSession()
+  const location = useLocation()
   if (loading) return <Loading />
   if (!employee) return <Navigate to="/login" replace />
+  if (!isDevMode() && !hasRequiredOnboarding(employee.id)) {
+    return <Navigate to="/conheca?entry=1" replace state={{ from: location.pathname }} />
+  }
   return <>{children}</>
 }
 

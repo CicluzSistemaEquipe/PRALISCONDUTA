@@ -13,7 +13,7 @@ export function LisHeaderAvatar({
   size?: number
   onClick?: () => void
 }) {
-  const STROKE = 3
+  const STROKE = Math.max(3, Math.round(size * 0.075))
   const R = (size - STROKE * 2) / 2
   const C = 2 * Math.PI * R
   const offset = C - (Math.min(100, Math.max(0, globalProgress)) / 100) * C
@@ -22,11 +22,16 @@ export function LisHeaderAvatar({
     <button
       onClick={onClick}
       className="relative shrink-0"
-      style={{ width: size, height: size }}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        boxShadow: '0 10px 24px rgba(43,22,15,0.20)',
+      }}
       aria-label={`Progresso: ${Math.round(globalProgress)}%`}
     >
       <svg width={size} height={size} className="absolute left-0 top-0">
-        <circle cx={size / 2} cy={size / 2} r={R} stroke="rgba(255,255,255,0.1)" strokeWidth={STROKE} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={R} stroke="rgba(255,255,255,0.22)" strokeWidth={STROKE} fill="none" />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -45,7 +50,8 @@ export function LisHeaderAvatar({
         className="absolute overflow-hidden rounded-full"
         style={{
           inset: STROKE + 2,
-          background: 'rgba(184,134,11,0.35)',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,230,184,0.82))',
+          border: '1px solid rgba(255,255,255,0.55)',
         }}
       >
         <img

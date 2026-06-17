@@ -45,54 +45,80 @@
 
 :root {
   /* BASE QUENTE — não preto puro, marrom escuríssimo */
-  --bg-base: #0d0800; /* fundo geral do app */
-  --bg-deep: #080400; /* overlays, modais */
+  --bg-base: #5e3731; /* fundo geral do app */
+  --bg-deep: #3f241f; /* overlays, modais */
 
   /* GLASS — substituem --bg-surface e --bg-elevated */
-  --glass-bg: rgba(255, 245, 220, 0.09); /* cards base */
-  --glass-bg-warm: rgba(184, 134, 11, 0.12); /* cards gold */
-  --glass-border: rgba(255, 245, 220, 0.15);
-  --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --glass-bg: #6a4038; /* cards base */
+  --glass-bg-warm: #75483f; /* cards gold */
+  --glass-border: #9a7068;
+  --glass-shadow: none;
 
   /* BRAND COLORS — idênticos ao manual da marca */
   --gold: #b8860b;
-  --gold-light: #d4a017;
-  --gold-vivid: #e8a820;
-  --gold-muted: rgba(184, 134, 11, 0.2);
+  --gold-light: #b8860b;
+  --gold-vivid: #b8860b;
+  --gold-muted: #735210;
   --orange: #f37435;
-  --orange-light: #ff8f5a;
-  --orange-muted: rgba(243, 116, 53, 0.18);
+  --orange-light: #f37435;
+  --orange-muted: #8b3f23;
   --brown: #5e3731;
   --cream: #e8cfa0;
-  --cream-muted: rgba(232, 207, 160, 0.65);
-  --green: #4ade80;
+  --cream-muted: #f2dfbc;
+  --green: #5dd87a;
   --red: #c0392b;
   --purple: #8e44ad;
 
   /* BORDAS */
-  --border-gold: rgba(184, 134, 11, 0.38);
-  --border-white: rgba(255, 255, 255, 0.12);
-  --border-warm: rgba(232, 207, 160, 0.12);
+  --border-gold: #b8860b;
+  --border-white: #7b524b;
+  --border-warm: #8a665f;
+  --stroke: #9a7068;
+  --stroke-soft: #7b524b;
 
   /* TEXTO */
   --text-primary: #ffffff;
   --text-secondary: #e8cfa0;
-  --text-muted: rgba(255, 255, 255, 0.55);
-  --text-locked: rgba(255, 255, 255, 0.3);
+  --text-muted: #f2dfbc;
+  --text-locked: #c3aaa3;
+  --text-on-accent: #ffffff;
+  --text-on-gold: #000000;
+  --text-on-surface: #ffffff;
+
+  /* TOKENS SEMÂNTICOS */
+  --color-bg-app: var(--bg-base);
+  --color-surface-card: var(--glass-bg);
+  --color-surface-card-strong: #6a4038;
+  --color-surface-card-soft: rgba(255, 255, 255, 0.10);
+  --color-text-main: var(--text-primary);
+  --color-text-subtle: var(--text-secondary);
+  --color-action: var(--orange);
+  --color-action-text: #ffffff;
+  --color-success: var(--green);
+  --color-success-bg: #31543a;
+  --color-danger: var(--red);
+  --color-danger-bg: #744034;
+  --color-review-bg: rgba(255, 255, 255, 0.12);
+  --color-review-border: rgba(255, 230, 184, 0.34);
+  --color-review-text: #ffe6b8;
 
   /* NAV / SHADOWS (defaults dark — sobrescritos no white mode) */
-  --nav-bg: rgba(8, 4, 0, 0.92);
-  --nav-border: rgba(184, 134, 11, 0.3);
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --shadow-glow: 0 0 40px rgba(243, 116, 53, 0.25);
+  --nav-bg: #6a4038;
+  --nav-border: #9a7068;
+  --nav-active-bg: #b8860b;
+  --nav-active-text: #2b160f;
+  --shadow-card: none;
+  --shadow-glow: none;
 
   /* SAFE AREA */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   /* ALIASES legados */
+  --bg-card: var(--glass-bg);
   --bg-surface: var(--glass-bg);
-  --bg-elevated: rgba(255, 245, 220, 0.11);
+  --bg-surface-2: #75483f;
+  --bg-elevated: #75483f;
   --pralis-ouro: var(--gold);
   --pralis-ouro-lt: var(--cream);
   --pralis-laranja: var(--orange);
@@ -116,6 +142,7 @@
 /* Fundo base do app — quente, não preto */
 .app-shell {
   background: var(--bg-base) !important;
+  color: var(--text-primary);
 }
 
 /* ============================================================
@@ -124,33 +151,31 @@
 
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
 }
 
 .glass-gold {
   background: var(--glass-bg-warm);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--border-gold);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45), 0 0 20px rgba(184, 134, 11, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  box-shadow: none;
 }
 
 .glass-orange {
-  background: rgba(243, 116, 53, 0.12);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(243, 116, 53, 0.32);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(243, 116, 53, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  background: var(--orange);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--orange);
+  box-shadow: none;
 }
 
 .btn-glass {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   transition: all 0.2s ease;
 }
 .btn-glass:active {
@@ -163,38 +188,61 @@
    Tons quentes da marca — não branco puro. Fallback é dark.
    ============================================================ */
 [data-theme='light'] {
-  --bg-base:    #fdf8f2;
-  --bg-deep:    #f5ede0;
+  color-scheme: light;
+
+  --bg-base:    #ffffff;
+  --bg-deep:    #ffffff;
   --bg-surface: #ffffff;
-  --bg-surface-2: #faf2e6;
-  --bg-card:    rgba(255, 248, 235, 0.95);
+  --bg-surface-2: #f7f2ec;
+  --bg-card:    #ffffff;
   --bg-elevated: #ffffff;
 
-  --text-primary:   #1a0e00;
+  --text-primary:   #000000;
   --text-secondary: #5e3731;
-  --text-muted:     #8a6a50;
-  --text-locked:    rgba(94, 55, 49, 0.35);
+  --text-muted:     #5e3731;
+  --text-locked:    #8d7772;
+  --text-on-accent: #ffffff;
+  --text-on-gold:   #000000;
+  --text-on-surface: #000000;
 
-  --glass-bg:     rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(184, 134, 11, 0.20);
-  --glass-shadow: 0 2px 16px rgba(94, 55, 49, 0.08), 0 1px 4px rgba(184, 134, 11, 0.06);
+  --color-bg-app: #ffffff;
+  --color-surface-card: #ffffff;
+  --color-surface-card-strong: #fff4eb;
+  --color-surface-card-soft: rgba(94, 55, 49, 0.06);
+  --color-text-main: #000000;
+  --color-text-subtle: #5e3731;
+  --color-action: #f37435;
+  --color-action-text: #ffffff;
+  --color-success: #1e7e4e;
+  --color-success-bg: #effff3;
+  --color-danger: #c0392b;
+  --color-danger-bg: #fff0ec;
+  --color-review-bg: rgba(94, 55, 49, 0.08);
+  --color-review-border: rgba(94, 55, 49, 0.18);
+  --color-review-text: #5e3731;
 
-  --border-gold:  rgba(184, 134, 11, 0.22);
-  --border-white: rgba(94, 55, 49, 0.10);
-  --border-warm:  rgba(184, 134, 11, 0.14);
-  --stroke:       rgba(184, 134, 11, 0.18);
-  --stroke-soft:  rgba(94, 55, 49, 0.08);
+  --glass-bg:     #ffffff;
+  --glass-border: #d8c1aa;
+  --glass-shadow: none;
 
-  --shadow-card:  0 2px 12px rgba(94, 55, 49, 0.08), 0 1px 4px rgba(184, 134, 11, 0.06);
-  --shadow-glow:  0 0 20px rgba(184, 134, 11, 0.08);
+  --border-gold:  #b8860b;
+  --border-white: #dfd2c8;
+  --border-warm:  #d8c1aa;
+  --stroke:       #d8c1aa;
+  --stroke-soft:  #eadfd5;
+
+  --shadow-card:  none;
+  --shadow-glow:  none;
 
   --nav-bg:     #ffffff;
-  --nav-border: rgba(184, 134, 11, 0.14);
+  --nav-border: #d8c1aa;
 
   /* aliases legados */
-  --cream-muted:    rgba(94, 55, 49, 0.65);
-  --pralis-marrom-dk: #fdf8f2;
-  --pralis-creme:   #1a0e00;
+  --cream-muted: #5e3731;
+  --pralis-marrom-dk: #ffffff;
+  --pralis-marrom-lk: #f7f2ec;
+  --pralis-creme: #5e3731;
+  --pralis-branco: #000000;
 }
 
 /* ------------------------------------------------------------
@@ -203,6 +251,65 @@
 [data-theme='light'] .tag-chip {
   background: #f37435;
   color: #ffffff;
+}
+
+.app-shell .tag-chip {
+  background: #f37435;
+  color: #ffffff;
+  border: 1px solid #f37435;
+}
+
+.app-shell .btn-laranja {
+  background: linear-gradient(110deg, #f37435 0%, #f37435 34%, #b8860b 52%, #f37435 72%, #f37435 100%) !important;
+  background-size: 240% 100% !important;
+  color: #ffffff !important;
+}
+
+.app-shell .btn-ghost {
+  background: var(--bg-surface) !important;
+  color: var(--text-on-surface) !important;
+  border-color: var(--stroke) !important;
+  box-shadow: none !important;
+}
+
+:root:not([data-theme='light']) .app-shell .btn-ghost {
+  color: #ffffff !important;
+}
+
+.app-shell .text-pralis-branco,
+[data-theme='light'] .app-shell .text-pralis-branco {
+  color: var(--text-primary) !important;
+}
+
+[data-theme='light'] .app-shell .text-pralis-ouro-lt {
+  color: var(--gold) !important;
+}
+
+[data-theme='light'] .app-shell .text-pralis-creme,
+[data-theme='light'] .app-shell .text-pralis-creme\/80,
+[data-theme='light'] .app-shell .text-pralis-creme\/70,
+[data-theme='light'] .app-shell .text-pralis-creme\/60,
+[data-theme='light'] .app-shell .text-pralis-creme\/50 {
+  color: var(--text-secondary) !important;
+}
+
+.app-shell .bg-pralis-marrom-dk,
+.app-shell .bg-pralis-marrom-dk\/40,
+.app-shell .bg-pralis-marrom-dk\/50 {
+  background-color: var(--bg-card) !important;
+}
+
+.app-shell.bg-pralis-radial,
+.app-shell .bg-pralis-radial,
+[data-theme='light'] .app-shell .bg-pralis-radial {
+  background-image: none !important;
+  background-color: var(--bg-base) !important;
+}
+
+[data-theme='light'] .app-shell .border-pralis-marrom-lk,
+[data-theme='light'] .app-shell .border-pralis-ouro\/25,
+[data-theme='light'] .app-shell .border-pralis-ouro\/30 {
+  border-color: var(--stroke) !important;
 }
 
 /* ------------------------------------------------------------

@@ -180,6 +180,18 @@ export async function saveQuizAnswer(
   a: QuizAnswerRecord,
 ): Promise<void> {
   if (hasSupabase && supabase) {
+    if (a.reviewed) {
+      await supabase
+        .from('quiz_answers')
+        .update({
+          answer: a.answer,
+          correct: a.correct,
+        })
+        .eq('employee_id', employeeId)
+        .eq('module_id', a.module_id)
+        .eq('question_id', a.question_id)
+      return
+    }
     await supabase.from('quiz_answers').insert({
       employee_id: employeeId,
       module_id: a.module_id,
@@ -190,7 +202,9 @@ export async function saveQuizAnswer(
     return
   }
   const all = read<QuizAnswerRecord[]>(LS.quiz(employeeId), [])
-  all.push(a)
+  const idx = all.findIndex((item) => item.module_id === a.module_id && item.question_id === a.question_id)
+  if (idx >= 0) all[idx] = { ...all[idx], ...a, answered_at: all[idx].answered_at || a.answered_at }
+  else all.push(a)
   write(LS.quiz(employeeId), all)
 }
 

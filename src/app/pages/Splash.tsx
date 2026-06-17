@@ -4,18 +4,20 @@ import { motion } from 'framer-motion'
 import { brand, FILTER_WHITE } from '@/lib/brand'
 import { getAdminData } from '@/lib/adminStore'
 import { LisAvatar } from '../components/LisAvatar'
+import { useTheme } from '../context/ThemeContext'
+import { hasRequiredOnboarding } from '@/lib/onboarding'
 
 export default function Splash() {
   const navigate = useNavigate()
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
   const welcomeText = getAdminData().splashConfig.welcomeText
 
   useEffect(() => {
-    const seen = localStorage.getItem('pralis:onboarding_seen')
     const current = localStorage.getItem('pralis:current-employee')
     const id = setTimeout(() => {
-      if (current) navigate('/feed', { replace: true })
-      else if (seen) navigate('/login', { replace: true })
-      else navigate('/conheca', { replace: true })
+      if (current) navigate(hasRequiredOnboarding(current) ? '/feed' : '/conheca?entry=1', { replace: true })
+      else navigate('/login', { replace: true })
     }, 2800)
     return () => clearTimeout(id)
   }, [navigate])
@@ -23,32 +25,51 @@ export default function Splash() {
   return (
     <div
       className="app-shell items-center justify-center"
-      style={{ background: '#150900', overflow: 'hidden' }}
+      style={{ background: 'var(--bg-base)', overflow: 'hidden' }}
     >
       {/* padrão de fundo oficial da marca */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.055 }}
-        transition={{ duration: 2, delay: 0.3 }}
+      <motion.img
+        src={brand.simboloEspiga}
+        alt=""
         aria-hidden="true"
+        className="pointer-events-none absolute"
         style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `url(${brand.patternBrand})`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '120px',
+          width: 250,
+          right: -86,
+          top: 96,
+          opacity: isLight ? 0.04 : 0.055,
+          filter: isLight ? 'none' : FILTER_WHITE,
+          mixBlendMode: isLight ? 'multiply' : 'screen',
         }}
+        animate={{ y: [0, 14, 0], rotate: [-4, -1, -4] }}
+        transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.img
+        src={brand.simboloPar}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute"
+        style={{
+          width: 170,
+          left: -54,
+          bottom: 104,
+          opacity: isLight ? 0.035 : 0.05,
+          filter: isLight ? 'none' : FILTER_WHITE,
+          mixBlendMode: isLight ? 'multiply' : 'screen',
+        }}
+        animate={{ y: [0, -10, 0], rotate: [6, 2, 6] }}
+        transition={{ duration: 17, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       <div className="relative z-10 flex flex-col items-center gap-5">
         {/* logo vetorial branca — desce com spring */}
         <motion.img
-          src={brand.logoSVGBranca}
+          src={isLight ? brand.logoSVGPreta : brand.logoSVGBranca}
           alt="padaria pralís"
           initial={{ opacity: 0, y: -30, scale: 0.94 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', stiffness: 180, damping: 18, delay: 0.15 }}
-          style={{ width: 200, height: 'auto', filter: FILTER_WHITE }}
+          style={{ width: 200, height: 'auto', filter: isLight ? 'none' : FILTER_WHITE }}
         />
 
         {/* Lis — mascote (corpo inteiro) */}
@@ -68,7 +89,7 @@ export default function Splash() {
             fontFamily: 'Montserrat, sans-serif',
             fontSize: 13,
             fontStyle: 'italic',
-            color: 'rgba(232,207,160,0.70)',
+            color: 'var(--text-secondary)',
             letterSpacing: '0.04em',
           }}
         >

@@ -11,7 +11,7 @@ import { LisCard } from './LisCard'
 import { TextCard } from './TextCard'
 import { VideoCard } from './VideoCard'
 import { SummaryCard } from './SummaryCard'
-import { QuizCard } from './QuizCard'
+import { QuizCard, type QuizRuntimeState } from './QuizCard'
 import { CompletionCard } from './CompletionCard'
 
 interface StoryPlayerProps {
@@ -21,8 +21,26 @@ interface StoryPlayerProps {
   onIndexChange?: (index: number) => void
   onModuleComplete: () => void
   onQuizAnswer: (moduleId: string, q: QuizQuestion, selectedIndex: number, correct: boolean) => void
+  onQuizReview?: (moduleId: string, q: QuizQuestion, selectedIndex: number, correct: boolean) => void
   onVideoWatched: (moduleId: string, videoId: string) => void
   watchedVideos: Set<string>
+  quizSeed?: string
+}
+
+function storyPatternAssets(story: Story, index: number) {
+  const byType: Record<Story['type'], string[]> = {
+    lis: [brand.simboloEspiga, brand.simboloPar],
+    text: [brand.symbolUrl, brand.simboloEspiga],
+    video: [brand.simboloPar, brand.simboloEspiga],
+    summary: [brand.simboloPar, brand.symbolUrl],
+    quiz: [brand.simboloEspiga, brand.simboloPar],
+    completion: [brand.simboloPar, brand.simboloEspiga],
+  }
+  const assets = byType[story.type]
+  return {
+    primary: assets[index % assets.length],
+    secondary: assets[(index + 1) % assets.length],
+  }
 }
 
 export function StoryPlayer({
@@ -32,8 +50,10 @@ export function StoryPlayer({
   onIndexChange,
   onModuleComplete,
   onQuizAnswer,
+  onQuizReview,
   onVideoWatched,
   watchedVideos,
+  quizSeed,
 }: StoryPlayerProps) {
   const stories = module.stories
   const [index, setIndex] = useState(Math.min(startIndex, stories.length - 1))
@@ -41,6 +61,7 @@ export function StoryPlayer({
   const [videoPlaying, setVideoPlaying] = useState(false)
   const [quizCorrect, setQuizCorrect] = useState(0)
   const [quizTotal, setQuizTotal] = useState(0)
+  const [quizStates, setQuizStates] = useState<Record<number, QuizRuntimeState>>({})
 
   const story = stories[index]
 
@@ -91,14 +112,16 @@ export function StoryPlayer({
 
   const accent = module.accent
   const [g0] = module.gradient
+  const patterns = storyPatternAssets(story, index)
 
   // a seta de avançar aparece nos cards "passivos" (os interativos têm controle próprio)
-  const showNextArrow = story.type !== 'quiz' && story.type !== 'completion' && story.type !== 'video'
+  const showNextArrow = story.type !== 'lis' && story.type !== 'quiz' && story.type !== 'completion' && story.type !== 'video'
   // segmento atual sempre cheio (sem timer); no vídeo, acompanha a reprodução
   const displayFraction = videoPlaying ? 0.5 : 1
 
   return (
     <div
+      data-testid="story-player"
       className="fixed inset-0 z-50 mx-auto flex max-w-[480px] flex-col"
       style={{
         ['--pralis-accent' as string]: accent,
@@ -107,29 +130,66 @@ export function StoryPlayer({
       }}
     >
       {/* padrão de espigas em drift lento */}
+      <motion.img
+        aria-hidden="true"
+        src={patterns.primary}
+        className="pointer-events-none absolute"
+        style={{
+          width: story.type === 'quiz' ? 310 : 260,
+          maxWidth: '72%',
+          right: story.type === 'quiz' ? -112 : -78,
+          top: story.type === 'lis' ? 72 : 112,
+          opacity: story.type === 'quiz' ? 0.055 : 0.065,
+          filter: 'brightness(0) invert(1)',
+          mixBlendMode: 'screen',
+        }}
+        animate={{ y: [0, 14, 0], rotate: [-6, -2, -6], opacity: [0.045, 0.075, 0.045] }}
+        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.img
+        aria-hidden="true"
+        src={patterns.secondary}
+        className="pointer-events-none absolute"
+        style={{
+          width: story.type === 'completion' ? 180 : 230,
+          maxWidth: '62%',
+          left: story.type === 'quiz' ? -96 : -72,
+          bottom: story.type === 'quiz' ? 16 : 76,
+          opacity: story.type === 'quiz' ? 0.04 : 0.052,
+          filter: 'brightness(0) invert(1)',
+          mixBlendMode: 'screen',
+        }}
+        animate={{ y: [0, -12, 0], rotate: [8, 4, 8], opacity: [0.035, 0.06, 0.035] }}
+        transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+      />
       <motion.div
+        aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage: `url(${brand.patternUrl})`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '70px',
-          opacity: 0.06,
+          background: 'radial-gradient(circle at 18% 16%, rgba(255,255,255,0.10), transparent 26%), radial-gradient(circle at 90% 74%, rgba(243,116,53,0.10), transparent 34%)',
         }}
-        animate={{ backgroundPosition: ['0px 0px', '70px 70px'] }}
-        transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+        animate={{ opacity: [0.36, 0.52, 0.36] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       {/* topo: barra de progresso + fechar */}
-      <div className="relative z-30 px-3 pt-3" style={{ paddingTop: 'calc(var(--safe-top) + 0.75rem)' }}>
+      <div
+        className="relative z-30 px-3 pb-3 pt-3"
+        style={{
+          paddingTop: 'calc(var(--safe-top) + 0.75rem)',
+          background: '#6a4038',
+          borderBottom: '1px solid #d8a24d',
+        }}
+      >
         <StoryProgressBar total={stories.length} current={index} fraction={displayFraction} />
         <div className="mt-2 flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <ModuleIcon type={module.iconType} color={accent} size={20} />
-            <span className="font-body text-xs font-semibold uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.85)' }}>
+            <ModuleIcon type={module.iconType} color="#e8cfa0" size={18} />
+            <span className="font-body text-[11px] font-bold uppercase tracking-wide" style={{ color: '#ffffff' }}>
               {module.number} · {module.title}
             </span>
           </span>
-          <button onClick={onClose} aria-label="Fechar módulo" className="rounded-full p-1" style={{ color: 'rgba(255,255,255,0.85)' }}>
+          <button onClick={onClose} aria-label="Fechar módulo" className="rounded-full p-1" style={{ color: '#ffffff' }}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -151,7 +211,8 @@ export function StoryPlayer({
             initial={{ x: dir > 0 ? '100%' : '-100%', opacity: 0.5 }}
             animate={{ x: 0, opacity: 1, transition: spring }}
             exit={{ x: dir > 0 ? '-100%' : '100%', opacity: 0.4, transition: spring }}
-            className="absolute inset-0"
+            className="absolute inset-0 overflow-y-auto overscroll-contain no-scrollbar"
+            style={{ WebkitOverflowScrolling: 'touch' }}
           >
             <StoryContent
               story={story}
@@ -163,9 +224,14 @@ export function StoryPlayer({
               onNext={next}
               onClose={onClose}
               onQuizAnswer={handleQuizAnswer}
+              onQuizReview={(q, sel, ok) => onQuizReview?.(module.id, q, sel, ok)}
+              onReviewStory={(storyIndex) => go(storyIndex, -1)}
+              quizState={quizStates[index]}
+              onQuizStateChange={(state) => setQuizStates((prev) => ({ ...prev, [index]: state }))}
               onVideoWatched={(vid) => onVideoWatched(module.id, vid)}
               watchedVideos={watchedVideos}
               onVideoPlayingChange={setVideoPlaying}
+              quizSeed={`${quizSeed ?? module.id}:${index}`}
             />
           </motion.div>
         </AnimatePresence>
@@ -181,7 +247,7 @@ export function StoryPlayer({
             animate={{ opacity: 0.75, x: 0 }}
             aria-label="Anterior"
             className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full"
-            style={{ background: 'rgba(0,0,0,0.18)', backdropFilter: 'blur(8px)' }}
+            style={{ background: '#6a4038', border: '1.5px solid #e8cfa0', backdropFilter: 'none' }}
           >
             <ChevronLeft size={22} color="#fff" />
           </motion.button>
@@ -196,20 +262,21 @@ export function StoryPlayer({
             animate={{
               scale: [1, 1.05, 1],
               boxShadow: [
-                '0 0 0 0 rgba(243,116,53,0)',
-                '0 0 0 8px rgba(243,116,53,0.15)',
-                '0 0 0 0 rgba(243,116,53,0)',
+                '0 0 0 0 rgba(0,0,0,0)',
+                '0 0 0 8px rgba(0,0,0,0.18)',
+                '0 0 0 0 rgba(0,0,0,0)',
               ],
             }}
             transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
             aria-label="Próximo"
             className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full"
             style={{
-              background: '#f37435',
-              border: '1.5px solid rgba(255,255,255,0.35)',
+              background: '#ffffff',
+              border: '2px solid rgba(255,255,255,0.72)',
+              boxShadow: '0 12px 26px rgba(43,22,15,0.20)',
             }}
           >
-            <ChevronRight size={24} color="#fff" />
+            <ChevronRight size={24} color="#f37435" />
           </motion.button>
         )}
       </div>
@@ -229,9 +296,14 @@ interface StoryContentProps {
   onNext: () => void
   onClose: () => void
   onQuizAnswer: (q: QuizQuestion, selectedIndex: number, correct: boolean) => void
+  onQuizReview: (q: QuizQuestion, selectedIndex: number, correct: boolean) => void
+  onReviewStory: (storyIndex: number) => void
+  quizState?: QuizRuntimeState
+  onQuizStateChange: (state: QuizRuntimeState) => void
   onVideoWatched: (videoId: string) => void
   watchedVideos: Set<string>
   onVideoPlayingChange: (playing: boolean) => void
+  quizSeed: string
 }
 
 function StoryContent({
@@ -243,9 +315,14 @@ function StoryContent({
   onNext,
   onClose,
   onQuizAnswer,
+  onQuizReview,
+  onReviewStory,
+  quizState,
+  onQuizStateChange,
   onVideoWatched,
   watchedVideos,
   onVideoPlayingChange,
+  quizSeed,
 }: StoryContentProps) {
   switch (story.type) {
     case 'lis':
@@ -282,7 +359,21 @@ function StoryContent({
     case 'summary':
       return <SummaryCard title={story.title} bullets={story.bullets} onNext={onNext} />
     case 'quiz':
-      return <QuizCard questions={story.questions} onAnswer={onQuizAnswer} onComplete={onNext} accent={accent} />
+      return (
+        <QuizCard
+          questions={story.questions}
+          sampleSize={story.sampleSize}
+          randomize={story.randomize}
+          quizSeed={quizSeed}
+          onAnswer={onQuizAnswer}
+          onReviewQuestion={onQuizReview}
+          onComplete={onNext}
+          onReviewStory={onReviewStory}
+          initialState={quizState}
+          onStateChange={onQuizStateChange}
+          accent={accent}
+        />
+      )
     case 'completion':
       return <CompletionCard badge={story.badge} message={story.message} quizScore={quizScore} onBack={onClose} />
     default:

@@ -9,16 +9,16 @@ interface StoryProgressBarProps {
 
 export function StoryProgressBar({ total, current, fraction }: StoryProgressBarProps) {
   return (
-    <div style={{ display: 'flex', gap: 4, padding: '0 4px' }}>
+    <div style={{ display: 'flex', gap: 5, padding: '0 4px' }}>
       {Array.from({ length: total }).map((_, i) => (
         <div
           key={i}
           style={{
             flex: 1,
-            height: 3,
+            height: 5,
             borderRadius: 999,
             overflow: 'hidden',
-            background: 'rgba(255,255,255,0.20)',
+            background: 'var(--stroke-soft)',
           }}
         >
           <motion.div
@@ -27,7 +27,7 @@ export function StoryProgressBar({ total, current, fraction }: StoryProgressBarP
               borderRadius: 999,
               background:
                 i < current
-                  ? '#fff'
+                  ? '#b8860b'
                   : i === current
                     ? '#f37435'
                     : 'transparent',

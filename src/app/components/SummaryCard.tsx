@@ -1,85 +1,113 @@
 import { motion } from 'framer-motion'
-import { BookOpen } from 'lucide-react'
-import { slideFromLeft, staggerChildren } from '@/lib/animations'
+import { BookOpen, Check } from 'lucide-react'
+
 interface SummaryCardProps {
   title: string
   bullets: string[]
-  /** mantido por compatibilidade — o avanço é feito pela seta global do StoryPlayer */
   onNext?: () => void
 }
 
 export function SummaryCard({ title, bullets }: SummaryCardProps) {
   return (
-    <div className="flex h-full flex-col justify-center gap-5 px-6 pb-24 pt-12">
+    <div className="flex h-full flex-col justify-center gap-4 px-5 pb-28 pt-10">
       <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 22 }}
+        className="flex min-w-0 items-center gap-3"
       >
         <div
           style={{
             width: 52,
             height: 52,
             borderRadius: 16,
-            background: 'rgba(255,255,255,0.15)',
-            border: '1px solid rgba(255,255,255,0.30)',
+            background: '#6a4038',
+            border: '1.5px solid #e8cfa0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            flexShrink: 0,
           }}
         >
-          <BookOpen size={24} color="#fff" />
+          <BookOpen size={24} color="#e8cfa0" />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <p
+            className="font-body uppercase"
+            style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.16em', color: '#ffe6b8' }}
+          >
+            resumo do modulo
+          </p>
+          <h2
+            style={{
+              fontFamily: 'MadeByDillan, serif',
+              fontSize: 'clamp(24px, 7vw, 31px)',
+              color: '#ffffff',
+              lineHeight: 1.02,
+              overflowWrap: 'anywhere',
+            }}
+          >
+            {title}
+          </h2>
         </div>
       </motion.div>
 
-      <motion.h2
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{ fontFamily: 'MadeByDillan, serif', fontSize: 28, color: '#fff', lineHeight: 1.1 }}
-      >
-        {title}
-      </motion.h2>
-
-      <motion.ul variants={staggerChildren} initial="hidden" animate="visible" className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-2.5">
         {bullets.map((b, i) => (
-          <motion.li
+          <motion.div
             key={i}
-            variants={slideFromLeft}
+            initial={{ opacity: 0, x: -18, scale: 0.98 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ delay: 0.16 + i * 0.14, type: 'spring', stiffness: 220, damping: 22 }}
             style={{
               display: 'flex',
               alignItems: 'flex-start',
-              gap: 12,
-              background: 'rgba(255,255,255,0.12)',
-              border: '1px solid rgba(255,255,255,0.20)',
-              borderRadius: 14,
-              padding: '12px 14px',
+              gap: 10,
+              background: '#6a4038',
+              border: '1.5px solid #d8a24d',
+              borderRadius: 16,
+              padding: '12px 13px',
+              boxShadow: '0 8px 18px rgba(43,22,15,0.12)',
             }}
           >
             <span
               style={{
                 flexShrink: 0,
-                width: 22,
-                height: 22,
-                borderRadius: 8,
-                background: 'rgba(255,255,255,0.20)',
-                border: '1px solid rgba(255,255,255,0.30)',
+                width: 28,
+                height: 28,
+                borderRadius: 10,
+                background: '#f37435',
+                border: '1px solid #ffe6b8',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 11,
+                fontSize: 12,
                 fontFamily: 'Montserrat, sans-serif',
-                fontWeight: 700,
-                color: '#fff',
+                fontWeight: 800,
+                color: '#ffffff',
               }}
             >
               {i + 1}
             </span>
-            <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 14, lineHeight: 1.55, color: 'rgba(255,255,255,0.90)' }}>
+            <span
+              style={{
+                flex: 1,
+                minWidth: 0,
+                fontFamily: 'Montserrat, sans-serif',
+                fontSize: 'clamp(13px, 3.8vw, 15px)',
+                fontWeight: 700,
+                lineHeight: 1.42,
+                color: '#ffffff',
+                overflowWrap: 'anywhere',
+                hyphens: 'auto',
+              }}
+            >
               {b}
             </span>
-          </motion.li>
+            <Check size={17} color="#5dd87a" style={{ marginTop: 3, flexShrink: 0 }} />
+          </motion.div>
         ))}
-      </motion.ul>
+      </div>
     </div>
   )
 }

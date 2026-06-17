@@ -55,6 +55,23 @@ export default function ModulePage() {
     })
   }
 
+  const handleQuizReview = (
+    moduleId: string,
+    q: QuizQuestion,
+    selectedIndex: number,
+    correct: boolean,
+  ) => {
+    void saveQuizAnswer(employee.id, {
+      module_id: moduleId,
+      question_id: q.id,
+      answer: q.options[selectedIndex],
+      correct,
+      answered_at: new Date().toISOString(),
+      reviewed: true,
+      reviewed_at: new Date().toISOString(),
+    })
+  }
+
   const handleVideoWatched = (moduleId: string, videoId: string) => {
     void markVideoWatched(employee.id, moduleId, videoId)
     setWatched((prev) => new Set(prev).add(videoId))
@@ -64,11 +81,13 @@ export default function ModulePage() {
     <StoryPlayer
       module={module}
       startIndex={startIndex}
+      quizSeed={`${employee.id}:${module.id}`}
       watchedVideos={watched}
       onClose={() => navigate('/feed')}
       onIndexChange={(i) => setStoryIndex(module.id, i)}
       onModuleComplete={() => completeModule(module.id)}
       onQuizAnswer={handleQuizAnswer}
+      onQuizReview={handleQuizReview}
       onVideoWatched={handleVideoWatched}
     />
   )

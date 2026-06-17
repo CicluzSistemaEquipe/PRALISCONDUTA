@@ -18,11 +18,11 @@ export function ThemeToggle() {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        background: isLight ? '#f0e4d4' : 'rgba(255,245,220,0.08)',
-        border: `1px solid ${isLight ? 'rgba(184,134,11,0.22)' : 'rgba(184,134,11,0.28)'}`,
+        background: isLight ? '#ffffff' : '#75483f',
+        border: '1px solid var(--stroke)',
         borderRadius: 99,
         padding: 3,
-        gap: 2,
+        gap: 3,
       }}
     >
       {([
@@ -36,11 +36,13 @@ export function ThemeToggle() {
             onClick={() => setTheme(id)}
             whileTap={{ scale: 0.92 }}
             aria-pressed={active}
+            title={label}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
-              padding: '5px 11px',
+              justifyContent: 'center',
+              width: 30,
+              height: 30,
               borderRadius: 99,
               border: 'none',
               cursor: 'pointer',
@@ -53,17 +55,11 @@ export function ThemeToggle() {
                 ? '#ffffff'
                 : isLight
                   ? '#8a6a50'
-                  : 'rgba(255,255,255,0.40)',
-              fontSize: 12,
-              fontFamily: 'Montserrat, sans-serif',
-              fontWeight: 600,
-              lineHeight: 1,
+                  : 'var(--text-secondary)',
               transition: 'background 0.18s, color 0.18s',
-              whiteSpace: 'nowrap',
             }}
           >
-            <Icon size={12} />
-            {label}
+            <Icon size={15} />
           </motion.button>
         )
       })}

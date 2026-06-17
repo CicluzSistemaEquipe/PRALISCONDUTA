@@ -1,4 +1,4 @@
-import type { Module, ModuleIconType } from './types'
+import type { Module, ModuleIconType, Story } from './types'
 
 // ============================================================
 // CONTEÚDO DOS MÓDULOS
@@ -981,10 +981,39 @@ function ensureVideoBeforeQuiz(m: RawModule): RawModule['stories'] {
   return [...stories.slice(0, quizAt), placeholder, ...stories.slice(quizAt)]
 }
 
+function previousReviewIndex(stories: Story[], quizIndex: number) {
+  for (let i = quizIndex - 1; i >= 0; i -= 1) {
+    if (stories[i].type === 'text' || stories[i].type === 'summary') return i
+  }
+  return Math.max(0, quizIndex - 1)
+}
+
+function prepareStories(m: RawModule): Story[] {
+  const stories = ensureVideoBeforeQuiz(m)
+
+  return stories.map((story, index) => {
+    if (story.type !== 'quiz') return story
+
+    const reviewIndex = previousReviewIndex(stories, index)
+    return {
+      ...story,
+      sampleSize: story.sampleSize ?? Math.min(3, story.questions.length),
+      randomize: story.randomize ?? true,
+      questions: story.questions.map((question) => ({
+        ...question,
+        reviewTarget: question.reviewTarget ?? {
+          storyIndex: reviewIndex,
+          label: 'Rever esse trecho',
+        },
+      })),
+    }
+  })
+}
+
 export const MODULES: Module[] = RAW_MODULES.map((m) => ({
   ...m,
   kind: m.kind ?? 'stories',
-  stories: ensureVideoBeforeQuiz(m),
+  stories: prepareStories(m),
   ...MODULE_META[m.id],
 }))
 
@@ -1022,7 +1051,12 @@ function activeModules(): Module[] {
     if (raw) {
       const parsed = JSON.parse(raw) as { modules?: Module[] }
       if (Array.isArray(parsed.modules) && parsed.modules.length) {
-        return parsed.modules.filter((m) => m.active !== false)
+        return parsed.modules
+          .filter((m) => m.active !== false)
+          .map((m) => ({
+            ...m,
+            stories: prepareStories(m),
+          }))
       }
     }
   } catch {

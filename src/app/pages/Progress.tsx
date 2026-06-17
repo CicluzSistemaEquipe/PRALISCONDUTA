@@ -43,7 +43,7 @@ export default function ProgressScreen() {
       <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-6 pb-28 pt-12">
         <h1
           className="text-center font-display text-3xl"
-          style={{ color: isLight ? 'var(--text-primary)' : '#fff' }}
+          style={{ color: 'var(--text-primary)' }}
         >
           Seu progresso
         </h1>
@@ -55,7 +55,7 @@ export default function ProgressScreen() {
               cx={SIZE / 2}
               cy={SIZE / 2}
               r={R}
-              stroke={isLight ? 'rgba(94,55,49,0.12)' : 'rgba(255,255,255,0.08)'}
+              stroke="var(--stroke-soft)"
               strokeWidth={STROKE}
               fill="none"
             />
@@ -63,7 +63,7 @@ export default function ProgressScreen() {
               cx={SIZE / 2}
               cy={SIZE / 2}
               r={R}
-              stroke="url(#pgrad)"
+              stroke="#f37435"
               strokeWidth={STROKE}
               fill="none"
               strokeLinecap="round"
@@ -73,23 +73,17 @@ export default function ProgressScreen() {
               animate={{ strokeDashoffset: offset }}
               transition={{ duration: 1, ease: 'easeOut' }}
             />
-            <defs>
-              <linearGradient id="pgrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#b8860b" />
-                <stop offset="100%" stopColor="#f37435" />
-              </linearGradient>
-            </defs>
           </svg>
           <div className="text-center">
             <p
               className="font-display text-4xl"
-              style={{ color: isLight ? 'var(--text-primary)' : '#fff' }}
+              style={{ color: 'var(--text-primary)' }}
             >
               {completed}
             </p>
             <p
               className="-mt-1 font-body text-xs"
-              style={{ color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.60)' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
               de {total} módulos
             </p>
@@ -111,13 +105,11 @@ export default function ProgressScreen() {
                 className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl"
                 style={{
                   background: done
-                    ? isLight ? 'rgba(74,222,128,0.12)' : 'rgba(93,216,122,0.15)'
+                    ? isLight ? '#effff3' : '#31543a'
                     : started
-                      ? isLight ? 'rgba(184,134,11,0.10)' : 'rgba(184,134,11,0.12)'
-                      : isLight ? 'rgba(94,55,49,0.05)' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${done
-                    ? 'rgba(74,222,128,0.38)'
-                    : isLight ? 'rgba(184,134,11,0.22)' : 'rgba(184,134,11,0.28)'}`,
+                      ? 'var(--bg-card)'
+                      : 'var(--bg-surface-2)',
+                  border: `1px solid ${done ? 'var(--green)' : started ? m.accent : 'var(--stroke)'}`,
                 }}
                 aria-label={m.title}
               >
@@ -129,17 +121,17 @@ export default function ProgressScreen() {
                       ? '#4ade80'
                       : started
                         ? m.accent
-                        : isLight ? 'rgba(94,55,49,0.30)' : 'rgba(255,255,255,0.30)'
+                        : 'var(--text-locked)'
                   }
                 />
                 {done ? (
                   <Check size={12} color="#4ade80" />
                 ) : !started ? (
-                  <Lock size={11} color={isLight ? 'rgba(94,55,49,0.35)' : 'rgba(255,255,255,0.30)'} />
+                  <Lock size={11} color="var(--text-locked)" />
                 ) : (
                   <span
                     className="font-body"
-                    style={{ fontSize: 9, color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.60)' }}
+                    style={{ fontSize: 9, color: 'var(--text-secondary)' }}
                   >
                     {m.number}
                   </span>
@@ -151,7 +143,7 @@ export default function ProgressScreen() {
 
         <p
           className="mt-10 text-center font-body text-base italic"
-          style={{ color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.80)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           {pct >= 100
             ? 'Você concluiu tudo! Que orgulho. 🌾'

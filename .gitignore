@@ -31,3 +31,7 @@ Design/
 Referencias/
 *.rar
 *.zip
+
+# testes / artefatos locais
+test-results/
+playwright-report/

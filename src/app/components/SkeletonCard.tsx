@@ -6,7 +6,7 @@ export function SkeletonCard({ height = 200 }: { height?: number }) {
     <motion.div
       aria-hidden="true"
       className="rounded-3xl"
-      style={{ height, background: 'rgba(184,134,11,0.08)' }}
+      style={{ height, background: 'var(--bg-surface-2)' }}
       animate={{ opacity: [0.5, 1, 0.5] }}
       transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
     />

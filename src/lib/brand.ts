@@ -8,6 +8,7 @@ import logoFundoBordo from '@/assets/brand/logo-primario-fundo-bordo.png'
 import logoSecBege from '@/assets/brand/logo-secundario-bege.png'
 import symbolUrl from '@/assets/brand/simbolo-pralis.svg'
 import patternUrl from '@/assets/brand/padrao-fundo.svg'
+import padraoFundo from '@/assets/brand/padrao-fundo.svg?url'
 // SVGs oficiais da identidade (vetoriais)
 import logoSVGBranca from '@/assets/brand/logo-branca.svg?url'
 import logoSVGPreta from '@/assets/brand/logo-preta.svg?url'
@@ -26,6 +27,7 @@ export const brand = {
   symbolUrl,
   /** padrão de espigas — textura de fundo */
   patternUrl,
+  padraoFundo,
   /** logo vetorial branca — fundos escuros (nítida) */
   logoSVGBranca,
   /** logo vetorial preta — fundos claros */

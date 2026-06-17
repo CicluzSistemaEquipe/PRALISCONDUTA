@@ -40,6 +40,12 @@ export function newQuizQuestion(): QuizQuestion {
     options: ['Alternativa A', 'Alternativa B', 'Alternativa C', 'Alternativa D'],
     correctIndex: 0,
     explain: 'Explicação exibida após a resposta.',
+    optionExplanations: [
+      'Explique por que esta alternativa está correta ou incorreta.',
+      'Explique por que esta alternativa está correta ou incorreta.',
+      'Explique por que esta alternativa está correta ou incorreta.',
+      'Explique por que esta alternativa está correta ou incorreta.',
+    ],
   }
 }
 

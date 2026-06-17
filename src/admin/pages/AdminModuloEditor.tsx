@@ -344,7 +344,13 @@ export default function AdminModuloEditor() {
               {tab === 'quiz' && (
                 <div>
                   {quiz ? (
-                    <QuizEditor questions={quiz.questions} onChange={(qs) => updateStory(quizIdx, { type: 'quiz', questions: qs })} />
+                    <QuizEditor
+                      questions={quiz.questions}
+                      sampleSize={quiz.sampleSize}
+                      randomize={quiz.randomize}
+                      onChange={(qs) => updateStory(quizIdx, { ...quiz, questions: qs })}
+                      onConfigChange={(patch) => updateStory(quizIdx, { ...quiz, ...patch })}
+                    />
                   ) : (
                     <div className="adm-card flex flex-col items-center gap-3 py-8 text-center">
                       <HelpCircle className="h-8 w-8 text-[var(--cream-muted)]" />

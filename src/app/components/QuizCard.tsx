@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, X, ArrowRight } from 'lucide-react'
+import { Check, X, ArrowRight, BookOpen } from 'lucide-react'
 import type { QuizQuestion } from '@/lib/types'
+import { pickQuizQuestions, quizOptionExplanation } from '@/lib/quiz'
 import { LisAvatar } from './LisAvatar'
 import { useTheme } from '../context/ThemeContext'
 import { hapticError, hapticSuccess, soundCorrect, soundWrong, fireConfetti } from '@/lib/effects'
@@ -10,27 +11,72 @@ interface QuizCardProps {
   questions: QuizQuestion[]
   onAnswer: (q: QuizQuestion, selectedIndex: number, correct: boolean) => void
   onComplete: () => void
+  onReviewStory?: (storyIndex: number) => void
+  onReviewQuestion?: (q: QuizQuestion, selectedIndex: number, correct: boolean) => void
+  initialState?: QuizRuntimeState
+  onStateChange?: (state: QuizRuntimeState) => void
   accent?: string
+  sampleSize?: number
+  randomize?: boolean
+  quizSeed?: string
 }
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E']
 
-export function QuizCard({ questions, onAnswer, onComplete }: QuizCardProps) {
+export interface QuizRuntimeState {
+  currentIndex: number
+  answers: Record<string, { selectedIndex: number; correct: boolean; reviewed?: boolean }>
+}
+
+export function QuizCard({
+  questions,
+  onAnswer,
+  onComplete,
+  onReviewStory,
+  onReviewQuestion,
+  initialState,
+  onStateChange,
+  sampleSize,
+  randomize,
+  quizSeed,
+}: QuizCardProps) {
   const { theme } = useTheme()
   const isLight = theme === 'light'
-  const [qIndex, setQIndex] = useState(0)
-  const [selected, setSelected] = useState<number | null>(null)
-  const [revealed, setRevealed] = useState(false)
+  const activeQuestions = useMemo(
+    () => pickQuizQuestions(questions, { sampleSize, randomize, seed: quizSeed }),
+    [questions, sampleSize, randomize, quizSeed],
+  )
+  const [qIndex, setQIndex] = useState(() =>
+    Math.min(initialState?.currentIndex ?? 0, Math.max(0, activeQuestions.length - 1)),
+  )
+  const [answers, setAnswers] = useState<QuizRuntimeState['answers']>(() => initialState?.answers ?? {})
+  const headerRef = useRef<HTMLDivElement | null>(null)
 
-  const q = questions[qIndex]
-  const isLast = qIndex === questions.length - 1
-  const isCorrect = selected === q.correctIndex
+  const q = activeQuestions[qIndex]
+  if (!q) return null
+
+  const savedAnswer = answers[q.id]
+  const selected = savedAnswer?.selectedIndex ?? null
+  const revealed = Boolean(savedAnswer)
+  const isLast = qIndex === activeQuestions.length - 1
+  const isCorrect = savedAnswer?.correct ?? false
+  const feedbackText = selected === null ? q.explain : quizOptionExplanation(q, selected)
+  const canReview = revealed && !isCorrect && q.reviewTarget && onReviewStory
+
+  const reviewCurrent = () => {
+    if (selected === null || !q.reviewTarget) return
+    setAnswers((prev) => ({
+      ...prev,
+      [q.id]: { ...prev[q.id], selectedIndex: selected, correct: isCorrect, reviewed: true },
+    }))
+    onReviewQuestion?.(q, selected, isCorrect)
+    onReviewStory?.(q.reviewTarget.storyIndex)
+  }
 
   const choose = (i: number) => {
     if (revealed) return
-    setSelected(i)
-    setRevealed(true)
     const correct = i === q.correctIndex
+    setAnswers((prev) => ({ ...prev, [q.id]: { selectedIndex: i, correct } }))
     onAnswer(q, i, correct)
     if (correct) {
       hapticSuccess()
@@ -47,46 +93,85 @@ export function QuizCard({ questions, onAnswer, onComplete }: QuizCardProps) {
       onComplete()
     } else {
       setQIndex((n) => n + 1)
-      setSelected(null)
-      setRevealed(false)
     }
   }
 
   const lisState = !revealed ? 'thinking' : isCorrect ? 'correct' : 'wrong'
 
+  useEffect(() => {
+    onStateChange?.({ currentIndex: qIndex, answers })
+  }, [answers, qIndex])
+
+  useEffect(() => {
+    if (!revealed) return
+    window.setTimeout(() => {
+      headerRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    }, 80)
+  }, [revealed])
+
   return (
     <div
-      className="flex h-full flex-col justify-center gap-5 px-5 pb-28 pt-14"
-      style={{ background: isLight ? '#fdf8f2' : '#0d0800' }}
+      className="flex min-h-full flex-col gap-4 px-5 pb-36 pt-5"
+      style={{
+        background: 'transparent',
+        justifyContent: 'flex-start',
+      }}
     >
       {/* cabeçalho: Lis + pergunta */}
       <motion.div
+        ref={headerRef}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex items-start gap-3"
+        style={{ scrollMarginTop: 16 }}
       >
         <LisAvatar state={lisState} size={54} />
         <div
           style={{
             flex: 1,
-            background: isLight ? 'rgba(255,248,235,0.85)' : 'rgba(0,0,0,0.35)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: `1px solid ${isLight ? 'rgba(184,134,11,0.20)' : 'rgba(255,255,255,0.10)'}`,
+            minWidth: 0,
+            background: isLight ? 'var(--bg-card)' : '#6a4038',
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
+            border: '1.5px solid #d8a24d',
             borderRadius: '6px 18px 18px 18px',
-            padding: '14px 16px',
+            padding: '13px 15px',
           }}
         >
+          <span
+            style={{
+              display: 'inline-flex',
+              marginBottom: 8,
+              padding: '4px 9px',
+              borderRadius: 999,
+              background: 'var(--orange)',
+              color: '#ffffff',
+              fontFamily: 'Montserrat, sans-serif',
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: '0.10em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Pergunta {qIndex + 1} de {activeQuestions.length}
+          </span>
+
           {/* pontos de progresso das perguntas */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            {questions.map((_, i) => (
+            {activeQuestions.map((_, i) => (
               <span
                 key={i}
                 style={{
                   width: i === qIndex ? 16 : 6,
                   height: 6,
                   borderRadius: 999,
-                  background: i < qIndex ? '#4ade80' : i === qIndex ? '#f37435' : 'rgba(255,255,255,0.15)',
+                  background: answers[activeQuestions[i].id]
+                    ? answers[activeQuestions[i].id].correct
+                      ? 'var(--green)'
+                      : 'var(--red)'
+                    : i === qIndex
+                      ? 'var(--orange)'
+                      : 'var(--stroke-soft)',
                   transition: 'all 0.3s ease',
                 }}
               />
@@ -95,11 +180,13 @@ export function QuizCard({ questions, onAnswer, onComplete }: QuizCardProps) {
           <p
             style={{
               fontFamily: 'MadeByDillan, serif',
-              fontSize: 'clamp(20px, 5.5vw, 26px)',
-              color: isLight ? 'var(--text-primary)' : '#ffffff',
+              fontSize: 'clamp(18px, 5vw, 24px)',
+              color: 'var(--text-primary)',
               fontWeight: 700,
-              lineHeight: 1.35,
-              textShadow: isLight ? 'none' : '0 2px 12px rgba(0,0,0,0.60)',
+              lineHeight: 1.28,
+              textShadow: 'none',
+              overflowWrap: 'anywhere',
+              hyphens: 'auto',
             }}
           >
             {q.prompt}
@@ -131,20 +218,18 @@ export function QuizCard({ questions, onAnswer, onComplete }: QuizCardProps) {
               className="flex w-full items-center gap-3 text-left"
               style={{
                 borderRadius: 16,
-                padding: '15px 16px',
+                padding: '13px 14px',
                 border: `1.5px solid ${
-                  showCorrect ? 'rgba(74,222,128,0.60)' : showWrong ? 'rgba(226,96,79,0.50)' : isLight ? 'rgba(184,134,11,0.20)' : 'rgba(255,245,220,0.18)'
+                  showCorrect ? 'var(--green)' : showWrong ? 'var(--red)' : 'var(--stroke)'
                 }`,
                 background: showCorrect
-                  ? 'rgba(74,222,128,0.15)'
+                  ? isLight ? '#effff3' : '#31543a'
                   : showWrong
-                    ? 'rgba(226,96,79,0.12)'
-                    : isLight
-                      ? 'rgba(255,248,235,0.85)'
-                      : 'rgba(255,245,220,0.10)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                boxShadow: revealed ? undefined : isLight ? 'var(--shadow-card)' : '0 4px 20px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.08)',
+                    ? isLight ? '#fff0ec' : '#744034'
+                    : isLight ? 'var(--bg-card)' : '#6a4038',
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none',
+                boxShadow: 'none',
                 transition: 'background 0.2s ease, border-color 0.2s ease',
                 cursor: revealed ? 'default' : 'pointer',
               }}
@@ -163,15 +248,13 @@ export function QuizCard({ questions, onAnswer, onComplete }: QuizCardProps) {
                   fontSize: 13,
                   fontWeight: 800,
                   background: showCorrect
-                    ? 'rgba(74,222,128,0.20)'
+                    ? 'var(--green)'
                     : showWrong
-                      ? 'rgba(226,96,79,0.20)'
-                      : isLight
-                        ? 'rgba(94,55,49,0.08)'
-                        : 'rgba(255,255,255,0.08)',
-                  color: showCorrect ? (isLight ? '#2f8a44' : '#4ade80') : showWrong ? (isLight ? '#c14a39' : '#f87171') : isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.60)',
+                      ? 'var(--red)'
+                      : 'var(--bg-surface-2)',
+                  color: showCorrect || showWrong ? '#ffffff' : 'var(--text-secondary)',
                   border: `1px solid ${
-                    showCorrect ? 'rgba(74,222,128,0.40)' : showWrong ? 'rgba(226,96,79,0.40)' : isLight ? 'rgba(94,55,49,0.15)' : 'rgba(255,255,255,0.10)'
+                    showCorrect ? 'var(--green)' : showWrong ? 'var(--red)' : 'var(--stroke)'
                   }`,
                 }}
               >
@@ -181,10 +264,13 @@ export function QuizCard({ questions, onAnswer, onComplete }: QuizCardProps) {
                 style={{
                   flex: 1,
                   fontFamily: 'Montserrat, sans-serif',
-                  fontSize: 15,
+                  fontSize: 'clamp(13px, 3.8vw, 15px)',
                   fontWeight: 600,
                   lineHeight: 1.4,
-                  color: showCorrect ? (isLight ? '#2f8a44' : '#4ade80') : showWrong ? (isLight ? 'var(--text-primary)' : 'rgba(255,255,255,0.85)') : isLight ? 'var(--text-primary)' : '#ffffff',
+                  color: showCorrect ? (isLight ? '#155724' : '#ffffff') : showWrong ? 'var(--text-primary)' : 'var(--text-primary)',
+                  minWidth: 0,
+                  overflowWrap: 'anywhere',
+                  hyphens: 'auto',
                 }}
               >
                 {opt}
@@ -207,8 +293,9 @@ export function QuizCard({ questions, onAnswer, onComplete }: QuizCardProps) {
               style={{
                 borderRadius: 16,
                 padding: '14px 16px',
-                borderLeft: `4px solid ${isCorrect ? '#4ade80' : '#f87171'}`,
-                background: isCorrect ? 'rgba(74,222,128,0.07)' : 'rgba(248,113,113,0.07)',
+                borderLeft: `4px solid ${isCorrect ? 'var(--color-success)' : 'var(--color-danger)'}`,
+                background: isCorrect ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
+                border: `1px solid ${isCorrect ? 'var(--color-success)' : 'var(--color-danger)'}`,
               }}
             >
               <span
@@ -218,32 +305,68 @@ export function QuizCard({ questions, onAnswer, onComplete }: QuizCardProps) {
                   fontWeight: 800,
                   textTransform: 'uppercase',
                   letterSpacing: '0.12em',
-                  color: isCorrect ? '#4ade80' : '#f87171',
+                  color: isCorrect ? 'var(--color-success)' : 'var(--color-danger)',
                   display: 'block',
                   marginBottom: 6,
                 }}
               >
-                {isCorrect ? '✓ Correto!' : '✗ Quase lá!'}
+                {isCorrect ? 'Correto!' : 'Quase lá!'}
               </span>
-              <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 14, lineHeight: 1.6, color: isLight ? 'var(--text-primary)' : 'rgba(232,207,160,0.90)' }}>
-                {q.explain}
+              <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 14, lineHeight: 1.6, color: 'var(--text-primary)' }}>
+                {feedbackText}
               </p>
               {!isCorrect && (
-                <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 12, color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.50)', marginTop: 6 }}>
+                <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 12, color: 'var(--text-secondary)', marginTop: 6 }}>
                   Resposta certa: <strong style={{ color: isLight ? '#2f8a44' : '#4ade80' }}>{q.options[q.correctIndex]}</strong>
                 </p>
               )}
             </div>
 
+            {canReview && (
+              <motion.button
+                initial={{ opacity: 0, y: 8, backgroundPosition: '120% 0%' }}
+                animate={{ opacity: 1, y: 0, backgroundPosition: ['120% 0%', '-120% 0%'] }}
+                transition={{
+                  opacity: { delay: 0.42, duration: 0.18 },
+                  y: { delay: 0.42, type: 'spring', stiffness: 200, damping: 22 },
+                  backgroundPosition: { duration: 4.2, repeat: Infinity, ease: 'linear' },
+                }}
+                whileTap={{ scale: 0.97 }}
+                onClick={reviewCurrent}
+                className="flex w-full items-center justify-center gap-2 rounded-pill px-5 py-3 font-body font-bold"
+                style={{
+                  background: 'linear-gradient(110deg, #f37435 0%, #f37435 42%, #b8860b 70%, #f37435 100%)',
+                  backgroundSize: '220% 100%',
+                  border: '1px solid rgba(255,255,255,0.45)',
+                  color: '#2b160f',
+                  boxShadow: '0 12px 26px rgba(43,22,15,0.20), 0 0 0 1px rgba(255,230,184,0.12) inset',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                }}
+              >
+                <BookOpen className="h-4 w-4" color="#2b160f" />
+                <span style={{ color: '#2b160f', fontWeight: 900 }}>{q.reviewTarget?.label ?? 'Rever esse trecho'}</span>
+              </motion.button>
+            )}
+
             <motion.button
               initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: [1, 1.025, 1],
+              }}
+              transition={{
+                opacity: { delay: 0.7 },
+                y: { delay: 0.7 },
+                scale: { delay: 0.9, duration: 1.6, repeat: Infinity, ease: 'easeInOut' },
+              }}
+              whileTap={{ scale: 0.97 }}
               onClick={next}
-              className="btn-laranja w-full"
+              className="btn-next-white w-full"
             >
-              {isLast ? 'Ver resultado 🏆' : 'Próxima pergunta'}
-              <ArrowRight className="h-5 w-5" />
+              <span>{isLast ? 'Ver resultado' : 'Próxima pergunta'}</span>
+              <ArrowRight className="h-5 w-5" color="#f37435" />
             </motion.button>
           </motion.div>
         )}
