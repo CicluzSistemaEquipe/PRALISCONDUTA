@@ -9,9 +9,12 @@ import { getSignature } from '@/lib/storage'
 import { ModuleIcon } from '../components/ModuleIcon'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { BottomNav, TAB_PATH } from '../components/BottomNav'
+import { useTheme } from '../context/ThemeContext'
 
 export default function ProgressScreen() {
   const navigate = useNavigate()
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
   const { employee, progress } = useSession()
   const [signed, setSigned] = useState(false)
 
@@ -36,14 +39,26 @@ export default function ProgressScreen() {
 
   return (
     <div className="app-shell">
-      <AnimatedBackground theme="dark" />
+      <AnimatedBackground />
       <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-6 pb-28 pt-12">
-        <h1 className="text-center font-display text-3xl text-white">Seu progresso</h1>
+        <h1
+          className="text-center font-display text-3xl"
+          style={{ color: isLight ? 'var(--text-primary)' : '#fff' }}
+        >
+          Seu progresso
+        </h1>
 
         {/* ring global */}
         <div className="relative mx-auto mt-8 flex items-center justify-center" style={{ width: SIZE, height: SIZE }}>
           <svg width={SIZE} height={SIZE} className="absolute">
-            <circle cx={SIZE / 2} cy={SIZE / 2} r={R} stroke="rgba(255,255,255,0.08)" strokeWidth={STROKE} fill="none" />
+            <circle
+              cx={SIZE / 2}
+              cy={SIZE / 2}
+              r={R}
+              stroke={isLight ? 'rgba(94,55,49,0.12)' : 'rgba(255,255,255,0.08)'}
+              strokeWidth={STROKE}
+              fill="none"
+            />
             <motion.circle
               cx={SIZE / 2}
               cy={SIZE / 2}
@@ -66,8 +81,18 @@ export default function ProgressScreen() {
             </defs>
           </svg>
           <div className="text-center">
-            <p className="font-display text-4xl text-white">{completed}</p>
-            <p className="-mt-1 font-body text-xs text-pralis-creme/60">de {total} módulos</p>
+            <p
+              className="font-display text-4xl"
+              style={{ color: isLight ? 'var(--text-primary)' : '#fff' }}
+            >
+              {completed}
+            </p>
+            <p
+              className="-mt-1 font-body text-xs"
+              style={{ color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.60)' }}
+            >
+              de {total} módulos
+            </p>
           </div>
         </div>
 
@@ -85,29 +110,49 @@ export default function ProgressScreen() {
                 transition={{ delay: 0.2 + i * 0.04, type: 'spring', stiffness: 260, damping: 18 }}
                 className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl"
                 style={{
-                  background: done ? 'rgba(93,216,122,0.15)' : started ? 'var(--gold-muted)' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${done ? 'rgba(93,216,122,0.4)' : 'var(--border-gold)'}`,
+                  background: done
+                    ? isLight ? 'rgba(74,222,128,0.12)' : 'rgba(93,216,122,0.15)'
+                    : started
+                      ? isLight ? 'rgba(184,134,11,0.10)' : 'rgba(184,134,11,0.12)'
+                      : isLight ? 'rgba(94,55,49,0.05)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${done
+                    ? 'rgba(74,222,128,0.38)'
+                    : isLight ? 'rgba(184,134,11,0.22)' : 'rgba(184,134,11,0.28)'}`,
                 }}
                 aria-label={m.title}
               >
                 <ModuleIcon
                   type={m.iconType}
                   size={26}
-                  color={done ? '#5dd87a' : started ? m.accent : 'rgba(255,255,255,0.3)'}
+                  color={
+                    done
+                      ? '#4ade80'
+                      : started
+                        ? m.accent
+                        : isLight ? 'rgba(94,55,49,0.30)' : 'rgba(255,255,255,0.30)'
+                  }
                 />
                 {done ? (
-                  <Check size={12} className="text-pralis-verde" />
+                  <Check size={12} color="#4ade80" />
                 ) : !started ? (
-                  <Lock size={11} className="text-white/30" />
+                  <Lock size={11} color={isLight ? 'rgba(94,55,49,0.35)' : 'rgba(255,255,255,0.30)'} />
                 ) : (
-                  <span className="font-body text-[9px] text-pralis-creme/60">{m.number}</span>
+                  <span
+                    className="font-body"
+                    style={{ fontSize: 9, color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.60)' }}
+                  >
+                    {m.number}
+                  </span>
                 )}
               </motion.button>
             )
           })}
         </div>
 
-        <p className="mt-10 text-center font-body text-base italic text-pralis-creme/80">
+        <p
+          className="mt-10 text-center font-body text-base italic"
+          style={{ color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.80)' }}
+        >
           {pct >= 100
             ? 'Você concluiu tudo! Que orgulho. 🌾'
             : pct >= 50

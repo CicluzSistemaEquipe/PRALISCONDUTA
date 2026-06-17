@@ -3,6 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { AnimatePresence, motion } from 'framer-motion'
 import { SessionProvider, useSession } from './app/context/SessionContext'
 import { Loading } from './app/components/Loading'
+import { DevToolbar } from './app/components/DevToolbar'
+import { isDevMode } from './lib/devMode'
 
 // code splitting por rota
 const Splash = lazy(() => import('./app/pages/Splash'))
@@ -143,6 +145,7 @@ export default function App() {
     <SessionProvider>
       <BrowserRouter>
         <AnimatedRoutes />
+        {isDevMode() && <DevToolbar />}
       </BrowserRouter>
     </SessionProvider>
   )

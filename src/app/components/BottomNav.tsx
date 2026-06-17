@@ -28,8 +28,8 @@ export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab
       className="fixed inset-x-0 bottom-0 z-40 mx-auto flex h-16 max-w-[480px] items-center justify-around"
       style={{
         background: isLight
-          ? 'linear-gradient(180deg, transparent 0%, var(--nav-bg) 35%, var(--nav-bg) 100%)'
-          : 'linear-gradient(180deg, transparent 0%, rgba(8,4,0,0.88) 35%, rgba(8,4,0,0.98) 100%)',
+          ? 'rgba(255,255,255,0.96)'
+          : 'rgba(26,14,0,0.96)',
         backdropFilter: 'blur(32px)',
         WebkitBackdropFilter: 'blur(32px)',
         borderTop: '1px solid var(--nav-border)',

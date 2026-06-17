@@ -81,15 +81,9 @@ export default function Login() {
   const fs = (id: string) => (focused === id ? { ...inputStyle, ...inputFocusStyle } : inputStyle)
 
   return (
-    <div className="app-shell" style={{ background: '#000', position: 'relative' }}>
-      {/* Fundo: glow dourado no topo + padrão de espigas */}
+    <div className="app-shell" style={{ background: '#150900', position: 'relative' }}>
+      {/* Fundo: padrão de espigas dark */}
       <AnimatedBackground accent="#b8860b" theme="dark" />
-      <div
-        style={{
-          position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(184,134,11,0.30) 0%, rgba(0,0,0,0) 65%)',
-        }}
-      />
 
       <motion.div
         variants={staggerChildren}
@@ -102,7 +96,7 @@ export default function Login() {
         <motion.div variants={fadeUp} className="flex flex-col items-center gap-3 mb-8">
           <img src={brand.logoBege} alt="Padaria Pralís" className="h-12 w-auto" />
           <div
-            style={{ height: 1, width: 48, background: 'linear-gradient(90deg, transparent, rgba(184,134,11,0.6), transparent)' }}
+            style={{ height: 1, width: 48, background: 'rgba(184,134,11,0.5)', borderRadius: 1 }}
           />
         </motion.div>
 

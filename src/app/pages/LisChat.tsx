@@ -8,6 +8,7 @@ import { LisAvatar } from '../components/LisAvatar'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { BottomNav, TAB_PATH } from '../components/BottomNav'
 import { useTheme } from '../context/ThemeContext'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 export default function LisChat() {
   const navigate = useNavigate()
@@ -30,24 +31,10 @@ export default function LisChat() {
       <AnimatedBackground accent="#b8860b" />
 
       <main className="no-scrollbar relative z-10 flex flex-1 flex-col items-center justify-start gap-5 overflow-y-auto px-6 pb-28 pt-5 text-center">
-        {/* glow ambiental atrás do avatar */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            width: 320,
-            height: 320,
-            borderRadius: '50%',
-            background: isLight
-              ? 'radial-gradient(circle, rgba(184,134,11,0.10) 0%, rgba(243,116,53,0.05) 45%, transparent 70%)'
-              : 'radial-gradient(circle, rgba(184,134,11,0.22) 0%, rgba(243,116,53,0.10) 45%, transparent 70%)',
-            filter: 'blur(32px)',
-            pointerEvents: 'none',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -65%)',
-          }}
-        />
+        {/* toggle topo */}
+        <div className="flex w-full justify-end">
+          <ThemeToggle />
+        </div>
 
         {/* saudação acima do avatar */}
         <motion.p
@@ -86,8 +73,8 @@ export default function LisChat() {
           className="w-full px-5 py-5"
           style={{
             background: isLight
-              ? 'linear-gradient(135deg, rgba(232,207,160,0.35) 0%, rgba(255,248,235,0.75) 100%)'
-              : 'linear-gradient(135deg, rgba(184,134,11,0.28) 0%, rgba(94,55,49,0.22) 100%)',
+              ? '#ffffff'
+              : 'rgba(255,245,220,0.08)',
             border: '1px solid rgba(184,134,11,0.35)',
             borderRadius: '6px 22px 22px 22px',
             backdropFilter: 'blur(24px)',
@@ -124,8 +111,8 @@ export default function LisChat() {
                 padding: '14px 16px',
                 borderRadius: 16,
                 background: isLight
-                  ? 'linear-gradient(135deg, rgba(243,116,53,0.15) 0%, rgba(255,248,235,0.80) 100%)'
-                  : 'linear-gradient(135deg, rgba(243,116,53,0.22) 0%, rgba(184,134,11,0.14) 100%)',
+                  ? 'rgba(243,116,53,0.08)'
+                  : 'rgba(243,116,53,0.14)',
                 border: '1px solid rgba(243,116,53,0.38)',
                 boxShadow: isLight ? 'var(--shadow-card)' : '0 4px 24px rgba(243,116,53,0.14), inset 0 1px 0 rgba(255,255,255,0.07)',
               }}

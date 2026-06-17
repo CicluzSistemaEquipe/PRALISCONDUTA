@@ -23,11 +23,7 @@ export default function Splash() {
   return (
     <div
       className="app-shell items-center justify-center"
-      style={{
-        background: '#000',
-        backgroundImage: 'radial-gradient(ellipse 120% 55% at 50% 0%, rgba(184,134,11,0.35) 0%, transparent 65%)',
-        overflow: 'hidden',
-      }}
+      style={{ background: '#150900', overflow: 'hidden' }}
     >
       {/* padrão de fundo oficial da marca */}
       <motion.div

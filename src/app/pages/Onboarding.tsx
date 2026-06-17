@@ -11,15 +11,15 @@ import { TextCard } from '../components/TextCard'
 import { VideoCard } from '../components/VideoCard'
 import { ValuesCard } from '../components/ValuesCard'
 
-// Fundo dinâmico por story — preto com glow colorido
+// Fundo sólido por story — cores chapadas da marca
 const STORY_BACKGROUNDS = [
-  'radial-gradient(ellipse 90% 55% at 50% 10%, rgba(184,134,11,0.45) 0%, rgba(0,0,0,0) 70%), #000',
-  'radial-gradient(ellipse 90% 55% at 50% 10%, rgba(243,116,53,0.35) 0%, rgba(0,0,0,0) 70%), #000',
-  'radial-gradient(ellipse 90% 55% at 50% 10%, rgba(184,134,11,0.30) 0%, rgba(0,0,0,0) 70%), #000',
-  'radial-gradient(ellipse 90% 55% at 50% 10%, rgba(74,222,128,0.25) 0%, rgba(0,0,0,0) 70%), #000',
-  'radial-gradient(ellipse 90% 55% at 30% 20%, rgba(184,134,11,0.30) 0%, rgba(0,0,0,0) 65%), #000',
-  'radial-gradient(ellipse 90% 55% at 50% 10%, rgba(74,222,128,0.30) 0%, rgba(0,0,0,0) 70%), #000',
-  'radial-gradient(ellipse 90% 55% at 50% 10%, rgba(184,134,11,0.50) 0%, rgba(0,0,0,0) 70%), #000',
+  '#150900',
+  '#1a0b00',
+  '#0d0800',
+  '#091209',
+  '#150900',
+  '#091209',
+  '#150900',
 ]
 
 const STORIES: Story[] = [
@@ -225,7 +225,7 @@ export default function Onboarding() {
                 transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
                 aria-label="Próximo"
                 className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full"
-                style={{ background: 'linear-gradient(135deg, #f37435, #b8860b)', border: '1.5px solid rgba(255,255,255,0.35)' }}
+                style={{ background: '#f37435', border: '1.5px solid rgba(255,255,255,0.35)' }}
               >
                 <ChevronRight size={24} color="#fff" />
               </motion.button>

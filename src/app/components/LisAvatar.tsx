@@ -102,7 +102,8 @@ function LisFallback({ state = 'idle', size = 56, className }: LisAvatarProps) {
         <div style={{
           position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
           width: size * 0.8, height: size * 0.15, borderRadius: '50%',
-          background: `radial-gradient(ellipse, ${ring} 0%, transparent 70%)`,
+          background: ring,
+          opacity: 0.4,
           filter: 'blur(8px)',
         }} />
         <img
@@ -134,7 +135,7 @@ function LisFallback({ state = 'idle', size = 56, className }: LisAvatarProps) {
       className={`shrink-0 overflow-hidden rounded-full ${className ?? ''}`}
       style={{
         width: size, height: size,
-        background: 'linear-gradient(135deg, rgba(184,134,11,0.30), rgba(212,160,23,0.20))',
+        background: 'rgba(184,134,11,0.28)',
         border: `2px solid ${ring}`,
         boxShadow: `0 0 0 3px ${ring}, 0 0 20px rgba(184,134,11,0.25)`,
       }}

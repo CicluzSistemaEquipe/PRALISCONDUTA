@@ -49,9 +49,9 @@
   --bg-deep: #080400; /* overlays, modais */
 
   /* GLASS — substituem --bg-surface e --bg-elevated */
-  --glass-bg: rgba(255, 245, 220, 0.07); /* cards base */
-  --glass-bg-warm: rgba(184, 134, 11, 0.1); /* cards gold */
-  --glass-border: rgba(255, 245, 220, 0.13);
+  --glass-bg: rgba(255, 245, 220, 0.09); /* cards base */
+  --glass-bg-warm: rgba(184, 134, 11, 0.12); /* cards gold */
+  --glass-border: rgba(255, 245, 220, 0.15);
   --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 
   /* BRAND COLORS — idênticos ao manual da marca */
@@ -159,36 +159,50 @@
 }
 
 /* ============================================================
-   ── WHITE MODE ──  (override por [data-theme="light"] no <html>)
+   ── LIGHT MODE ──  (override por [data-theme="light"] no <html>)
    Tons quentes da marca — não branco puro. Fallback é dark.
    ============================================================ */
 [data-theme='light'] {
-  /* NB: --bg-base NÃO é alterado de propósito — o fundo creme das telas do
-     colaborador vem do AnimatedBackground (camada fixa). Manter --bg-base dark
-     evita que telas não adaptadas (Login, Onboarding, Conclusão, Progresso),
-     que usam .app-shell, fiquem com texto claro sobre fundo claro. */
+  --bg-base:    #fdf8f2;
+  --bg-deep:    #f5ede0;
   --bg-surface: #ffffff;
   --bg-surface-2: #faf2e6;
-  --bg-card: rgba(255, 248, 235, 0.9);
+  --bg-card:    rgba(255, 248, 235, 0.95);
+  --bg-elevated: #ffffff;
 
-  --text-primary: #1a0e00;
+  --text-primary:   #1a0e00;
   --text-secondary: #5e3731;
-  --text-muted: #8a6a50;
+  --text-muted:     #8a6a50;
+  --text-locked:    rgba(94, 55, 49, 0.35);
 
-  --glass-bg: rgba(255, 248, 235, 0.72);
-  --glass-border: rgba(184, 134, 11, 0.22);
-  --glass-shadow: 0 4px 24px rgba(94, 55, 49, 0.1), 0 1px 4px rgba(184, 134, 11, 0.08);
+  --glass-bg:     rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(184, 134, 11, 0.20);
+  --glass-shadow: 0 2px 16px rgba(94, 55, 49, 0.08), 0 1px 4px rgba(184, 134, 11, 0.06);
 
-  --stroke: rgba(184, 134, 11, 0.2);
-  --stroke-soft: rgba(94, 55, 49, 0.1);
-  --shadow-card: 0 4px 24px rgba(94, 55, 49, 0.1), 0 1px 4px rgba(184, 134, 11, 0.08);
-  --shadow-glow: 0 0 32px rgba(184, 134, 11, 0.12);
-  --nav-bg: rgba(253, 246, 236, 0.94);
-  --nav-border: rgba(184, 134, 11, 0.18);
+  --border-gold:  rgba(184, 134, 11, 0.22);
+  --border-white: rgba(94, 55, 49, 0.10);
+  --border-warm:  rgba(184, 134, 11, 0.14);
+  --stroke:       rgba(184, 134, 11, 0.18);
+  --stroke-soft:  rgba(94, 55, 49, 0.08);
 
-  /* aliases legados usados por componentes antigos */
-  --cream-muted: rgba(94, 55, 49, 0.7);
-  --text-locked: rgba(94, 55, 49, 0.35);
+  --shadow-card:  0 2px 12px rgba(94, 55, 49, 0.08), 0 1px 4px rgba(184, 134, 11, 0.06);
+  --shadow-glow:  0 0 20px rgba(184, 134, 11, 0.08);
+
+  --nav-bg:     #ffffff;
+  --nav-border: rgba(184, 134, 11, 0.14);
+
+  /* aliases legados */
+  --cream-muted:    rgba(94, 55, 49, 0.65);
+  --pralis-marrom-dk: #fdf8f2;
+  --pralis-creme:   #1a0e00;
+}
+
+/* ------------------------------------------------------------
+   LIGHT MODE — tag-chip: fundo laranja sólido + texto branco (contraste AA)
+   ------------------------------------------------------------ */
+[data-theme='light'] .tag-chip {
+  background: #f37435;
+  color: #ffffff;
 }
 
 /* ------------------------------------------------------------

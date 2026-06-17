@@ -15,6 +15,16 @@ import {
   getProgress,
   saveProgress as persistProgress,
 } from '@/lib/storage'
+import { isDevMode, enableDevMode } from '@/lib/devMode'
+
+const DEV_EMPLOYEE: Employee = {
+  id: 'dev-0000',
+  name: 'Desenvolvedor',
+  phone: '00000000000',
+  role: 'Caixa',
+  token: 'DEV_TOKEN',
+  created_at: new Date().toISOString(),
+}
 
 const CURRENT_KEY = 'pralis:current-employee'
 
@@ -48,8 +58,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // restaura sessão ao abrir o app
   useEffect(() => {
+    // ativa dev mode se URL tiver ?dev=1
+    if (new URLSearchParams(window.location.search).get('dev') === '1') enableDevMode()
+
     let active = true
     ;(async () => {
+      // DEV MODE — injeta colaborador fake e pula storage
+      if (isDevMode()) {
+        if (active) {
+          setEmployee(DEV_EMPLOYEE)
+          setLoading(false)
+        }
+        return
+      }
+
       const id = localStorage.getItem(CURRENT_KEY)
       if (id) {
         const emp = await getEmployeeById(id)

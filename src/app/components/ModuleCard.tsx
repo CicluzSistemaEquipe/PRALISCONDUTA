@@ -27,20 +27,22 @@ export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps
   const inProgress = status === 'in-progress'
   const pct = Math.round(progress * 100)
 
-  // superfícies por estado/tema (done usa verde, igual em ambos)
+  // superfícies por estado/tema — cores sólidas, sem gradientes
   const bg = locked
     ? isLight
       ? 'rgba(94,55,49,0.04)'
       : 'rgba(255,255,255,0.03)'
     : done
-      ? 'linear-gradient(135deg, rgba(74,222,128,0.16) 0%, rgba(74,222,128,0.07) 100%)'
+      ? isLight
+        ? '#ecfdf5'
+        : 'rgba(74,222,128,0.08)'
       : inProgress
         ? isLight
-          ? `linear-gradient(135deg, ${module.accent}1f 0%, rgba(255,248,235,0.85) 100%)`
-          : `linear-gradient(135deg, ${module.accent}25 0%, rgba(255,245,220,0.07) 100%)`
-        : isLight
-          ? 'rgba(94,55,49,0.06)'
+          ? '#ffffff'
           : 'rgba(255,245,220,0.09)'
+        : isLight
+          ? '#ffffff'
+          : 'rgba(255,245,220,0.07)'
 
   const borderColor = locked
     ? isLight
@@ -197,7 +199,7 @@ export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps
               initial={{ width: 0 }}
               animate={{ width: `${pct}%` }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-              style={{ background: `linear-gradient(90deg, ${module.accent}, #f37435)`, boxShadow: `0 0 6px ${module.accent}80` }}
+              style={{ background: module.accent, boxShadow: `0 0 6px ${module.accent}80` }}
             />
           </span>
         )}

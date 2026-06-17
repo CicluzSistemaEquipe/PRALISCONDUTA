@@ -15,7 +15,7 @@ interface QuizCardProps {
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E']
 
-export function QuizCard({ questions, onAnswer, onComplete, accent = '#f37435' }: QuizCardProps) {
+export function QuizCard({ questions, onAnswer, onComplete }: QuizCardProps) {
   const { theme } = useTheme()
   const isLight = theme === 'light'
   const [qIndex, setQIndex] = useState(0)
@@ -57,7 +57,7 @@ export function QuizCard({ questions, onAnswer, onComplete, accent = '#f37435' }
   return (
     <div
       className="flex h-full flex-col justify-center gap-5 px-5 pb-28 pt-14"
-      style={{ background: `radial-gradient(120% 45% at 50% 0%, ${accent}${isLight ? '1a' : '26'} 0%, ${isLight ? '#fdf6ec' : '#000'} 58%)` }}
+      style={{ background: isLight ? '#fdf8f2' : '#0d0800' }}
     >
       {/* cabeçalho: Lis + pergunta */}
       <motion.div

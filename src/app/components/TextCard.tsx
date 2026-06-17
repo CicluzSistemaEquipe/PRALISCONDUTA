@@ -24,7 +24,7 @@ function renderWithHighlights(text: string, highlights: string[] = []) {
   const parts = text.split(re)
   return parts.map((part, i) =>
     highlights.some((h) => h.toLowerCase() === part.toLowerCase()) ? (
-      <span key={i} className="font-semibold" style={{ color: 'var(--pralis-laranja)' }}>
+      <span key={i} className="font-semibold" style={{ color: 'var(--orange)' }}>
         {part}
       </span>
     ) : (
@@ -107,7 +107,7 @@ export function TextCard({
   return (
     <div
       className="relative flex h-full flex-col overflow-y-auto no-scrollbar px-6 pb-32 pt-10"
-      style={{ background: `radial-gradient(120% 45% at 50% 0%, ${accent}${isLight ? '1a' : '26'} 0%, ${isLight ? '#fdf6ec' : '#000'} 58%)` }}
+      style={{ background: isLight ? '#ffffff' : '#0d0800' }}
     >
       {/* header: (mute + tag) à esquerda, ilustração animada à direita */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
@@ -167,7 +167,7 @@ export function TextCard({
           marginTop: 16,
           borderRadius: 999,
           transformOrigin: 'left',
-          background: 'linear-gradient(90deg, #b8860b, rgba(184,134,11,0))',
+          background: '#b8860b',
         }}
       />
 
@@ -176,7 +176,7 @@ export function TextCard({
         <motion.div
           animate={{ width: `${(visibleCount / Math.max(1, paragraphs.length)) * 100}%` }}
           transition={{ duration: 0.4 }}
-          style={{ height: '100%', borderRadius: 999, background: 'linear-gradient(90deg, #b8860b, #f37435)' }}
+          style={{ height: '100%', borderRadius: 999, background: '#b8860b' }}
         />
       </div>
 

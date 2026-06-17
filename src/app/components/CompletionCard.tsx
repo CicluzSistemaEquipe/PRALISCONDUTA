@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 import { Trophy, Home } from 'lucide-react'
 import { fireConfetti, soundComplete, hapticSuccess } from '@/lib/effects'
 import { PralisSymbolX } from './PralisSymbol'
-import { useTheme } from '../context/ThemeContext'
 
 interface CompletionCardProps {
   badge: string
@@ -13,8 +12,6 @@ interface CompletionCardProps {
 }
 
 export function CompletionCard({ badge, message, quizScore, onBack }: CompletionCardProps) {
-  const { theme } = useTheme()
-  const isLight = theme === 'light'
   useEffect(() => {
     fireConfetti(3000)
     soundComplete()
@@ -37,7 +34,7 @@ export function CompletionCard({ badge, message, quizScore, onBack }: Completion
           width: 96,
           height: 96,
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #b8860b, #f37435)',
+          background: '#b8860b',
           boxShadow: '0 0 60px rgba(184,134,11,0.5)',
           display: 'flex',
           alignItems: 'center',
@@ -60,7 +57,7 @@ export function CompletionCard({ badge, message, quizScore, onBack }: Completion
             fontSize: 11,
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
-            color: '#b8860b',
+            color: 'rgba(255,255,255,0.90)',
             fontWeight: 700,
           }}
         >
@@ -70,7 +67,7 @@ export function CompletionCard({ badge, message, quizScore, onBack }: Completion
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 20 }}
-          style={{ fontFamily: 'MadeByDillan, serif', fontSize: 32, color: isLight ? 'var(--text-primary)' : '#fff', marginTop: 8, lineHeight: 1.1 }}
+          style={{ fontFamily: 'MadeByDillan, serif', fontSize: 32, color: '#fff', marginTop: 8, lineHeight: 1.1 }}
         >
           {badge}
         </motion.h2>
@@ -81,7 +78,7 @@ export function CompletionCard({ badge, message, quizScore, onBack }: Completion
           style={{
             fontFamily: 'Montserrat, sans-serif',
             fontSize: 16,
-            color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.80)',
+            color: 'rgba(255,255,255,0.85)',
             marginTop: 12,
             lineHeight: 1.6,
           }}
@@ -103,10 +100,10 @@ export function CompletionCard({ badge, message, quizScore, onBack }: Completion
             textAlign: 'center',
           }}
         >
-          <p style={{ fontFamily: 'MadeByDillan, serif', fontSize: 28, color: isLight ? 'var(--text-primary)' : '#fff' }}>
+          <p style={{ fontFamily: 'MadeByDillan, serif', fontSize: 28, color: '#fff' }}>
             {quizScore.correct}/{quizScore.total}
           </p>
-          <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 13, color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.65)', marginTop: 4 }}>
+          <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>
             {perfect ? '🎯 Perfeito! Acertou tudo!' : 'acertos no quiz'}
           </p>
         </motion.div>

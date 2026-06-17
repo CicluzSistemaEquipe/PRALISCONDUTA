@@ -12,6 +12,8 @@ import { BottomNav, TAB_PATH } from '../components/BottomNav'
 import { SkeletonCard } from '../components/SkeletonCard'
 import { brand, FILTER_WHITE } from '@/lib/brand'
 import { useTheme } from '../context/ThemeContext'
+import { ThemeToggle } from '../components/ThemeToggle'
+import { isDevMode } from '@/lib/devMode'
 
 /** Primeiro nome legível — nunca exibe um e-mail. */
 function firstName(name: string): string {
@@ -90,6 +92,7 @@ export default function Feed() {
     const fracMap = new Map<string, number>()
     let prevDone = true
     let completed = 0
+    const devMode = isDevMode()
 
     for (const m of ordered) {
       const done = isModuleDone(m)
@@ -99,7 +102,7 @@ export default function Feed() {
 
       let status: ModuleStatus
       if (done) status = 'done'
-      else if (!prevDone) status = 'locked'
+      else if (!prevDone && !devMode) status = 'locked' // dev mode: sem bloqueio
       else if (started) status = 'in-progress'
       else status = 'active'
       statusMap.set(m.id, status)
@@ -145,8 +148,8 @@ export default function Feed() {
         style={{
           paddingTop: 'calc(var(--safe-top) + 1rem)',
           background: isLight
-            ? 'linear-gradient(180deg, rgba(253,246,236,0.94) 0%, rgba(253,246,236,0.82) 100%)'
-            : 'linear-gradient(180deg, rgba(13,8,0,0.96) 0%, rgba(13,8,0,0.85) 100%)',
+            ? 'rgba(253,248,242,0.97)'
+            : 'rgba(26,14,0,0.97)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
           borderBottom: '1px solid var(--nav-border)',
@@ -157,7 +160,10 @@ export default function Feed() {
       >
         <div className="flex items-center justify-between">
           <img src={isLight ? brand.logoSVGPreta : brand.logoSVGBranca} alt="padaria pralís" style={{ width: 140, height: 'auto', filter: isLight ? 'none' : FILTER_WHITE }} />
-          <LisHeaderAvatar globalProgress={globalProgress} onClick={() => navigate('/progresso')} />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <LisHeaderAvatar globalProgress={globalProgress} onClick={() => navigate('/progresso')} />
+          </div>
         </div>
 
         <div className="flex flex-col gap-0.5">
@@ -195,8 +201,8 @@ export default function Feed() {
               style={{
                 padding: '20px 20px',
                 background: isLight
-                  ? 'linear-gradient(135deg, rgba(184,134,11,0.14) 0%, rgba(255,248,235,0.85) 55%, rgba(243,116,53,0.10) 100%)'
-                  : 'linear-gradient(135deg, rgba(184,134,11,0.22) 0%, rgba(94,55,49,0.14) 55%, rgba(243,116,53,0.12) 100%)',
+                  ? '#ffffff'
+                  : 'rgba(255,245,220,0.07)',
                 border: '1px solid var(--stroke)',
                 borderRadius: 22,
                 boxShadow: isLight
@@ -275,7 +281,7 @@ export default function Feed() {
                     initial={{ width: 0 }}
                     animate={{ width: `${globalProgress}%` }}
                     transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
-                    style={{ height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #b8860b, #f37435)', boxShadow: '0 0 6px rgba(184,134,11,0.7)' }}
+                    style={{ height: '100%', borderRadius: 99, background: '#b8860b', boxShadow: '0 0 6px rgba(184,134,11,0.7)' }}
                   />
                 </div>
               </div>

@@ -1,8 +1,6 @@
 import { motion } from 'framer-motion'
 import { BookOpen } from 'lucide-react'
 import { slideFromLeft, staggerChildren } from '@/lib/animations'
-import { useTheme } from '../context/ThemeContext'
-
 interface SummaryCardProps {
   title: string
   bullets: string[]
@@ -11,8 +9,6 @@ interface SummaryCardProps {
 }
 
 export function SummaryCard({ title, bullets }: SummaryCardProps) {
-  const { theme } = useTheme()
-  const isLight = theme === 'light'
   return (
     <div className="flex h-full flex-col justify-center gap-5 px-6 pb-24 pt-12">
       <motion.div
@@ -25,21 +21,21 @@ export function SummaryCard({ title, bullets }: SummaryCardProps) {
             width: 52,
             height: 52,
             borderRadius: 16,
-            background: 'rgba(184,134,11,0.15)',
-            border: '1px solid rgba(184,134,11,0.3)',
+            background: 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,0.30)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <BookOpen size={24} color="#b8860b" />
+          <BookOpen size={24} color="#fff" />
         </div>
       </motion.div>
 
       <motion.h2
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ fontFamily: 'MadeByDillan, serif', fontSize: 28, color: isLight ? 'var(--text-primary)' : '#fff', lineHeight: 1.1 }}
+        style={{ fontFamily: 'MadeByDillan, serif', fontSize: 28, color: '#fff', lineHeight: 1.1 }}
       >
         {title}
       </motion.h2>
@@ -53,8 +49,8 @@ export function SummaryCard({ title, bullets }: SummaryCardProps) {
               display: 'flex',
               alignItems: 'flex-start',
               gap: 12,
-              background: isLight ? 'rgba(255,248,235,0.80)' : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${isLight ? 'rgba(184,134,11,0.18)' : 'rgba(255,255,255,0.08)'}`,
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.20)',
               borderRadius: 14,
               padding: '12px 14px',
             }}
@@ -65,20 +61,20 @@ export function SummaryCard({ title, bullets }: SummaryCardProps) {
                 width: 22,
                 height: 22,
                 borderRadius: 8,
-                background: 'rgba(184,134,11,0.20)',
-                border: '1px solid rgba(184,134,11,0.3)',
+                background: 'rgba(255,255,255,0.20)',
+                border: '1px solid rgba(255,255,255,0.30)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: 11,
                 fontFamily: 'Montserrat, sans-serif',
                 fontWeight: 700,
-                color: '#b8860b',
+                color: '#fff',
               }}
             >
               {i + 1}
             </span>
-            <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 14, lineHeight: 1.55, color: isLight ? 'var(--text-secondary)' : 'rgba(232,207,160,0.90)' }}>
+            <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 14, lineHeight: 1.55, color: 'rgba(255,255,255,0.90)' }}>
               {b}
             </span>
           </motion.li>

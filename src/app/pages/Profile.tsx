@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Volume2, VolumeX, LogOut, Award, BookOpen, Sun, Moon } from 'lucide-react'
+import { Volume2, VolumeX, LogOut, Award, BookOpen } from 'lucide-react'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { modulesForRole } from '@/lib/content'
 import type { Module } from '@/lib/types'
 import { useSession } from '../context/SessionContext'
@@ -13,7 +14,7 @@ import { isSoundOn, setSoundOn } from '@/lib/effects'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { theme, toggleTheme } = useTheme()
+  const { theme } = useTheme()
   const isLight = theme === 'light'
   const { employee, progress, logout } = useSession()
   const [sound, setSound] = useState(isSoundOn())
@@ -38,26 +39,12 @@ export default function Profile() {
   return (
     <div className="app-shell">
       <AnimatedBackground />
-      <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-6 pb-28 pt-12">
-        {/* glow ambiental atrás do avatar */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            top: 20,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 260,
-            height: 200,
-            borderRadius: '50%',
-            background: isLight
-              ? 'radial-gradient(circle, rgba(184,134,11,0.10) 0%, rgba(243,116,53,0.04) 50%, transparent 70%)'
-              : 'radial-gradient(circle, rgba(184,134,11,0.20) 0%, rgba(243,116,53,0.08) 50%, transparent 70%)',
-            filter: 'blur(28px)',
-            pointerEvents: 'none',
-          }}
-        />
-        <div className="relative flex flex-col items-center gap-3 text-center">
+      <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-6 pb-28 pt-6">
+        {/* toggle topo */}
+        <div className="flex justify-end mb-6">
+          <ThemeToggle />
+        </div>
+        <div className="flex flex-col items-center gap-3 text-center">
           <LisAvatar state="neutral" size={96} />
           <div>
             <h1 className="font-display text-3xl" style={{ color: isLight ? 'var(--text-primary)' : '#fff' }}>{employee.name}</h1>
@@ -86,7 +73,6 @@ export default function Profile() {
 
         {/* ações */}
         <div className="mt-8 flex flex-col gap-2">
-          <Row onClick={toggleTheme} icon={isLight ? <Sun size={18} /> : <Moon size={18} />} label="Aparência" value={isLight ? 'Claro' : 'Escuro'} />
           <Row onClick={toggleSound} icon={sound ? <Volume2 size={18} /> : <VolumeX size={18} />} label="Som e feedback" value={sound ? 'Ligado' : 'Desligado'} />
           <Row onClick={() => navigate('/conclusao')} icon={<Award size={18} />} label="Termos e assinatura" value="" />
           <Row onClick={logout} icon={<LogOut size={18} />} label="Sair" value="" danger />
@@ -108,9 +94,7 @@ function Stat({ icon, value, label, color }: { icon: React.ReactNode; value: str
     <div
       className="flex flex-1 flex-col items-center gap-1.5 rounded-2xl py-5"
       style={{
-        background: isLight
-          ? `linear-gradient(135deg, ${c}1A 0%, rgba(255,248,235,0.80) 100%)`
-          : `linear-gradient(135deg, ${c}1E 0%, rgba(255,245,220,0.05) 100%)`,
+        background: isLight ? '#ffffff' : 'rgba(255,245,220,0.07)',
         border: `1px solid ${c}40`,
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
@@ -133,8 +117,8 @@ function Row({ onClick, icon, label, value, danger }: { onClick: () => void; ico
       className="flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left"
       style={{
         background: danger
-          ? isLight ? 'rgba(243,116,53,0.10)' : 'rgba(243,116,53,0.08)'
-          : isLight ? 'rgba(255,248,235,0.70)' : 'rgba(255,245,220,0.07)',
+          ? 'rgba(243,116,53,0.08)'
+          : isLight ? '#ffffff' : 'rgba(255,245,220,0.07)',
         border: danger ? '1px solid rgba(243,116,53,0.28)' : `1px solid ${isLight ? 'var(--stroke)' : 'rgba(255,245,220,0.12)'}`,
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',

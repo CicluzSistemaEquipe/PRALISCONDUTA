@@ -5,7 +5,6 @@ import type { Module, QuizQuestion, Story } from '@/lib/types'
 import { spring } from '@/lib/animations'
 import { soundDing } from '@/lib/effects'
 import { brand } from '@/lib/brand'
-import { useTheme } from '../context/ThemeContext'
 import { StoryProgressBar } from './StoryProgressBar'
 import { ModuleIcon } from './ModuleIcon'
 import { LisCard } from './LisCard'
@@ -90,10 +89,8 @@ export function StoryPlayer({
     return () => window.removeEventListener('keydown', onKey)
   }, [next, prev, onClose])
 
-  const { theme } = useTheme()
-  const isLight = theme === 'light'
   const accent = module.accent
-  const [g0, g1] = module.gradient
+  const [g0] = module.gradient
 
   // a seta de avançar aparece nos cards "passivos" (os interativos têm controle próprio)
   const showNextArrow = story.type !== 'quiz' && story.type !== 'completion' && story.type !== 'video'
@@ -105,7 +102,8 @@ export function StoryPlayer({
       className="fixed inset-0 z-50 mx-auto flex max-w-[480px] flex-col"
       style={{
         ['--pralis-accent' as string]: accent,
-        background: `linear-gradient(160deg, ${g0} 0%, ${g1} 48%, ${isLight ? '#fdf6ec' : '#000'} 100%)`,
+        // cor sólida do módulo em ambos os modos
+        background: g0,
       }}
     >
       {/* padrão de espigas em drift lento */}
@@ -127,11 +125,11 @@ export function StoryPlayer({
         <div className="mt-2 flex items-center justify-between">
           <span className="flex items-center gap-2">
             <ModuleIcon type={module.iconType} color={accent} size={20} />
-            <span className="font-body text-xs font-semibold uppercase tracking-wide text-pralis-creme/80">
+            <span className="font-body text-xs font-semibold uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.85)' }}>
               {module.number} · {module.title}
             </span>
           </span>
-          <button onClick={onClose} aria-label="Fechar módulo" className="rounded-full p-1 text-pralis-creme/80">
+          <button onClick={onClose} aria-label="Fechar módulo" className="rounded-full p-1" style={{ color: 'rgba(255,255,255,0.85)' }}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -183,9 +181,9 @@ export function StoryPlayer({
             animate={{ opacity: 0.75, x: 0 }}
             aria-label="Anterior"
             className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full"
-            style={{ background: isLight ? 'rgba(94,55,49,0.12)' : 'rgba(255,255,255,0.10)', backdropFilter: 'blur(8px)' }}
+            style={{ background: 'rgba(0,0,0,0.18)', backdropFilter: 'blur(8px)' }}
           >
-            <ChevronLeft size={22} color={isLight ? '#5e3731' : '#fff'} />
+            <ChevronLeft size={22} color="#fff" />
           </motion.button>
         ) : (
           <span />
@@ -207,7 +205,7 @@ export function StoryPlayer({
             aria-label="Próximo"
             className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full"
             style={{
-              background: 'linear-gradient(135deg, #f37435, #b8860b)',
+              background: '#f37435',
               border: '1.5px solid rgba(255,255,255,0.35)',
             }}
           >

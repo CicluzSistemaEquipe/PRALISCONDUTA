@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, CheckCircle, Volume2, VolumeX, RotateCcw } from 'lucide-react'
+import { Play, CheckCircle, Volume2, VolumeX, RotateCcw, Zap } from 'lucide-react'
 import { brand, FILTER_WHITE } from '@/lib/brand'
 import { hapticTap, soundDing } from '@/lib/effects'
+import { isDevMode } from '@/lib/devMode'
 
 interface VideoCardProps {
   videoId: string
@@ -145,7 +146,7 @@ export function VideoCard({
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: 'linear-gradient(to bottom, rgba(30,14,8,1) 0%, #000 100%)' }}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: '#0d0800' }}>
           <motion.img
             src={brand.symbolUrl}
             alt=""
@@ -174,7 +175,7 @@ export function VideoCard({
           >
             <span
               className="flex h-[72px] w-[72px] items-center justify-center rounded-full"
-              style={{ background: 'linear-gradient(135deg, #f37435, #b8860b)', boxShadow: '0 8px 32px rgba(243,116,53,0.5)' }}
+              style={{ background: '#f37435', boxShadow: '0 8px 32px rgba(243,116,53,0.5)' }}
             >
               <Play size={32} color="#fff" fill="#fff" style={{ marginLeft: 4 }} />
             </span>
@@ -193,6 +194,33 @@ export function VideoCard({
         </button>
       )}
 
+      {/* botão DEV SKIP — só em dev mode */}
+      {isDevMode() && !marked && (
+        <button
+          onClick={() => { setCanMark(true); setMarked(true); setFraction(1); onWatched(); soundDing() }}
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            zIndex: 20,
+            background: '#b8860b',
+            border: 'none',
+            borderRadius: 8,
+            padding: '5px 10px',
+            color: '#fff',
+            fontFamily: 'Montserrat, sans-serif',
+            fontWeight: 700,
+            fontSize: 11,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+          }}
+        >
+          <Zap size={12} /> Skip (Dev)
+        </button>
+      )}
+
       {/* gradiente inferior + info + botão assistido */}
       <div
         className="absolute inset-x-0 bottom-0 px-5 pb-9 pt-16"
@@ -202,7 +230,7 @@ export function VideoCard({
         <div className="mb-3 h-[3px] w-full overflow-hidden rounded-full bg-white/25">
           <div
             className="h-full rounded-full"
-            style={{ width: `${fraction * 100}%`, background: 'linear-gradient(90deg, #b8860b, #f37435)' }}
+            style={{ width: `${fraction * 100}%`, background: '#f37435' }}
           />
         </div>
         <p className="font-display text-2xl text-white">{title}</p>

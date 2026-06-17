@@ -31,7 +31,7 @@ export function LisHeaderAvatar({
           cx={size / 2}
           cy={size / 2}
           r={R}
-          stroke="url(#ring-gradient)"
+          stroke="#f37435"
           strokeWidth={STROKE}
           fill="none"
           strokeDasharray={C}
@@ -40,18 +40,12 @@ export function LisHeaderAvatar({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           style={{ transition: 'stroke-dashoffset 0.6s ease' }}
         />
-        <defs>
-          <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#b8860b" />
-            <stop offset="100%" stopColor="#f37435" />
-          </linearGradient>
-        </defs>
       </svg>
       <span
         className="absolute overflow-hidden rounded-full"
         style={{
           inset: STROKE + 2,
-          background: 'linear-gradient(160deg, rgba(184,134,11,0.35), rgba(94,55,49,0.40))',
+          background: 'rgba(184,134,11,0.35)',
         }}
       >
         <img

@@ -29,7 +29,7 @@ export function StoryProgressBar({ total, current, fraction }: StoryProgressBarP
                 i < current
                   ? '#fff'
                   : i === current
-                    ? 'linear-gradient(90deg, #b8860b, #f37435)'
+                    ? '#f37435'
                     : 'transparent',
             }}
             animate={{ width: i < current ? '100%' : i === current ? `${fraction * 100}%` : '0%' }}
