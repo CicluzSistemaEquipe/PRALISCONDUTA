@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Check, ChevronRight, Lock } from 'lucide-react'
 import type { Module } from '@/lib/types'
 import { Icon } from './Icon'
+import { useTheme } from '../context/ThemeContext'
 
 export type ModuleStatus = 'locked' | 'active' | 'in-progress' | 'done'
 
@@ -13,14 +14,16 @@ interface ModuleCardProps {
 }
 
 export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps) {
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
   const locked = status === 'locked'
   const done = status === 'done'
   const inProgress = status === 'in-progress'
   const pct = Math.round(progress * 100)
 
-  const doneText = '#12341e'
-  const doneSubtle = '#225238'
-  const doneSurface = '#eaffe9'
+  const doneText = isLight ? '#12341e' : '#5dd87a'
+  const doneSubtle = isLight ? '#225238' : 'rgba(93,216,122,0.75)'
+  const doneSurface = isLight ? '#eaffe9' : 'rgba(93,216,122,0.12)'
 
   return (
     <motion.button
@@ -34,11 +37,9 @@ export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps
         borderRadius: 16,
         padding: '16px',
         opacity: locked ? 0.58 : 1,
-        background: done ? 'linear-gradient(135deg, rgba(93,216,122,0.86), rgba(126,232,148,0.72))' : 'rgba(106,64,56,0.82)',
-        border: `1.5px solid ${done ? '#8bf0a1' : inProgress ? module.accent : 'var(--stroke)'}`,
-        boxShadow: done ? '0 8px 18px rgba(93,216,122,0.18)' : 'none',
-        backdropFilter: 'blur(12px) saturate(1.12)',
-        WebkitBackdropFilter: 'blur(12px) saturate(1.12)',
+        background: done ? doneSurface : 'var(--bg-card)',
+        border: `1.5px solid ${done ? '#1f7a39' : inProgress ? module.accent : 'var(--stroke)'}`,
+        boxShadow: 'none',
         transition: 'background 0.18s, border-color 0.18s, transform 0.18s',
       }}
     >
@@ -75,10 +76,10 @@ export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps
           height: 44,
           borderRadius: 12,
           background: done ? doneSurface : 'var(--bg-surface-2)',
-          border: `1px solid ${done ? '#1f7a39' : locked ? 'var(--stroke)' : module.accent}`,
+          border: `1px solid ${done ? (isLight ? '#1f7a39' : '#5dd87a') : locked ? 'var(--stroke)' : module.accent}`,
         }}
       >
-        <Icon name={module.icon} size={20} color={locked ? 'var(--text-locked)' : done ? '#1f7a39' : module.accent} />
+        <Icon name={module.icon} size={20} color={locked ? 'var(--text-locked)' : done ? (isLight ? '#1f7a39' : '#5dd87a') : module.accent} />
       </span>
 
       <span className="relative min-w-0 flex-1">
@@ -129,10 +130,10 @@ export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps
               height: 34,
               borderRadius: '50%',
               background: doneSurface,
-              border: '2px solid #1f7a39',
+              border: `2px solid ${isLight ? '#1f7a39' : '#5dd87a'}`,
             }}
           >
-            <Check size={18} color="#1f7a39" strokeWidth={3} />
+            <Check size={18} color={isLight ? '#1f7a39' : '#5dd87a'} strokeWidth={3} />
           </span>
         ) : locked ? (
           <Lock size={15} color="var(--text-locked)" />

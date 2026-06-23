@@ -10,9 +10,12 @@ interface LisCardProps {
   state?: LisState
   onNext: () => void
   isLast?: boolean
+  videoSrc?: string
+  onProgress?: (f: number) => void
+  onVideoEnd?: () => void
 }
 
-export function LisCard({ text, state = 'talking', onNext, isLast }: LisCardProps) {
+export function LisCard({ text, state = 'talking', onNext, isLast, videoSrc, onProgress, onVideoEnd }: LisCardProps) {
   const [shown, setShown] = useState('')
   const [done, setDone] = useState(false)
 
@@ -31,6 +34,83 @@ export function LisCard({ text, state = 'talking', onNext, isLast }: LisCardProp
     return () => clearInterval(id)
   }, [text])
 
+  // --- layout com vídeo grande (hero) ---
+  if (videoSrc) {
+    return (
+      <div className="relative flex h-full flex-col" style={{ background: 'transparent' }}>
+        {/* vídeo ocupa ~60% da tela */}
+        <div style={{ position: 'relative', flex: '0 0 62%', overflow: 'hidden', background: 'var(--story-bg, #b8860b)' }}>
+          <video
+            src={videoSrc}
+            autoPlay
+            muted={false}
+            playsInline
+            style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center bottom' }}
+            onTimeUpdate={(e) => {
+              const v = e.currentTarget
+              if (v.duration) onProgress?.(v.currentTime / v.duration)
+            }}
+            onEnded={() => onVideoEnd?.()}
+          />
+          {/* sombra de fade na base do vídeo para fundir com o fundo do módulo */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 80,
+              background: 'linear-gradient(to bottom, transparent, var(--story-bg, #b8860b))',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
+
+        {/* texto + botão na parte de baixo */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 16, padding: '0 20px 100px' }}>
+          <div
+            style={{
+              background: 'rgba(106,64,56,0.88)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(232,207,160,0.26)',
+              borderRadius: '10px 22px 22px 22px',
+              padding: '16px 18px',
+              boxShadow: '0 14px 32px rgba(43,22,15,0.16)',
+            }}
+          >
+            <p
+              style={{
+                fontFamily: 'Montserrat, sans-serif',
+                fontStyle: 'italic',
+                fontSize: 'clamp(14px, 4vw, 16px)',
+                color: '#ffffff',
+                lineHeight: 1.6,
+                overflowWrap: 'anywhere',
+              }}
+            >
+              {shown}
+              {!done && <span className="ml-0.5 inline-block animate-cursor-blink">|</span>}
+            </p>
+          </div>
+
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: done ? 1 : 0, y: done ? 0 : 10 }}
+            onClick={onNext}
+            className="btn-next-white w-full"
+            disabled={!done}
+          >
+            <span>{isLast ? 'Concluir' : 'Próximo'}</span>
+            <ArrowRight className="h-5 w-5" color="#f37435" />
+          </motion.button>
+        </div>
+      </div>
+    )
+  }
+
+  // --- layout padrão (avatar animado) ---
   return (
     <div className="relative flex h-full flex-col items-center justify-center gap-4 px-5 pb-24 pt-8 text-center">
       <motion.img

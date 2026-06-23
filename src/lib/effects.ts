@@ -30,11 +30,17 @@ export function setSoundOn(on: boolean) {
 }
 
 let audioCtx: AudioContext | null = null
+type AudioContextWindow = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext
+  }
+
 function ctx(): AudioContext | null {
   if (!isSoundOn()) return null
   try {
     if (!audioCtx) {
-      const AC = window.AudioContext || (window as any).webkitAudioContext
+      const AC = window.AudioContext || (window as AudioContextWindow).webkitAudioContext
+      if (!AC) return null
       audioCtx = new AC()
     }
     if (audioCtx.state === 'suspended') void audioCtx.resume()

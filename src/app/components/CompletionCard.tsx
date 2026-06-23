@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Trophy, Home } from 'lucide-react'
+import { Home } from 'lucide-react'
 import { fireConfetti, soundComplete, hapticSuccess } from '@/lib/effects'
 import { PralisSymbolX } from './PralisSymbol'
 import { brand } from '@/lib/brand'
@@ -10,9 +10,10 @@ interface CompletionCardProps {
   message: string
   quizScore?: { correct: number; total: number }
   onBack: () => void
+  onNextModule?: () => void
 }
 
-export function CompletionCard({ badge, message, quizScore, onBack }: CompletionCardProps) {
+export function CompletionCard({ badge, message, quizScore, onBack, onNextModule }: CompletionCardProps) {
   useEffect(() => {
     fireConfetti(3000)
     soundComplete()
@@ -26,6 +27,7 @@ export function CompletionCard({ badge, message, quizScore, onBack }: Completion
       className="relative flex h-full flex-col items-center justify-center overflow-hidden text-center"
       style={{ padding: '0 24px 120px 24px', gap: 22 }}
     >
+      {/* patterns de fundo com máscara para sumir a borda */}
       <motion.img
         aria-hidden="true"
         src={brand.simboloEspiga}
@@ -34,9 +36,11 @@ export function CompletionCard({ badge, message, quizScore, onBack }: Completion
           width: 220,
           right: -72,
           top: 76,
-          opacity: 0.05,
+          opacity: 0.055,
           filter: 'brightness(0) invert(1)',
           mixBlendMode: 'screen',
+          WebkitMaskImage: 'radial-gradient(ellipse 75% 75% at 50% 50%, black 55%, transparent 100%)',
+          maskImage: 'radial-gradient(ellipse 75% 75% at 50% 50%, black 55%, transparent 100%)',
         }}
         animate={{ y: [0, 12, 0], rotate: [-5, -1, -5], opacity: [0.04, 0.065, 0.04] }}
         transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
@@ -49,37 +53,72 @@ export function CompletionCard({ badge, message, quizScore, onBack }: Completion
           width: 170,
           left: -54,
           bottom: 120,
-          opacity: 0.045,
+          opacity: 0.048,
           filter: 'brightness(0) invert(1)',
           mixBlendMode: 'screen',
+          WebkitMaskImage: 'radial-gradient(ellipse 75% 75% at 50% 50%, black 55%, transparent 100%)',
+          maskImage: 'radial-gradient(ellipse 75% 75% at 50% 50%, black 55%, transparent 100%)',
         }}
         animate={{ y: [0, -10, 0], rotate: [6, 2, 6], opacity: [0.035, 0.058, 0.035] }}
         transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
       />
 
+      {/* Lis comemorando — dentro do círculo com fade na base */}
       <motion.div
-        initial={{ scale: 0, rotate: -20 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
-        className="relative"
-        style={{
-          width: 96,
-          height: 96,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #ffffff 0%, #ffe6b8 100%)',
-          boxShadow: '0 0 70px rgba(255,230,184,0.36), 0 18px 34px rgba(43,22,15,0.18)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '1px solid rgba(255,255,255,0.65)',
-        }}
+        initial={{ scale: 0, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 220, damping: 16, delay: 0.15 }}
+        style={{ position: 'relative', width: 160, height: 210, flexShrink: 0 }}
       >
-        <motion.span
-          className="absolute inset-0 rounded-full"
-          animate={{ boxShadow: ['0 0 0 0 rgba(255,255,255,0.24)', '0 0 0 18px rgba(255,255,255,0)', '0 0 0 0 rgba(255,255,255,0)'] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
+        {/* pulso atrás de tudo */}
+        <motion.div
+          style={{
+            position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+            width: 128, height: 128, borderRadius: '50%',
+            border: '2px solid rgba(255,255,255,0.38)',
+            zIndex: 0, pointerEvents: 'none',
+          }}
+          animate={{ scale: [1, 1.55, 1.55], opacity: [0.45, 0, 0] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
         />
-        <Trophy size={44} color="#b8860b" />
+
+        {/* círculo base — atrás da Lis */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          width: 128, height: 128, borderRadius: '50%',
+          background: 'linear-gradient(160deg, #ffffff 0%, #ffe6b8 100%)',
+          border: '3px solid rgba(184,134,11,0.55)',
+          boxShadow: '0 0 40px rgba(255,230,184,0.50), 0 0 0 6px rgba(184,134,11,0.15)',
+          zIndex: 1,
+        }} />
+
+        {/* vídeo da Lis — dentro/sobre o círculo, mostrando do busto pra cima */}
+        <motion.div
+          animate={{ y: [0, -5, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute', bottom: 4, left: 0, right: 0,
+            height: 205, zIndex: 2, pointerEvents: 'none',
+          }}
+        >
+          <video
+            src="/video-final-lis-feliz-alpha.webm"
+            autoPlay loop muted playsInline
+            style={{
+              width: '100%', height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center 5%',  /* ancora no topo — mostra cabeça/busto */
+            }}
+          />
+        </motion.div>
+
+        {/* fade circular na base — busto dela "dissolve" no círculo */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          width: 128, height: 128, borderRadius: '50%',
+          background: 'linear-gradient(to bottom, transparent 15%, rgba(255,230,184,0.7) 60%, #ffe0a0 100%)',
+          zIndex: 3, pointerEvents: 'none',
+        }} />
       </motion.div>
 
       <div
@@ -160,17 +199,42 @@ export function CompletionCard({ badge, message, quizScore, onBack }: Completion
         </motion.div>
       )}
 
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.0 }}
-        onClick={onBack}
-        className="btn-next-white w-full"
-        style={{ marginTop: 8 }}
-      >
-        <span>Voltar ao início</span>
-        <Home size={18} color="#f37435" />
-      </motion.button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 8 }}>
+        {onNextModule && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0, type: 'spring', stiffness: 200, damping: 20 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={onNextModule}
+            className="w-full"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '14px 20px', borderRadius: 999,
+              background: 'linear-gradient(110deg, #f37435 0%, #f37435 45%, #b8860b 100%)',
+              border: '1px solid rgba(255,255,255,0.30)',
+              boxShadow: '0 12px 28px rgba(43,22,15,0.22)',
+              fontFamily: 'Montserrat, sans-serif',
+              fontSize: 15, fontWeight: 800, color: '#ffffff',
+              cursor: 'pointer',
+            }}
+          >
+            <span>Próximo módulo</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </motion.button>
+        )}
+
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: onNextModule ? 1.15 : 1.0 }}
+          onClick={onBack}
+          className="btn-next-white w-full"
+        >
+          <span>Voltar ao início</span>
+          <Home size={18} color="#f37435" />
+        </motion.button>
+      </div>
     </div>
   )
 }

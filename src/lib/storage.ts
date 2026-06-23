@@ -56,6 +56,11 @@ export function makeToken() {
   return `${part()}${part()}`
 }
 
+export function makeAccessCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('')
+}
+
 // ------------------------------------------------------------
 // Employees
 // ------------------------------------------------------------
@@ -82,6 +87,7 @@ export async function createEmployee(input: {
   phone: string
   role: Role
   token?: string
+  access_code?: string
 }): Promise<Employee> {
   const employee: Employee = {
     id: uid(),
@@ -89,6 +95,7 @@ export async function createEmployee(input: {
     phone: input.phone,
     role: input.role,
     token: input.token ?? makeToken(),
+    access_code: input.access_code ?? makeAccessCode(),
     created_at: new Date().toISOString(),
   }
 
@@ -100,6 +107,7 @@ export async function createEmployee(input: {
         phone: employee.phone,
         role: employee.role,
         token: employee.token,
+        access_code: employee.access_code,
       })
       .select()
       .single()
@@ -120,6 +128,53 @@ export async function preRegisterEmployee(input: {
   role: Role
 }): Promise<Employee> {
   return createEmployee(input)
+}
+
+export async function updateEmployee(
+  id: string,
+  patch: Partial<Pick<Employee, 'name' | 'phone' | 'role' | 'token' | 'access_code'>>,
+): Promise<Employee | null> {
+  if (hasSupabase && supabase) {
+    const { data, error } = await supabase
+      .from('employees')
+      .update(patch)
+      .eq('id', id)
+      .select()
+      .maybeSingle()
+    if (error) throw error
+    return (data as Employee) ?? null
+  }
+
+  const all = read<Employee[]>(LS.employees, [])
+  const idx = all.findIndex((employee) => employee.id === id)
+  if (idx < 0) return null
+  all[idx] = { ...all[idx], ...patch }
+  write(LS.employees, all)
+  return all[idx]
+}
+
+export async function regenerateEmployeeAccess(id: string): Promise<Employee | null> {
+  return updateEmployee(id, {
+    token: makeToken(),
+    access_code: makeAccessCode(),
+  })
+}
+
+export async function deleteEmployee(id: string): Promise<void> {
+  if (hasSupabase && supabase) {
+    const { error } = await supabase.from('employees').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+
+  write(
+    LS.employees,
+    read<Employee[]>(LS.employees, []).filter((employee) => employee.id !== id),
+  )
+  localStorage.removeItem(LS.progress(id))
+  localStorage.removeItem(LS.quiz(id))
+  localStorage.removeItem(LS.signature(id))
+  localStorage.removeItem(LS.videos(id))
 }
 
 export async function listEmployees(): Promise<Employee[]> {

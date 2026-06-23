@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { ROLES, type Role } from '@/lib/types'
 import { useSession } from '../context/SessionContext'
-import { LisAvatar } from '../components/LisAvatar'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { brand, FILTER_WHITE } from '@/lib/brand'
 import { fadeUp, staggerChildren } from '@/lib/animations'
@@ -17,8 +16,8 @@ function getTokenFromUrl(): string | undefined {
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(106,64,56,0.72)',
-  border: '1px solid rgba(232,207,160,0.30)',
+  background: 'var(--glass-bg)',
+  border: '1px solid var(--stroke)',
   borderRadius: 16,
   padding: '14px 16px',
   color: 'var(--text-primary)',
@@ -26,8 +25,6 @@ const inputStyle: React.CSSProperties = {
   fontSize: 15,
   outline: 'none',
   width: '100%',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
 }
 
 const inputFocusStyle: React.CSSProperties = {
@@ -97,7 +94,7 @@ export default function Login() {
             transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            style={{ height: 2, width: 58, background: 'linear-gradient(90deg, transparent, #b8860b, transparent)', borderRadius: 2 }}
+            style={{ height: 2, width: 58, background: '#b8860b', borderRadius: 2, opacity: 0.7 }}
             animate={{ width: [42, 72, 42], opacity: [0.55, 1, 0.55] }}
             transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
           />
@@ -109,20 +106,47 @@ export default function Login() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 18, delay: 0.2 }}
           >
-            <LisAvatar state="talking" size={64} />
+            <div
+              aria-label="Lis"
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: '50%',
+                overflow: 'hidden',
+                background: '#ffffff',
+                border: '2px solid rgba(184,134,11,0.55)',
+                boxShadow: '0 0 0 5px rgba(184,134,11,0.14), 0 10px 22px rgba(43,22,15,0.24)',
+                flexShrink: 0,
+              }}
+            >
+              <video
+                src="/videocirculo-dashboard.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{
+                  width: '130%',
+                  height: '130%',
+                  objectFit: 'cover',
+                  objectPosition: 'center 20%',
+                  marginLeft: '-2%',
+                  marginTop: '-10%',
+                  display: 'block',
+                }}
+              />
+            </div>
           </motion.div>
           <div
             style={{
               flex: 1,
-              background: 'rgba(106,64,56,0.82)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(232,207,160,0.30)',
+              background: 'var(--glass-bg)',
+              border: '1px solid var(--stroke)',
               borderRadius: '8px 18px 18px 18px',
               padding: '14px 16px',
             }}
           >
-            <p className="font-body leading-relaxed" style={{ fontStyle: 'italic', fontSize: 15, color: '#ffe6b8' }}>
+            <p className="font-body leading-relaxed" style={{ fontStyle: 'italic', fontSize: 15, color: 'var(--text-secondary)' }}>
               Que bom ter você aqui! Bora fazer seu cadastro?
             </p>
           </div>

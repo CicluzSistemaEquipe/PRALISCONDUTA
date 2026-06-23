@@ -44,69 +44,69 @@
    ============================================================ */
 
 :root {
-  /* BASE QUENTE — não preto puro, marrom escuríssimo */
-  --bg-base: #5e3731; /* fundo geral do app */
-  --bg-deep: #3f241f; /* overlays, modais */
+  /* BASE ESCURA — marrom escuríssimo, quase preto */
+  --bg-base: #0d0800; /* fundo geral do app */
+  --bg-deep: #050200; /* overlays, modais */
 
-  /* GLASS — substituem --bg-surface e --bg-elevated */
-  --glass-bg: #6a4038; /* cards base */
-  --glass-bg-warm: #75483f; /* cards gold */
-  --glass-border: #9a7068;
+  /* GLASS — cards e superfícies sobre o fundo escuro */
+  --glass-bg: #1c1008; /* cards base */
+  --glass-bg-warm: #261508; /* cards warm/gold */
+  --glass-border: rgba(184, 134, 11, 0.22);
   --glass-shadow: none;
 
   /* BRAND COLORS — idênticos ao manual da marca */
   --gold: #b8860b;
-  --gold-light: #b8860b;
-  --gold-vivid: #b8860b;
-  --gold-muted: #735210;
+  --gold-light: #d4a017;
+  --gold-vivid: #e6b020;
+  --gold-muted: rgba(184, 134, 11, 0.30);
   --orange: #f37435;
-  --orange-light: #f37435;
-  --orange-muted: #8b3f23;
+  --orange-light: #f8936a;
+  --orange-muted: rgba(243, 116, 53, 0.25);
   --brown: #5e3731;
   --cream: #e8cfa0;
-  --cream-muted: #f2dfbc;
+  --cream-muted: rgba(232, 207, 160, 0.70);
   --green: #5dd87a;
-  --red: #c0392b;
-  --purple: #8e44ad;
+  --red: #ef4444;
+  --purple: #a855f7;
 
   /* BORDAS */
-  --border-gold: #b8860b;
-  --border-white: #7b524b;
-  --border-warm: #8a665f;
-  --stroke: #9a7068;
-  --stroke-soft: #7b524b;
+  --border-gold: rgba(184, 134, 11, 0.35);
+  --border-white: rgba(255, 255, 255, 0.10);
+  --border-warm: rgba(184, 134, 11, 0.22);
+  --stroke: rgba(184, 134, 11, 0.22);
+  --stroke-soft: rgba(255, 255, 255, 0.08);
 
   /* TEXTO */
   --text-primary: #ffffff;
   --text-secondary: #e8cfa0;
-  --text-muted: #f2dfbc;
-  --text-locked: #c3aaa3;
+  --text-muted: rgba(232, 207, 160, 0.65);
+  --text-locked: rgba(255, 255, 255, 0.30);
   --text-on-accent: #ffffff;
-  --text-on-gold: #000000;
+  --text-on-gold: #1a0e00;
   --text-on-surface: #ffffff;
 
   /* TOKENS SEMÂNTICOS */
   --color-bg-app: var(--bg-base);
   --color-surface-card: var(--glass-bg);
-  --color-surface-card-strong: #6a4038;
-  --color-surface-card-soft: rgba(255, 255, 255, 0.10);
+  --color-surface-card-strong: #221308;
+  --color-surface-card-soft: rgba(255, 255, 255, 0.05);
   --color-text-main: var(--text-primary);
   --color-text-subtle: var(--text-secondary);
   --color-action: var(--orange);
   --color-action-text: #ffffff;
   --color-success: var(--green);
-  --color-success-bg: #31543a;
+  --color-success-bg: #0d2e18;
   --color-danger: var(--red);
-  --color-danger-bg: #744034;
-  --color-review-bg: rgba(255, 255, 255, 0.12);
-  --color-review-border: rgba(255, 230, 184, 0.34);
-  --color-review-text: #ffe6b8;
+  --color-danger-bg: #2d0f0f;
+  --color-review-bg: rgba(255, 245, 220, 0.07);
+  --color-review-border: rgba(232, 207, 160, 0.22);
+  --color-review-text: #e8cfa0;
 
-  /* NAV / SHADOWS (defaults dark — sobrescritos no white mode) */
-  --nav-bg: #6a4038;
-  --nav-border: #9a7068;
-  --nav-active-bg: #b8860b;
-  --nav-active-text: #2b160f;
+  /* NAV */
+  --nav-bg: #150900;
+  --nav-border: rgba(184, 134, 11, 0.20);
+  --nav-active-bg: #f37435;
+  --nav-active-text: #ffffff;
   --shadow-card: none;
   --shadow-glow: none;
 
@@ -117,8 +117,8 @@
   /* ALIASES legados */
   --bg-card: var(--glass-bg);
   --bg-surface: var(--glass-bg);
-  --bg-surface-2: #75483f;
-  --bg-elevated: #75483f;
+  --bg-surface-2: #261508;
+  --bg-elevated: #261508;
   --pralis-ouro: var(--gold);
   --pralis-ouro-lt: var(--cream);
   --pralis-laranja: var(--orange);
@@ -190,59 +190,73 @@
 [data-theme='light'] {
   color-scheme: light;
 
-  --bg-base:    #ffffff;
-  --bg-deep:    #ffffff;
+  /* Fundo creme quente — cor primária clara da Pralis */
+  --bg-base:    #fdf8f2;
+  --bg-deep:    #f5ece1;
   --bg-surface: #ffffff;
-  --bg-surface-2: #f7f2ec;
+  --bg-surface-2: #faf4ed;
   --bg-card:    #ffffff;
-  --bg-elevated: #ffffff;
+  --bg-elevated: #fff9f4;
 
-  --text-primary:   #000000;
+  /* Texto escuro sobre fundo claro */
+  --text-primary:   #1a0e00;
   --text-secondary: #5e3731;
-  --text-muted:     #5e3731;
-  --text-locked:    #8d7772;
+  --text-muted:     #8a6058;
+  --text-locked:    #b09a95;
   --text-on-accent: #ffffff;
-  --text-on-gold:   #000000;
-  --text-on-surface: #000000;
+  --text-on-gold:   #ffffff;
+  --text-on-surface: #1a0e00;
 
-  --color-bg-app: #ffffff;
+  --color-bg-app: #fdf8f2;
   --color-surface-card: #ffffff;
   --color-surface-card-strong: #fff4eb;
-  --color-surface-card-soft: rgba(94, 55, 49, 0.06);
-  --color-text-main: #000000;
+  --color-surface-card-soft: rgba(94, 55, 49, 0.05);
+  --color-text-main: #1a0e00;
   --color-text-subtle: #5e3731;
   --color-action: #f37435;
   --color-action-text: #ffffff;
   --color-success: #1e7e4e;
-  --color-success-bg: #effff3;
+  --color-success-bg: #edfff4;
   --color-danger: #c0392b;
   --color-danger-bg: #fff0ec;
-  --color-review-bg: rgba(94, 55, 49, 0.08);
-  --color-review-border: rgba(94, 55, 49, 0.18);
+  --color-review-bg: rgba(94, 55, 49, 0.06);
+  --color-review-border: rgba(94, 55, 49, 0.16);
   --color-review-text: #5e3731;
 
   --glass-bg:     #ffffff;
-  --glass-border: #d8c1aa;
-  --glass-shadow: none;
+  --glass-bg-warm: #fff9f4;
+  --glass-border: #e5d5c5;
+  --glass-shadow: 0 2px 12px rgba(26, 14, 0, 0.07);
+
+  --gold: #b8860b;
+  --gold-light: #d4a017;
+  --gold-muted: rgba(184, 134, 11, 0.12);
+  --orange: #f37435;
+  --orange-muted: rgba(243, 116, 53, 0.12);
+  --cream: #5e3731;
+  --cream-muted: #8a6058;
+  --green: #1e7e4e;
 
   --border-gold:  #b8860b;
-  --border-white: #dfd2c8;
-  --border-warm:  #d8c1aa;
-  --stroke:       #d8c1aa;
-  --stroke-soft:  #eadfd5;
+  --border-white: #e5d5c5;
+  --border-warm:  #ddd0c4;
+  --stroke:       #e5d5c5;
+  --stroke-soft:  #f0e5d8;
 
-  --shadow-card:  none;
+  --shadow-card:  0 1px 8px rgba(26, 14, 0, 0.06);
   --shadow-glow:  none;
 
-  --nav-bg:     #ffffff;
-  --nav-border: #d8c1aa;
+  --nav-bg:          #ffffff;
+  --nav-border:      #e5d5c5;
+  --nav-active-bg:   #f37435;
+  --nav-active-text: #ffffff;
 
   /* aliases legados */
-  --cream-muted: #5e3731;
-  --pralis-marrom-dk: #ffffff;
-  --pralis-marrom-lk: #f7f2ec;
+  --cream-muted: #8a6058;
+  --pralis-marrom-dk: #fdf8f2;
+  --pralis-marrom-lk: #faf4ed;
   --pralis-creme: #5e3731;
-  --pralis-branco: #000000;
+  --pralis-branco: #1a0e00;
 }
 
 /* ------------------------------------------------------------
@@ -266,14 +280,16 @@
 }
 
 .app-shell .btn-ghost {
-  background: var(--bg-surface) !important;
-  color: var(--text-on-surface) !important;
-  border-color: var(--stroke) !important;
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  border: 1.5px solid var(--stroke) !important;
   box-shadow: none !important;
 }
 
-:root:not([data-theme='light']) .app-shell .btn-ghost {
-  color: #ffffff !important;
+[data-theme='light'] .app-shell .btn-ghost {
+  background: #ffffff !important;
+  color: #1a0e00 !important;
+  border: 1.5px solid #d5c0ad !important;
 }
 
 .app-shell .text-pralis-branco,

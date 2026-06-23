@@ -35,3 +35,45 @@ Referencias/
 # testes / artefatos locais
 test-results/
 playwright-report/
+
+# logs e cache de desenvolvimento
+*.log
+.vite/
+
+# ============================================================
+# MIDIA: o app usa apenas .webm (alpha), .mp3 e um .mp4 leves.
+# Os .mov/.gif/.sfk/.jpeg e pastas de frames sao FONTES BRUTAS
+# pesadas (centenas de MB) e NAO entram no repositorio.
+# ============================================================
+*.sfk
+public/*.mov
+public/*.gif
+public/*.jpeg
+
+# variantes de video brutas/nao referenciadas (manter so a whitelist abaixo)
+public/*.webm
+public/*.mp4
+!public/videocirculo-dashboard.mp4
+!public/video-final-lis-feliz-alpha.webm
+!public/intro2-lis-tour-alpha.webm
+!public/intro-lis-tchau-alpha.webm
+!public/lis-conduta1-alpha.webm
+!public/lis-jornada-alpha.webm
+!public/lis-deverdetodos.webm
+!public/lis-proibido.webm
+!public/video-lis-questionario.webm
+
+# pastas de exports/frames brutos em public/ (nao usadas pelo build)
+public/0617/
+public/0617(1)/
+public/audios imagens conduta/
+public/codigo-conduta-amarelo/
+public/intro2-lis-tour/
+public/lis-conduta-1/
+public/lis-conduta1/
+public/lis-deverdetodos/
+public/lis-jornada/
+public/lis-quistionario2/
+public/pralis-jornada/
+public/textoconduta1-modulo1/
+public/video-final-lis-feliz-clean/

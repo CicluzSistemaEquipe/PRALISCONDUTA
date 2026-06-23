@@ -7,7 +7,7 @@ export function AnimatedBackground({ theme }: { accent?: string; theme?: Theme }
   const isLight = (theme ?? ctx.theme) === 'light'
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-0" style={{ background: isLight ? '#ffffff' : '#5e3731' }}>
+    <div className="pointer-events-none fixed inset-0 z-0" style={{ background: 'var(--bg-base)' }}>
       <motion.img
         src={brand.simboloEspiga}
         alt=""

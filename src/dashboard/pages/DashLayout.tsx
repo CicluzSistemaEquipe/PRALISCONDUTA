@@ -1,5 +1,5 @@
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, UserPlus, FileBarChart, LogOut } from 'lucide-react'
+import { FileBarChart, FilePenLine, LayoutDashboard, LogOut, UserPlus, Users } from 'lucide-react'
 import { isDashAuthed, dashLogout } from '../auth'
 import { brand } from '@/lib/brand'
 
@@ -8,6 +8,7 @@ const NAV = [
   { to: '/dashboard/colaboradores', label: 'Colaboradores', icon: Users, end: false },
   { to: '/dashboard/novo', label: 'Adicionar', icon: UserPlus, end: false },
   { to: '/dashboard/relatorios', label: 'Relatórios', icon: FileBarChart, end: false },
+  { to: '/admin/dashboard', label: 'Editar app', icon: FilePenLine, end: false },
 ]
 
 export default function DashLayout() {

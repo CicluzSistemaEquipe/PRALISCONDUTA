@@ -5,7 +5,6 @@ import { modulesForRole } from '@/lib/content'
 import type { Module } from '@/lib/types'
 import { useSession } from '../context/SessionContext'
 import { getSignature } from '@/lib/storage'
-import { LisAvatar } from '../components/LisAvatar'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { BottomNav, TAB_PATH } from '../components/BottomNav'
 import { useTheme } from '../context/ThemeContext'
@@ -40,7 +39,25 @@ export default function Profile() {
       <AnimatedBackground />
       <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-6 pb-28 pt-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <LisAvatar state="neutral" size={96} />
+          <div style={{ width: 160, height: 180, overflow: 'hidden', position: 'relative', background: 'var(--bg-base)' }}>
+            <video
+              src="/intro-lis-tchau-alpha.webm"
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            />
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 80,
+              background: 'linear-gradient(to bottom, transparent, var(--bg-base))',
+              pointerEvents: 'none',
+            }} />
+          </div>
           <div>
             <h1 className="font-display text-3xl" style={{ color: 'var(--text-primary)' }}>{employee.name}</h1>
             <p className="font-body text-sm" style={{ color: 'var(--text-secondary)', marginTop: 2 }}>{employee.role}</p>
@@ -111,7 +128,7 @@ function Row({ onClick, icon, label, value, danger }: { onClick: () => void; ico
       onClick={onClick}
       className="flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left"
       style={{
-        background: danger ? (isLight ? '#fff0e8' : '#6a4038') : 'var(--bg-card)',
+        background: danger ? (isLight ? '#fff0e8' : 'rgba(243,116,53,0.15)') : 'var(--bg-card)',
         border: danger ? '1px solid var(--orange)' : '1px solid var(--stroke)',
         backdropFilter: 'none',
         WebkitBackdropFilter: 'none',

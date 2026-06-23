@@ -1,5 +1,3 @@
-import lisBust from '@/assets/lis/lis-bust.png'
-
 /**
  * Avatar da Lis com ring de progresso (estilo stories do Instagram).
  * O ring mostra o progresso global do colaborador.
@@ -50,14 +48,17 @@ export function LisHeaderAvatar({
         className="absolute overflow-hidden rounded-full"
         style={{
           inset: STROKE + 2,
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,230,184,0.82))',
+          background: '#ffffff',
           border: '1px solid rgba(255,255,255,0.55)',
         }}
       >
-        <img
-          src={lisBust}
-          alt="Lis"
-          style={{ width: '115%', height: '115%', objectFit: 'cover', objectPosition: 'center 8%', marginLeft: '-7%', marginTop: '-2%' }}
+        <video
+          src="/videocirculo-dashboard.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{ width: '130%', height: '130%', objectFit: 'cover', objectPosition: 'center 20%', marginLeft: '-2%', marginTop: '-10%' }}
         />
       </span>
     </button>

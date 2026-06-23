@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { brand, FILTER_WHITE } from '@/lib/brand'
 import { getAdminData } from '@/lib/adminStore'
-import { LisAvatar } from '../components/LisAvatar'
 import { useTheme } from '../context/ThemeContext'
 import { hasRequiredOnboarding } from '@/lib/onboarding'
 
@@ -72,13 +71,25 @@ export default function Splash() {
           style={{ width: 200, height: 'auto', filter: isLight ? 'none' : FILTER_WHITE }}
         />
 
-        {/* Lis — mascote (corpo inteiro) */}
+        {/* Lis — vídeo 3D acenando (transparência nativa do MOV) */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 0.3, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          style={{ width: 300, height: 'auto', position: 'relative', background: 'var(--bg-base)' }}
         >
-          <LisAvatar state="neutral" size={140} />
+          <video
+            src="/intro-lis-tchau-alpha.webm"
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block',
+            }}
+          />
         </motion.div>
 
         <motion.p

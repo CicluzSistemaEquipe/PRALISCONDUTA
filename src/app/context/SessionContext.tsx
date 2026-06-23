@@ -139,15 +139,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const setStoryIndex = useCallback(
     (moduleId: string, index: number) => {
+      if (!employee) return
       setProgress((prev) => {
-        const current = prev[moduleId]
+        const current: ModuleProgress = prev[moduleId] ?? {
+          module_id: moduleId,
+          story_index: 0,
+          completed: false,
+          completed_at: null,
+        }
         // não retrocede o índice salvo
         if (current && current.story_index >= index) return prev
-        upsert(moduleId, { story_index: index })
-        return prev
+        const next: ModuleProgress = { ...current, story_index: index }
+        void persistProgress(employee.id, next)
+        return { ...prev, [moduleId]: next }
       })
     },
-    [upsert],
+    [employee],
   )
 
   const completeModule = useCallback(

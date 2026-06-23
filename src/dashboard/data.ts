@@ -4,6 +4,8 @@ import type { Employee } from '@/lib/types'
 
 export interface EmployeeRow {
   employee: Employee
+  accessId: string
+  accessCode: string
   totalModules: number
   completedModules: number
   progress: number // 0..1
@@ -27,12 +29,14 @@ export async function loadEmployeeRows(): Promise<EmployeeRow[]> {
         getSignature(employee.id),
         getQuizAnswers(employee.id),
       ])
-      const mods = modulesForRole(employee.role)
+      const mods = modulesForRole(employee.role).filter((module) => module.kind !== 'signature')
       const completedModules = mods.filter(
         (m) => progress.find((p) => p.module_id === m.id)?.completed,
       ).length
       return {
         employee,
+        accessId: employee.token,
+        accessCode: employee.access_code ?? 'Sem senha',
         totalModules: mods.length,
         completedModules,
         progress: mods.length ? completedModules / mods.length : 0,

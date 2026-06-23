@@ -110,6 +110,11 @@ export default function AddEmployee() {
             </div>
           </div>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            <AccessBox label="ID de acesso" value={created.token} />
+            <AccessBox label="Senha" value={created.access_code ?? 'Sem senha'} />
+          </div>
+
           <div className="flex flex-col gap-2 sm:flex-row">
             {created.phone && (
               <a href={whatsappUrl} target="_blank" rel="noreferrer" className="btn-laranja flex-1">
@@ -132,5 +137,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="font-body text-sm font-semibold text-pralis-creme">{label}</span>
       {children}
     </label>
+  )
+}
+
+function AccessBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-pralis-marrom-lk/70 bg-pralis-marrom-dk/40 p-3">
+      <p className="font-body text-[11px] font-bold uppercase tracking-[0.12em] text-pralis-creme/50">{label}</p>
+      <p className="mt-1 break-all font-body text-sm font-black text-pralis-branco">{value}</p>
+    </div>
   )
 }

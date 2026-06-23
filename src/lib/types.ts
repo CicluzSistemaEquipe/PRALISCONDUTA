@@ -23,6 +23,7 @@ export interface Employee {
   phone: string
   role: Role
   token: string
+  access_code?: string
   created_at: string
 }
 
@@ -85,6 +86,13 @@ export interface QuizQuestion {
 }
 
 export interface QuizConfig {
+  intro?: {
+    eyebrow?: string
+    title: string
+    description: string
+    voiceText?: string
+    cta?: string
+  }
   questions: QuizQuestion[]
   /** quantidade sorteada a partir do banco de perguntas */
   sampleSize?: number
@@ -93,7 +101,7 @@ export interface QuizConfig {
 }
 
 export type Story =
-  | { type: 'lis'; text: string; state?: LisState }
+  | { type: 'lis'; text: string; state?: LisState; videoSrc?: string }
   | {
       type: 'text'
       title: string
@@ -102,6 +110,9 @@ export type Story =
       highlight?: string
       highlights?: string[] // palavras a destacar em laranja
       keywords?: string[] // chips de conceito (opcional)
+      audioSrc?: string // MP3 narrado pela Lis; sincroniza barra e leitura
+      audioIncludesTitle?: boolean // false quando o MP3 começa direto nos parágrafos
+      narratorVideoSrc?: string // vídeo circular da Lis falando junto com o áudio
     }
   | {
       type: 'video'

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, X, ArrowRight, BookOpen } from 'lucide-react'
-import type { QuizQuestion } from '@/lib/types'
+import { Check, X, ArrowRight, BookOpen, BrainCircuit, Headphones, Sparkles } from 'lucide-react'
+import type { QuizConfig, QuizQuestion } from '@/lib/types'
 import { pickQuizQuestions, quizOptionExplanation } from '@/lib/quiz'
-import { LisAvatar } from './LisAvatar'
 import { useTheme } from '../context/ThemeContext'
-import { hapticError, hapticSuccess, soundCorrect, soundWrong, fireConfetti } from '@/lib/effects'
+import { hapticError, hapticSuccess, soundCorrect, soundWrong, fireConfetti, isSoundOn } from '@/lib/effects'
 
 interface QuizCardProps {
+  intro?: QuizConfig['intro']
   questions: QuizQuestion[]
   onAnswer: (q: QuizQuestion, selectedIndex: number, correct: boolean) => void
   onComplete: () => void
@@ -29,6 +29,7 @@ export interface QuizRuntimeState {
 }
 
 export function QuizCard({
+  intro,
   questions,
   onAnswer,
   onComplete,
@@ -39,6 +40,7 @@ export function QuizCard({
   sampleSize,
   randomize,
   quizSeed,
+  accent = '#f37435',
 }: QuizCardProps) {
   const { theme } = useTheme()
   const isLight = theme === 'light'
@@ -50,6 +52,10 @@ export function QuizCard({
     Math.min(initialState?.currentIndex ?? 0, Math.max(0, activeQuestions.length - 1)),
   )
   const [answers, setAnswers] = useState<QuizRuntimeState['answers']>(() => initialState?.answers ?? {})
+  const [showIntro, setShowIntro] = useState(() => {
+    const hasProgress = (initialState?.currentIndex ?? 0) > 0 || Object.keys(initialState?.answers ?? {}).length > 0
+    return Boolean(intro && !hasProgress)
+  })
   const headerRef = useRef<HTMLDivElement | null>(null)
 
   const q = activeQuestions[qIndex]
@@ -62,6 +68,30 @@ export function QuizCard({
   const isCorrect = savedAnswer?.correct ?? false
   const feedbackText = selected === null ? q.explain : quizOptionExplanation(q, selected)
   const canReview = revealed && !isCorrect && q.reviewTarget && onReviewStory
+
+  useEffect(() => {
+    if (!showIntro || !intro?.voiceText || !isSoundOn() || typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      return
+    }
+
+    window.speechSynthesis.cancel()
+    const utter = new SpeechSynthesisUtterance(intro.voiceText)
+    utter.lang = 'pt-BR'
+    utter.rate = 1.04
+    utter.pitch = 1.05
+    utter.volume = 0.86
+    const voices = window.speechSynthesis.getVoices()
+    const ptBR =
+      voices.find((v) => v.lang === 'pt-BR' && v.name.toLowerCase().includes('female')) ||
+      voices.find((v) => v.lang.startsWith('pt'))
+    if (ptBR) utter.voice = ptBR
+
+    const timer = window.setTimeout(() => window.speechSynthesis.speak(utter), 250)
+    return () => {
+      window.clearTimeout(timer)
+      window.speechSynthesis.cancel()
+    }
+  }, [intro?.voiceText, showIntro])
 
   const reviewCurrent = () => {
     if (selected === null || !q.reviewTarget) return
@@ -96,7 +126,12 @@ export function QuizCard({
     }
   }
 
-  const lisState = !revealed ? 'thinking' : isCorrect ? 'correct' : 'wrong'
+  const startQuiz = () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+    }
+    setShowIntro(false)
+  }
 
   useEffect(() => {
     onStateChange?.({ currentIndex: qIndex, answers })
@@ -108,6 +143,201 @@ export function QuizCard({
       headerRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
     }, 80)
   }, [revealed])
+
+  if (showIntro && intro) {
+    return (
+      <div
+        className="flex min-h-full flex-col px-5 pb-36 pt-6"
+        style={{
+          background: 'transparent',
+          justifyContent: 'flex-start',
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 190, damping: 22 }}
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 22,
+            padding: '18px 18px 20px',
+            background: isLight
+              ? 'linear-gradient(145deg, #fff7e8, #ffffff 58%, #ffe9d6)'
+              : 'linear-gradient(145deg, rgba(61,35,24,0.98), rgba(92,49,32,0.96) 62%, rgba(61,35,24,0.98))',
+            border: `2px solid ${accent}`,
+            boxShadow: '0 18px 36px rgba(43,22,15,0.24)',
+          }}
+        >
+          <motion.div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'radial-gradient(circle at 18% 12%, rgba(255,230,184,0.30), transparent 28%), radial-gradient(circle at 86% 70%, rgba(243,116,53,0.20), transparent 34%)',
+              pointerEvents: 'none',
+            }}
+            animate={{ opacity: [0.55, 0.85, 0.55] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+          />
+
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            <div
+              style={{
+                width: 104,
+                height: 104,
+                borderRadius: '50%',
+                background: '#ffffff',
+                border: '3px solid rgba(255,230,184,0.95)',
+                boxShadow: '0 0 0 5px rgba(184,134,11,0.18), 0 12px 24px rgba(43,22,15,0.24)',
+                overflow: 'hidden',
+                flexShrink: 0,
+              }}
+            >
+              <video
+                src="/video-lis-questionario.webm"
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{
+                  width: '108%',
+                  height: '108%',
+                  objectFit: 'cover',
+                  objectPosition: '60% 8%',
+                  transform: 'translate(-4%, -3%)',
+                }}
+              />
+            </div>
+
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '5px 10px',
+                  borderRadius: 999,
+                  background: '#fff1cf',
+                  color: '#7a3b1f',
+                  fontFamily: 'Montserrat, sans-serif',
+                  fontSize: 10,
+                  fontWeight: 900,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  boxShadow: '0 8px 18px rgba(43,22,15,0.12)',
+                }}
+              >
+                <BrainCircuit size={13} />
+                {intro.eyebrow ?? 'Questionário'}
+              </span>
+
+              <h2
+                style={{
+                  marginTop: 12,
+                  fontFamily: 'MadeByDillan, serif',
+                  fontSize: 'clamp(28px, 8vw, 40px)',
+                  lineHeight: 1.02,
+                  color: 'var(--text-primary)',
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                {intro.title}
+              </h2>
+            </div>
+          </div>
+
+          <p
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              marginTop: 18,
+              fontFamily: 'Montserrat, sans-serif',
+              fontSize: 'clamp(14px, 4vw, 16px)',
+              fontWeight: 700,
+              lineHeight: 1.55,
+              color: 'var(--text-primary)',
+            }}
+          >
+            {intro.description}
+          </p>
+
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: 10,
+              marginTop: 16,
+            }}
+          >
+            {[
+              { icon: Sparkles, label: `${activeQuestions.length} perguntas`, text: 'Responda com calma.' },
+              { icon: Headphones, label: 'Com apoio da Lis', text: 'Ela orienta a etapa.' },
+            ].map((item) => {
+              const Icon = item.icon
+              return (
+                <div
+                  key={item.label}
+                  style={{
+                    borderRadius: 14,
+                    padding: '12px 10px',
+                    background: isLight ? 'rgba(255,255,255,0.72)' : 'rgba(255,230,184,0.10)',
+                    border: '1px solid rgba(255,230,184,0.34)',
+                  }}
+                >
+                  <Icon size={17} color={accent} />
+                  <strong
+                    style={{
+                      display: 'block',
+                      marginTop: 6,
+                      fontFamily: 'Montserrat, sans-serif',
+                      fontSize: 12,
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    {item.label}
+                  </strong>
+                  <span
+                    style={{
+                      display: 'block',
+                      marginTop: 3,
+                      fontFamily: 'Montserrat, sans-serif',
+                      fontSize: 11,
+                      fontWeight: 650,
+                      lineHeight: 1.35,
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    {item.text}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0, scale: [1, 1.025, 1] }}
+            transition={{
+              opacity: { delay: 0.18 },
+              y: { delay: 0.18 },
+              scale: { delay: 0.8, duration: 1.8, repeat: Infinity, ease: 'easeInOut' },
+            }}
+            whileTap={{ scale: 0.97 }}
+            onClick={startQuiz}
+            className="btn-next-white w-full"
+            style={{ position: 'relative', zIndex: 1, marginTop: 18 }}
+          >
+            <span>{intro.cta ?? 'Começar questionário'}</span>
+            <ArrowRight className="h-5 w-5" color="#f37435" />
+          </motion.button>
+        </motion.div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -125,17 +355,45 @@ export function QuizCard({
         className="flex items-start gap-3"
         style={{ scrollMarginTop: 16 }}
       >
-        <LisAvatar state={lisState} size={54} />
+        <div style={{
+          position: 'relative',
+          width: 96,
+          height: 96,
+          borderRadius: '50%',
+          background: '#ffffff',
+          border: '3px solid rgba(184,134,11,0.6)',
+          boxShadow: '0 0 0 5px rgba(184,134,11,0.15), 0 8px 24px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+          flexShrink: 0,
+        }}>
+          <video
+            src="/video-lis-questionario.webm"
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              position: 'absolute',
+              width: '108%',
+              height: '108%',
+              objectFit: 'cover',
+              objectPosition: '60% 8%',
+              top: '-3%',
+              left: '-4%',
+            }}
+          />
+        </div>
         <div
           style={{
             flex: 1,
             minWidth: 0,
-            background: isLight ? 'var(--bg-card)' : '#6a4038',
+            background: isLight ? '#fdf6e8' : '#3d2318',
             backdropFilter: 'none',
             WebkitBackdropFilter: 'none',
-            border: '1.5px solid #d8a24d',
+            border: '2px solid #b8860b',
             borderRadius: '6px 18px 18px 18px',
             padding: '13px 15px',
+            boxShadow: '0 4px 16px rgba(184,134,11,0.18)',
           }}
         >
           <span

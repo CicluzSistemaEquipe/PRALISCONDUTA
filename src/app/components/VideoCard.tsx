@@ -15,6 +15,8 @@ interface VideoCardProps {
   onWatched: () => void
   /** avisa o StoryPlayer p/ pausar a barra de progresso enquanto toca */
   onPlayingChange?: (playing: boolean) => void
+  /** reporta progresso 0..1 para a barra de stories do pai */
+  onProgress?: (f: number) => void
 }
 
 const WATCH_THRESHOLD = 1.0 // 100% — precisa assistir o vídeo completo
@@ -33,6 +35,7 @@ export function VideoCard({
   watched,
   onWatched,
   onPlayingChange,
+  onProgress,
 }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const rafRef = useRef<number>(0)
@@ -55,7 +58,8 @@ export function VideoCard({
     const c = Math.min(1, Math.max(0, f))
     setFraction(c)
     if (c >= WATCH_THRESHOLD) setCanMark(true)
-  }, [])
+    onProgress?.(c)
+  }, [onProgress])
 
   // player real
   useEffect(() => {

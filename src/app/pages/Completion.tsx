@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Check, FileText, Home, LockKeyhole, ShieldCheck, Volume2, X } from 'lucide-react'
-import { MODULES, TERMS, modulesForRole } from '@/lib/content'
+import { TERMS, modulesForRole } from '@/lib/content'
 import { useAdminStore } from '@/lib/adminStore'
 import { useSession } from '../context/SessionContext'
 import { getSignature, saveSignature } from '@/lib/storage'
@@ -11,6 +11,7 @@ import { SproutLogo } from '../components/SproutLogo'
 import { PralisSymbolX } from '../components/PralisSymbol'
 import { brand } from '@/lib/brand'
 import { LisAvatar } from '../components/LisAvatar'
+import { AnimatedBackground } from '../components/AnimatedBackground'
 import { fireConfetti, hapticSuccess, soundComplete } from '@/lib/effects'
 import { fadeUp, spring, staggerChildren } from '@/lib/animations'
 
@@ -23,10 +24,24 @@ function escapeRegExp(value: string) {
 }
 
 function extractTermHtml(allHtml: string, title: string, fallback: string) {
+  const source = allHtml.trim()
+  if (!source) return `<h3>${title}</h3><p>${fallback}</p>`
+
   const titlePattern = escapeRegExp(title)
-  const match = allHtml.match(new RegExp(`<h3[^>]*>\\s*${titlePattern}\\s*</h3>([\\s\\S]*?)(?=<h3|$)`, 'i'))
-  if (match) return `<h3>${title}</h3>${match[1]}`
-  return `<h3>${title}</h3><p>${fallback}</p>`
+  const headingPattern = `<h[1-4][^>]*>\\s*${titlePattern}\\s*</h[1-4]>`
+  const match = source.match(new RegExp(`${headingPattern}([\\s\\S]*?)(?=<h[1-4][^>]*>|$)`, 'i'))
+  if (match) return sanitizeTermHtml(`<h3>${title}</h3>${match[1]}`)
+
+  return sanitizeTermHtml(`<h3>${title}</h3><p>${fallback}</p>`)
+}
+
+function sanitizeTermHtml(html: string) {
+  return html
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
+    .replace(/\s(on\w+)=(["']).*?\2/gi, '')
+    .replace(/\s(on\w+)=([^\s>]+)/gi, '')
+    .replace(/javascript:/gi, '')
 }
 
 export default function Completion() {
@@ -49,19 +64,18 @@ export default function Completion() {
   const allModulesDone = contentModules.length > 0 && completedModules === contentModules.length
 
   const stats = useMemo(() => {
-    const quizzes = MODULES.reduce((acc, module) => acc + module.stories.filter((story) => story.type === 'quiz').length, 0)
+    const quizzes = contentModules.reduce((acc, module) => acc + module.stories.filter((story) => story.type === 'quiz').length, 0)
     return { modules: completedModules, totalModules: contentModules.length, quizzes }
-  }, [completedModules, contentModules.length])
+  }, [completedModules, contentModules])
 
   if (!employee) {
-    navigate('/login', { replace: true })
-    return null
+    return <Navigate to="/login" replace />
   }
 
   const allChecked = TERMS.every((term) => checked[term.id])
   const selectedTerm = TERMS.find((term) => term.id === selectedTermId) ?? null
   const selectedTermHtml = selectedTerm
-    ? extractTermHtml(data.termsText, selectedTerm.title, selectedTerm.text)
+    ? extractTermHtml(data.termsText ?? '', selectedTerm.title, selectedTerm.text)
     : ''
 
   const sign = async () => {
@@ -84,12 +98,13 @@ export default function Completion() {
   if (signature) {
     const date = new Date(signature.signed_at)
     return (
-      <div className="app-shell bg-pralis-radial px-6 pb-10 pt-12">
-        <motion.div
+      <div className="app-shell">
+        <AnimatedBackground />
+        <motion.main
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={spring}
-          className="flex flex-1 flex-col items-center justify-center gap-6 text-center"
+          className="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 pb-10 pt-12 text-center"
         >
           <motion.div
             initial={{ scale: 0, rotate: -20 }}
@@ -127,15 +142,16 @@ export default function Completion() {
           <button onClick={() => navigate('/feed')} className="btn-ghost w-full">
             <ArrowLeft className="h-5 w-5" /> Voltar para home
           </button>
-        </motion.div>
+        </motion.main>
       </div>
     )
   }
 
   if (!allModulesDone) {
     return (
-      <div className="app-shell bg-pralis-radial px-6 pb-10 pt-12">
-        <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+      <div className="app-shell">
+        <AnimatedBackground />
+        <main className="relative z-10 flex flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-6 pb-10 pt-12 text-center">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-pralis-marrom-dk/70 ring-1 ring-pralis-creme/20">
             <LockKeyhole className="h-9 w-9 text-pralis-creme" />
           </div>
@@ -148,14 +164,21 @@ export default function Completion() {
           <button onClick={() => navigate('/feed')} className="btn-laranja w-full">
             <Home className="h-5 w-5" /> Voltar para home
           </button>
-        </div>
+        </main>
       </div>
     )
   }
 
   return (
-    <div className="app-shell bg-pralis-radial px-6 pb-32 pt-10">
-      <motion.div variants={staggerChildren} initial="hidden" animate="visible" className="flex flex-col gap-5">
+    <div className="app-shell">
+      <AnimatedBackground />
+      <motion.main
+        variants={staggerChildren}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 flex-1 overflow-y-auto px-6 pb-32 pt-10"
+      >
+        <div className="flex flex-col gap-5">
         <motion.div variants={fadeUp} className="flex flex-col items-center gap-2 text-center">
           <SproutLogo size={56} />
           <h1 className="font-display text-3xl text-pralis-branco text-balance">
@@ -172,7 +195,16 @@ export default function Completion() {
           <Stat label="Versão" value={data.termsVersion} small />
         </motion.div>
 
-        <motion.div variants={fadeUp} className="rounded-3xl border border-pralis-ouro/25 bg-pralis-marrom-dk/50 p-4">
+        <motion.div
+          variants={fadeUp}
+          className="relative overflow-hidden rounded-3xl border border-pralis-ouro/25 bg-pralis-marrom-dk/50 p-4"
+        >
+          <img
+            src={brand.simboloEspiga}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 opacity-[0.06]"
+          />
           <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-pralis-ouro-lt">
             documentos para revisar
           </p>
@@ -218,7 +250,8 @@ export default function Completion() {
           </p>
           <p className="mt-1 font-body text-xs text-pralis-creme/50">{new Date().toLocaleString('pt-BR')}</p>
         </motion.div>
-      </motion.div>
+        </div>
+      </motion.main>
 
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-[480px] gap-2 px-6 pb-6 pt-3">
         <button onClick={() => navigate('/feed')} className="btn-ghost flex-1">

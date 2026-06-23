@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 
 export type Theme = 'dark' | 'light'
 
@@ -12,26 +12,46 @@ interface ThemeValue {
 
 const ThemeContext = createContext<ThemeValue | null>(null)
 
-function applyDarkTheme() {
-  document.documentElement.removeAttribute('data-theme')
+function applyTheme(t: Theme) {
+  if (t === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light')
+  } else {
+    document.documentElement.removeAttribute('data-theme')
+  }
 }
 
-if (typeof document !== 'undefined') applyDarkTheme()
+function getStoredTheme(): Theme {
+  try {
+    const stored = localStorage.getItem(THEME_KEY)
+    if (stored === 'light') return 'light'
+  } catch {
+    /* private mode */
+  }
+  return 'dark'
+}
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme())
+
   useEffect(() => {
-    applyDarkTheme()
+    applyTheme(theme)
+  }, [theme])
+
+  const setTheme = useCallback((t: Theme) => {
+    setThemeState(t)
     try {
-      localStorage.setItem(THEME_KEY, 'dark')
+      localStorage.setItem(THEME_KEY, t)
     } catch {
       /* private mode */
     }
+    applyTheme(t)
   }, [])
 
-  const setTheme = useCallback((_t: Theme) => applyDarkTheme(), [])
-  const toggleTheme = useCallback(() => applyDarkTheme(), [])
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }, [theme, setTheme])
 
-  return <ThemeContext.Provider value={{ theme: 'dark', toggleTheme, setTheme }}>{children}</ThemeContext.Provider>
+  return <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>{children}</ThemeContext.Provider>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { getModule } from '@/lib/content'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { getModule, modulesForRole } from '@/lib/content'
 import { useSession } from '../context/SessionContext'
 import { StoryPlayer } from '../components/StoryPlayer'
 import { getVideoViews, markVideoWatched, saveQuizAnswer } from '@/lib/storage'
@@ -29,16 +29,18 @@ export default function ModulePage() {
   }, [employee])
 
   if (!employee) {
-    navigate('/login', { replace: true })
-    return null
+    return <Navigate to="/login" replace />
   }
   if (!module) {
-    navigate('/feed', { replace: true })
-    return null
+    return <Navigate to="/feed" replace />
   }
   if (!ready) return null
 
   const startIndex = progress[module.id]?.story_index ?? 0
+
+  const allModules = modulesForRole(employee.role)
+  const currentIdx = allModules.findIndex((m) => m.id === module.id)
+  const nextModule = currentIdx >= 0 && currentIdx < allModules.length - 1 ? allModules[currentIdx + 1] : null
 
   const handleQuizAnswer = (
     moduleId: string,
@@ -86,6 +88,7 @@ export default function ModulePage() {
       onClose={() => navigate('/feed')}
       onIndexChange={(i) => setStoryIndex(module.id, i)}
       onModuleComplete={() => completeModule(module.id)}
+      onNextModule={nextModule ? () => navigate(`/modulo/${nextModule.id}`) : undefined}
       onQuizAnswer={handleQuizAnswer}
       onQuizReview={handleQuizReview}
       onVideoWatched={handleVideoWatched}

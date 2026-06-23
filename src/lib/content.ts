@@ -13,66 +13,97 @@ type RawModule = Omit<
 
 const RAW_MODULES: RawModule[] = [
   // ---------------------------------------------------------
-  // 1. BOAS-VINDAS
+  // 1. BOAS-VINDAS / CÓDIGO DE CONDUTA
   // ---------------------------------------------------------
   {
     id: 'boas-vindas',
-    title: 'Boas-vindas à Pralis',
+    title: 'Código de Conduta',
     icon: 'HeartHandshake',
     color: '#b8860b',
-    estimatedMinutes: 2,
+    estimatedMinutes: 3,
     mandatory: true,
     roles: 'all',
     section: 'geral',
-    description: 'Comece por aqui. Conheça o propósito do nosso Código.',
+    description: 'Por que ele existe e o que ele significa para você.',
     stories: [
       {
         type: 'lis',
         state: 'celebrating',
-        text: 'Seja muito bem-vindo à família Pralís! Eu sou a Lis e vou te acompanhar nessa jornada. Aqui a gente acredita numa coisa simples: a prova é ser feliz! 🌾',
-      },
-      {
-        type: 'video',
-        videoId: 'boas-vindas-01',
-        title: 'Bem-vindo à Pralís',
-        description: 'A Lis te apresenta a casa em pouco mais de dois minutos.',
-        duration: '2:10',
+        videoSrc: '/lis-conduta1-alpha.webm',
+        text: 'Oi! Eu sou a Lis. Antes de tudo, quero te apresentar algo muito importante: o nosso Código de Ética e Conduta. Ele é a base de tudo que a gente faz aqui, e entender ele é o seu primeiro passo em nossa empresa.',
       },
       {
         type: 'text',
-        tag: 'Sobre o Código',
-        title: 'Por que existe este Código?',
+        tag: 'O que é',
+        title: 'Por que este Código existe?',
+        audioSrc: '/audio-boas-vindas-codigo-existe.mp3',
         paragraphs: [
-          'Todos os funcionários da empresa têm a obrigação de conhecer e cumprir com as normas do presente Código de Conduta.',
-          'O objetivo é estabelecer regras de relacionamento com colaboradores, clientes e fornecedores, como forma de firmar a cultura e os valores da empresa.',
-          'Ao final, você receberá para assinatura quatro documentos: Termo de Compromisso, de Uso de Nome, Voz e Imagem, de Confidencialidade e de Não Aliciamento.',
+          'O Código de Ética e Conduta da Pralís existe para garantir que todos — colaboradores, clientes e fornecedores — sejam tratados com respeito, clareza e justiça.',
+          'Ele define as regras de convivência, os deveres de cada colaborador e o que é terminantemente proibido dentro e fora da empresa. Não é uma burocracia: é a nossa cultura escrita.',
+          'Todo colaborador tem a obrigação de conhecer e cumprir essas normas. O descumprimento pode gerar advertência, suspensão ou até demissão por justa causa.',
         ],
-        highlights: ['conhecer', 'cumprir', 'cultura', 'valores'],
+        highlights: ['respeito', 'clareza', 'cultura', 'obrigação'],
         highlight:
           'Se você tiver comprometimento, humildade e respeito, terá evolução e resultado!',
       },
       {
+        type: 'text',
+        tag: 'O que você vai assinar',
+        title: 'Quatro documentos ao final',
+        audioSrc: '/audio-boas-vindas-documentos.mp3',
+        paragraphs: [
+          'Ao concluir todos os módulos, você receberá para leitura e assinatura quatro documentos fundamentais.',
+          'O Termo de Compromisso confirma que você conhece e aceita as normas da empresa. O Termo de Uso de Nome, Voz e Imagem regula como sua imagem pode ser usada pela Pralís.',
+          'O Termo de Confidencialidade protege as informações internas — receitas, dados de clientes, senhas de sistemas. E o Termo de Não Aliciamento garante que você não vai desviar clientes, fornecedores ou colegas da empresa.',
+        ],
+        highlights: ['Compromisso', 'Confidencialidade', 'Não Aliciamento', 'assinatura'],
+        highlight:
+          'Leia cada termo com calma antes de assinar. Você só assina quando estiver pronto.',
+      },
+      {
         type: 'quiz',
+        intro: {
+          eyebrow: 'Hora de conferir',
+          title: 'Vamos ver o que ficou claro?',
+          description:
+            'Você já viu a base do Código de Conduta. Agora a Lis vai te fazer perguntas rápidas para confirmar o entendimento, sem pegadinha: é só escolher a resposta que faz mais sentido.',
+          voiceText:
+            'Você já viu a base do Código de Conduta. Agora vamos fazer um questionário rápido para confirmar o que ficou claro. Não é uma prova difícil, é só uma checagem de entendimento. Leia com calma e escolha a resposta que faz mais sentido.',
+          cta: 'Responder agora',
+        },
         questions: [
           {
             id: 'bv-q1',
-            prompt: 'Qual é a obrigação de todo funcionário em relação ao Código de Conduta?',
+            prompt: 'Qual é a obrigação de todo colaborador em relação ao Código de Conduta?',
             options: [
-              'Apenas assiná-lo no primeiro dia',
+              'Apenas assiná-lo no primeiro dia sem precisar ler',
               'Conhecer e cumprir com as suas normas',
-              'Memorizar todas as páginas',
-              'Lê-lo somente se for promovido',
+              'Memorizar todas as páginas na íntegra',
+              'Seguir somente as regras que se aplicam à sua função',
             ],
             correctIndex: 1,
             explain:
-              'Isso! Todo colaborador tem a obrigação de conhecer e cumprir as normas — não basta assinar.',
+              'Exato! Todo colaborador tem a obrigação de conhecer e cumprir as normas — não basta assinar sem entender.',
+          },
+          {
+            id: 'bv-q2',
+            prompt: 'O que acontece se um colaborador descumprir o Código de Conduta?',
+            options: [
+              'Nada — o Código é apenas uma sugestão',
+              'Apenas uma conversa informal com o gestor',
+              'Pode receber advertência, suspensão ou demissão por justa causa',
+              'Precisa refazer o treinamento e isso encerra o assunto',
+            ],
+            correctIndex: 2,
+            explain:
+              'Isso mesmo. As medidas disciplinares vão desde advertência verbal até demissão por justa causa, dependendo da gravidade.',
           },
         ],
       },
       {
         type: 'completion',
-        badge: 'Primeiros Passos',
-        message: 'Você deu o primeiro passo na família Pralís! 🌾',
+        badge: 'Base Sólida',
+        message: 'Você entendeu o propósito do nosso Código. Agora vamos ao que ele diz! 🌾',
       },
     ],
   },
@@ -94,12 +125,15 @@ const RAW_MODULES: RawModule[] = [
       {
         type: 'lis',
         state: 'talking',
-        text: 'Deixa eu te contar como funciona a sua jornada aqui — desde o primeiro dia até virar guardião da nossa cultura.',
+        videoSrc: '/lis-jornada-alpha.webm',
+        text: 'Agora, deixa eu te contar como funciona a sua jornada na Pralís, desde o primeiro dia até virar guardião da nossa cultura.',
       },
       {
         type: 'text',
         tag: 'O novo colaborador',
         title: 'Seu começo na Pralís',
+        audioSrc: '/audio-jornada-seu-comeco.mp3',
+        audioIncludesTitle: false,
         paragraphs: [
           'O novo colaborador é admitido pelo setor de Recursos Humanos com base na sua capacidade, habilidade e experiências prévias, conforme as necessidades de cada vaga.',
           'Ao ser escolhido, deve apresentar dentro do prazo toda a documentação exigida pelo RH.',
@@ -113,6 +147,8 @@ const RAW_MODULES: RawModule[] = [
         type: 'text',
         tag: 'O colaborador efetivado',
         title: 'Guardião da cultura',
+        audioSrc: '/audio-jornada-guardiao-cultura.mp3',
+        audioIncludesTitle: false,
         paragraphs: [
           'Os colaboradores efetivados são guardiões da cultura e das normas da empresa, agindo em cumprimento ao Código como condição para bonificações e ascensão na carreira.',
           'Eles são designados para funções específicas, cumprindo tanto as normas gerais quanto aquelas exigidas pela sua função.',
@@ -124,6 +160,8 @@ const RAW_MODULES: RawModule[] = [
         type: 'text',
         tag: 'O ex-colaborador',
         title: 'Mesmo depois, a parceria continua',
+        audioSrc: '/audio-jornada-ex-colaborador.mp3',
+        audioIncludesTitle: false,
         paragraphs: [
           'Quem encerra a jornada, por qualquer motivo, deve entregar a documentação exigida pelo RH dentro do prazo.',
           'É dever do ex-colaborador preservar o bom nome e a imagem comercial da empresa, sem emitir opiniões ou comentários públicos que firam a honra da empresa.',
@@ -197,12 +235,15 @@ const RAW_MODULES: RawModule[] = [
       {
         type: 'lis',
         state: 'talking',
-        text: 'Agora os deveres que valem para TODO mundo aqui na Pralís. São o nosso combinado do dia a dia.',
+        videoSrc: '/lis-deverdetodos.webm',
+        text: 'Agora vamos falar sobre os deveres que valem para TODO mundo aqui na Pralís. São o nosso combinado do dia a dia.',
       },
       {
         type: 'text',
         tag: 'Pontualidade & uniforme',
         title: 'É dever de todos',
+        audioSrc: '/audio-deveres-pontualidade-uniforme.mp3',
+        audioIncludesTitle: false,
         paragraphs: [
           'Cumprir a pontualidade na entrada e na saída, registrando o ponto corretamente. Faltar apenas com aviso prévio e justificativa válida, entregando o atestado no exato dia do retorno, na primeira hora.',
           'Cuidar do uniforme e do crachá fornecidos e informar manchas ou rasgos. Comparecer de uniforme, com calça longa, sapato fechado, cabelos presos, sem barba, unhas aparadas com esmalte nude e maquiagem discreta.',
@@ -327,7 +368,8 @@ const RAW_MODULES: RawModule[] = [
       {
         type: 'lis',
         state: 'alert',
-        text: 'Agora preciso da sua atenção total. Estas são as condutas terminantemente proibidas na Pralís. Algumas têm multa pesada!',
+        videoSrc: '/lis-proibido.webm',
+        text: 'Agora preciso da sua atenção TOTAL. Estas são as condutas terminantemente proibidas na Pralís, e o descumprimento tem consequências sérias.',
       },
       {
         type: 'text',
@@ -1045,6 +1087,42 @@ export const TERMS = [
 // Lê os módulos editados no Admin CMS (localStorage). Lê direto a chave para
 // não criar dependência circular com adminStore.ts. Inativos são removidos.
 const ADMIN_DATA_KEY = 'pralis_admin_data'
+function applyRuntimeContentOverrides(module: Module): Module {
+  if (module.id !== 'deveres' && module.id !== 'proibido') return module
+
+  return {
+    ...module,
+    stories: module.stories.map((story, index) => {
+      if (module.id === 'deveres') {
+        if (index === 0 && story.type === 'lis') {
+          return {
+            ...story,
+            videoSrc: '/lis-deverdetodos.webm',
+            text: 'Agora vamos falar sobre os deveres que valem para TODO mundo aqui na Pralís. São o nosso combinado do dia a dia.',
+          }
+        }
+        if (index === 1 && story.type === 'text') {
+          return {
+            ...story,
+            audioSrc: '/audio-deveres-pontualidade-uniforme.mp3',
+            audioIncludesTitle: false,
+          }
+        }
+      }
+
+      if (module.id === 'proibido' && index === 0 && story.type === 'lis') {
+        return {
+          ...story,
+          videoSrc: '/lis-proibido.webm',
+          text: 'Agora preciso da sua atenção TOTAL. Estas são as condutas terminantemente proibidas na Pralís, e o descumprimento tem consequências sérias.',
+        }
+      }
+
+      return story
+    }),
+  }
+}
+
 function activeModules(): Module[] {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(ADMIN_DATA_KEY) : null
@@ -1057,12 +1135,13 @@ function activeModules(): Module[] {
             ...m,
             stories: prepareStories(m),
           }))
+          .map(applyRuntimeContentOverrides)
       }
     }
   } catch {
     /* fallback para o conteúdo padrão */
   }
-  return MODULES
+  return MODULES.map(applyRuntimeContentOverrides)
 }
 
 /** Módulos visíveis para um cargo: gerais + os específicos do cargo. */

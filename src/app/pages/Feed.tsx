@@ -171,13 +171,9 @@ export default function Feed() {
         className="sticky top-0 z-20 flex flex-col gap-2.5 overflow-hidden px-5 pb-3"
         style={{
           paddingTop: 'calc(var(--safe-top) + 0.75rem)',
-          background: isLight
-            ? 'linear-gradient(135deg, #ffffff 0%, #fff4eb 48%, #f7e1cc 100%)'
-            : 'linear-gradient(135deg, #75483f 0%, #5e3731 48%, #8b3f23 100%)',
-          backdropFilter: 'none',
-          WebkitBackdropFilter: 'none',
-          borderBottom: '1px solid rgba(232,207,160,0.26)',
-          boxShadow: isLight ? '0 8px 20px rgba(94,55,49,0.06)' : '0 8px 20px rgba(43,22,15,0.14)',
+          background: isLight ? '#ffffff' : '#150900',
+          borderBottom: `1px solid ${isLight ? '#e5d5c5' : 'rgba(184,134,11,0.18)'}`,
+          boxShadow: isLight ? '0 2px 10px rgba(26,14,0,0.05)' : 'none',
         }}
       >
         <motion.img
@@ -217,7 +213,7 @@ export default function Feed() {
           />
           <div className="absolute right-0 top-0 flex flex-col items-center gap-1">
             <LisHeaderAvatar globalProgress={globalProgress} size={82} onClick={() => navigate('/progresso')} />
-            <div className="text-center font-body" style={{ color: 'rgba(255,255,255,0.90)' }}>
+            <div className="text-center font-body" style={{ color: isLight ? '#1a0e00' : 'rgba(255,255,255,0.90)' }}>
               <p style={{ fontSize: 13, fontWeight: 900, lineHeight: 1 }}>{timeLabel}</p>
               <p style={{ fontSize: 9, lineHeight: 1.2, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{dateLabel}</p>
             </div>
@@ -258,10 +254,8 @@ export default function Feed() {
               className="relative mb-6 flex items-center gap-5 overflow-hidden"
               style={{
                 padding: '20px 20px',
-                background: isLight
-                  ? 'linear-gradient(135deg, #ffffff 0%, #fff4eb 100%)'
-                  : 'linear-gradient(135deg, #75483f 0%, #6a4038 100%)',
-                border: '1px solid rgba(232,207,160,0.30)',
+                background: isLight ? '#ffffff' : 'var(--bg-card)',
+                border: `1px solid ${isLight ? '#e5d5c5' : 'rgba(184,134,11,0.18)'}`,
                 borderRadius: 22,
                 boxShadow: 'none',
                 backdropFilter: 'none',
@@ -425,7 +419,7 @@ function SectionDivider({
         : 'rgba(243,116,53,0.18)'
       : isLight
         ? '#f7f2ec'
-        : 'rgba(117,72,63,0.76)'
+        : 'var(--bg-card)'
   const color = complete ? '#5dd87a' : current ? '#f37435' : accent
   const missingPercent = total > 0 ? Math.round((missing / total) * 100) : 0
   const donePercent = total > 0 ? Math.round((done / total) * 100) : 0

@@ -16,9 +16,9 @@ import { useAdminStore } from '@/lib/adminStore'
 import { getSignature } from '@/lib/storage'
 import type { Module, ModuleProgress } from '@/lib/types'
 import { useSession } from '../context/SessionContext'
-import { LisAvatar } from '../components/LisAvatar'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { BottomNav, TAB_PATH } from '../components/BottomNav'
+import { useTheme } from '../context/ThemeContext'
 
 const INTRO_TABS = [
   { id: 'inicio', label: 'Começo', icon: PlayCircle },
@@ -37,6 +37,8 @@ export default function LisChat() {
   const navigate = useNavigate()
   const { employee, progress } = useSession()
   const { data } = useAdminStore()
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
   const [introTab, setIntroTab] = useState<IntroTab>('inicio')
   const [signed, setSigned] = useState(false)
 
@@ -94,13 +96,38 @@ export default function LisChat() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
           className="font-body uppercase tracking-widest"
-          style={{ fontSize: 10, color: '#e8cfa0', letterSpacing: '0.22em' }}
+          style={{ fontSize: 10, color: 'var(--text-secondary)', letterSpacing: '0.22em' }}
         >
           sua guia de jornada
         </motion.p>
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <LisAvatar state={allContentDone ? 'celebrating' : 'talking'} size={166} />
+          <div style={{
+            position: 'relative',
+            width: 200,
+            height: 200,
+            borderRadius: '50%',
+            background: '#ffffff',
+            border: '3px solid rgba(184,134,11,0.6)',
+            boxShadow: '0 0 0 6px rgba(184,134,11,0.15), 0 16px 48px rgba(0,0,0,0.4)',
+            overflow: 'hidden',
+          }}>
+            <video
+              src="/videocirculo-dashboard.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={{
+                width: '130%',
+                height: '130%',
+                objectFit: 'cover',
+                objectPosition: 'center 20%',
+                marginLeft: '-2%',
+                marginTop: '-10%',
+              }}
+            />
+          </div>
         </motion.div>
 
         <motion.div
@@ -109,13 +136,12 @@ export default function LisChat() {
           transition={{ type: 'spring', stiffness: 200, damping: 22, delay: 0.2 }}
           className="w-full px-5 py-5 text-left"
           style={{
-            background: 'linear-gradient(135deg, rgba(94,55,49,0.90), rgba(117,72,63,0.76))',
-            border: '1px solid rgba(232,207,160,0.30)',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--stroke)',
             borderRadius: '8px 22px 22px 22px',
-            boxShadow: '0 16px 34px rgba(43,22,15,0.20)',
           }}
         >
-          <p className="font-body" style={{ fontSize: 15, fontStyle: 'italic', lineHeight: 1.65, color: '#ffffff' }}>
+          <p className="font-body" style={{ fontSize: 15, fontStyle: 'italic', lineHeight: 1.65, color: 'var(--text-primary)' }}>
             {lisMessage}
           </p>
         </motion.div>
@@ -125,7 +151,7 @@ export default function LisChat() {
             <p className="font-body uppercase" style={{ fontSize: 10, fontWeight: 900, color: '#f37435', letterSpacing: '0.18em' }}>
               começo da Pralis
             </p>
-            <button onClick={() => navigate('/conheca?review=1')} className="font-body text-xs font-bold" style={{ color: '#ffe6b8' }}>
+            <button onClick={() => navigate('/conheca?review=1')} className="font-body text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
               Rever tour
             </button>
           </div>
@@ -141,9 +167,9 @@ export default function LisChat() {
                   onClick={() => setIntroTab(tab.id)}
                   className="flex min-w-0 items-center justify-center gap-1 rounded-full px-1.5 py-2 font-body font-bold"
                   style={{
-                    background: active ? '#ffffff' : 'rgba(255,255,255,0.10)',
-                    color: active ? '#f37435' : '#ffe6b8',
-                    border: `1px solid ${active ? '#ffffff' : 'rgba(255,255,255,0.20)'}`,
+                    background: active ? '#f37435' : 'var(--bg-card)',
+                    color: active ? '#ffffff' : 'var(--text-secondary)',
+                    border: `1px solid ${active ? '#f37435' : 'var(--stroke)'}`,
                     fontSize: 'clamp(9px, 2.65vw, 11px)',
                     whiteSpace: 'nowrap',
                   }}
@@ -168,8 +194,8 @@ export default function LisChat() {
             className="relative mt-2 w-full overflow-hidden p-5 text-left"
             style={{
               borderRadius: 22,
-              background: 'linear-gradient(135deg, rgba(139,63,35,0.90), rgba(94,55,49,0.92))',
-              border: '1px solid rgba(232,207,160,0.28)',
+              background: isLight ? '#fff9f4' : 'var(--bg-card)',
+              border: `1px solid ${isLight ? '#e5d5c5' : 'rgba(184,134,11,0.22)'}`,
               cursor: 'pointer',
             }}
           >
@@ -181,10 +207,10 @@ export default function LisChat() {
                 <IntroIcon size={20} />
               </span>
               <div>
-                <h2 className="font-display" style={{ fontSize: 22, lineHeight: 1.05, color: '#ffffff' }}>
+                <h2 className="font-display" style={{ fontSize: 22, lineHeight: 1.05, color: 'var(--text-primary)' }}>
                   {introContent.title}
                 </h2>
-                <p className="mt-2 font-body" style={{ fontSize: 13, lineHeight: 1.65, color: '#ffe6d2' }}>
+                <p className="mt-2 font-body" style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--text-secondary)' }}>
                   {introContent.body}
                 </p>
               </div>
@@ -197,7 +223,7 @@ export default function LisChat() {
             <p className="font-body uppercase" style={{ fontSize: 10, fontWeight: 900, color: '#f37435', letterSpacing: '0.18em' }}>
               próximo passo
             </p>
-            <span className="font-body text-xs font-bold" style={{ color: '#ffe6b8', whiteSpace: 'nowrap' }}>
+            <span className="font-body text-xs font-bold" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
               {contentModules.length - completedContent} pendente(s)
             </span>
           </div>
@@ -210,8 +236,8 @@ export default function LisChat() {
             style={{
               padding: '15px 16px',
               borderRadius: 18,
-              background: 'linear-gradient(135deg, #ffffff, #fff4eb)',
-              border: '1px solid rgba(255,255,255,0.72)',
+              background: isLight ? '#ffffff' : 'var(--bg-surface-2)',
+              border: `1px solid ${isLight ? '#e5d5c5' : 'rgba(184,134,11,0.22)'}`,
               opacity: !nextModule && termsDisabled ? 0.55 : 1,
             }}
           >
@@ -219,10 +245,10 @@ export default function LisChat() {
               {nextModule ? <ArrowRight size={18} /> : <FileSignature size={18} />}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-display" style={{ fontSize: 16, lineHeight: 1.15, color: '#2b160f' }}>
+              <span className="block font-display" style={{ fontSize: 16, lineHeight: 1.15, color: 'var(--text-primary)' }}>
                 {nextModule?.title ?? (signed ? 'Certificado liberado' : 'Assinatura final')}
               </span>
-              <span className="block font-body" style={{ fontSize: 11, color: '#5e3731', marginTop: 2 }}>
+              <span className="block font-body" style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
                 {nextModule ? `${nextModule.subtitle} · ${nextModule.estimatedMinutes} min` : `${progressPct}% dos módulos concluídos`}
               </span>
             </span>
@@ -243,9 +269,9 @@ export default function LisChat() {
             className="w-full rounded-3xl p-4 text-left"
             style={{
               background: termsUnlocked
-                ? 'linear-gradient(135deg, rgba(30,126,78,0.30), rgba(94,55,49,0.82))'
-                : 'rgba(94,55,49,0.74)',
-              border: `1px solid ${termsUnlocked ? '#5dd87a' : 'rgba(232,207,160,0.26)'}`,
+                ? isLight ? 'rgba(30,126,78,0.08)' : 'rgba(93,216,122,0.12)'
+                : 'var(--bg-card)',
+              border: `1px solid ${termsUnlocked ? (isLight ? '#1e7e4e' : '#5dd87a') : 'var(--stroke)'}`,
               opacity: termsDisabled ? 0.72 : 1,
             }}
           >
@@ -255,29 +281,29 @@ export default function LisChat() {
                 style={{
                   width: 44,
                   height: 44,
-                  background: termsUnlocked ? '#5dd87a' : 'rgba(255,255,255,0.10)',
-                  color: termsUnlocked ? '#102617' : '#ffe6b8',
+                  background: termsUnlocked ? (isLight ? '#1e7e4e' : '#5dd87a') : 'var(--bg-surface-2)',
+                  color: termsUnlocked ? '#ffffff' : 'var(--text-secondary)',
                 }}
               >
                 {termsUnlocked ? <FileSignature size={18} /> : <LockKeyhole size={18} />}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center justify-between gap-3">
-                  <strong className="font-display" style={{ fontSize: 18, color: '#ffffff' }}>
+                  <strong className="font-display" style={{ fontSize: 18, color: 'var(--text-primary)' }}>
                     Documentos finais
                   </strong>
-                  <span className="font-body text-[10px] font-black uppercase" style={{ color: termsUnlocked ? '#5dd87a' : '#ffe6b8', letterSpacing: '0.12em' }}>
+                  <span className="font-body text-[10px] font-black uppercase" style={{ color: termsUnlocked ? (isLight ? '#1e7e4e' : '#5dd87a') : 'var(--text-secondary)', letterSpacing: '0.12em' }}>
                     {signed ? 'Assinado' : allContentDone ? 'Liberado' : `${contentModules.length - completedContent} pendente(s)`}
                   </span>
                 </span>
-                <span className="mt-1 block font-body" style={{ fontSize: 12, lineHeight: 1.55, color: '#ffe6d2' }}>
+                <span className="mt-1 block font-body" style={{ fontSize: 12, lineHeight: 1.55, color: 'var(--text-secondary)' }}>
                   {signed
                     ? 'Você já assinou os documentos. Pode rever o certificado quando quiser.'
                     : allContentDone
                       ? 'Leia cada termo com calma, ouça a narração e confirme apenas quando concordar.'
                       : 'Os documentos aparecem aqui quando todos os módulos forem concluídos.'}
                 </span>
-                <span className="mt-3 flex items-center gap-2 font-body text-xs font-bold" style={{ color: termsDisabled ? '#d4a38f' : '#ffffff' }}>
+                <span className="mt-3 flex items-center gap-2 font-body text-xs font-bold" style={{ color: termsDisabled ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                   {signed ? 'Ver certificado' : allContentDone ? 'Ler termos e assinar' : 'Termos bloqueados'}
                   {termsUnlocked ? <ArrowRight size={16} /> : <LockKeyhole size={16} />}
                 </span>
