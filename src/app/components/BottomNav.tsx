@@ -1,22 +1,21 @@
 import { motion } from 'framer-motion'
-import { House, MessagesSquare, UserRound } from 'lucide-react'
+import { House, UserRound } from 'lucide-react'
 import { brand } from '@/lib/brand'
 import { useTheme } from '../context/ThemeContext'
 
-// 'progress' permanece no tipo por compatibilidade. A tela ainda existe e e acessivel pelo avatar da Lis no header.
+// 'progress' e 'lis' permanecem no tipo por compatibilidade com rotas existentes
 export type Tab = 'feed' | 'progress' | 'lis' | 'profile'
 
 export const TAB_PATH: Record<Tab, string> = {
-  feed: '/feed',
+  feed:     '/feed',
   progress: '/progresso',
-  lis: '/lis',
-  profile: '/perfil',
+  lis:      '/perfil',   // redireciona para perfil
+  profile:  '/perfil',
 }
 
 const NAV_ITEMS: { id: Tab; icon: typeof House; label: string }[] = [
-  { id: 'feed', icon: House, label: 'Inicio' },
-  { id: 'lis', icon: MessagesSquare, label: 'Lis' },
-  { id: 'profile', icon: UserRound, label: 'Perfil' },
+  { id: 'feed',    icon: House,      label: 'Inicio' },
+  { id: 'profile', icon: UserRound,  label: 'Perfil' },
 ]
 
 export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {

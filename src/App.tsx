@@ -14,7 +14,6 @@ const Login = lazy(() => import('./app/pages/Login'))
 const Acesso = lazy(() => import('./app/pages/Acesso'))
 const Feed = lazy(() => import('./app/pages/Feed'))
 const ProgressScreen = lazy(() => import('./app/pages/Progress'))
-const LisChat = lazy(() => import('./app/pages/LisChat'))
 const Profile = lazy(() => import('./app/pages/Profile'))
 const ModulePage = lazy(() => import('./app/pages/Module'))
 const Completion = lazy(() => import('./app/pages/Completion'))
@@ -28,7 +27,6 @@ const AdminModuloEditor = lazy(() => import('./admin/pages/AdminModuloEditor'))
 const AdminInicio = lazy(() => import('./admin/pages/AdminInicio'))
 const AdminColaboradores = lazy(() => import('./admin/pages/AdminColaboradores'))
 const AdminTermos = lazy(() => import('./admin/pages/AdminTermos'))
-const AdminAcompanhamento = lazy(() => import('./admin/pages/AdminAcompanhamento'))
 
 // dashboard RH
 const DashLogin = lazy(() => import('./dashboard/pages/DashLogin'))
@@ -83,14 +81,7 @@ function AnimatedRoutes() {
                 </RequireAuth>
               }
             />
-            <Route
-              path="/lis"
-              element={
-                <RequireAuth>
-                  <LisChat />
-                </RequireAuth>
-              }
-            />
+            <Route path="/lis" element={<Navigate to="/perfil" replace />} />
             <Route
               path="/perfil"
               element={
@@ -125,7 +116,6 @@ function AnimatedRoutes() {
               <Route path="inicio" element={<AdminInicio />} />
               <Route path="colaboradores" element={<AdminColaboradores />} />
               <Route path="termos" element={<AdminTermos />} />
-              <Route path="acompanhamento" element={<AdminAcompanhamento />} />
             </Route>
 
             {/* Dashboard RH */}

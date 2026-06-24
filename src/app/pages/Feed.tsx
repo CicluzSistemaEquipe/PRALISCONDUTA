@@ -380,7 +380,7 @@ export default function Feed() {
         <div className="flex flex-col items-center gap-2 pb-2 pt-4">
           <img src={brand.simboloPar} alt="" aria-hidden="true" style={{ width: 28, opacity: isLight ? 0.28 : 0.2, filter: isLight ? 'brightness(0) saturate(100%) opacity(0.5)' : FILTER_WHITE }} />
           <p className="text-center font-body" style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--text-secondary)' }}>
-            a prova é ser feliz
+            é provar e ser feliz
           </p>
         </div>
       </main>

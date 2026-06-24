@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, CheckCircle, Volume2, VolumeX, RotateCcw, Zap } from 'lucide-react'
+import { Play, CheckCircle, Volume2, VolumeX, Zap, RotateCcw } from 'lucide-react'
 import { brand, FILTER_WHITE } from '@/lib/brand'
 import { hapticTap, soundDing } from '@/lib/effects'
 import { isDevMode } from '@/lib/devMode'
@@ -13,20 +13,15 @@ interface VideoCardProps {
   src?: string
   watched: boolean
   onWatched: () => void
-  /** avisa o StoryPlayer p/ pausar a barra de progresso enquanto toca */
+  /** chamado quando o vídeo termina pela primeira vez — aciona o avanço automático */
+  onAutoAdvance?: () => void
   onPlayingChange?: (playing: boolean) => void
-  /** reporta progresso 0..1 para a barra de stories do pai */
   onProgress?: (f: number) => void
 }
 
-const WATCH_THRESHOLD = 1.0 // 100% — precisa assistir o vídeo completo
+const WATCH_THRESHOLD = 1.0
 const SIM_SECONDS = 14
 
-/**
- * Vídeo em formato stories — preenche toda a área (object-cover).
- * Sem seek/controles nativos; o botão "marcar como assistido" só libera
- * após 100% assistido. No placeholder, o timer só pausa ao perder o foco da aba.
- */
 export function VideoCard({
   title,
   description,
@@ -34,39 +29,53 @@ export function VideoCard({
   src,
   watched,
   onWatched,
+  onAutoAdvance,
   onPlayingChange,
   onProgress,
 }: VideoCardProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const rafRef = useRef<number>(0)
+  const videoRef      = useRef<HTMLVideoElement | null>(null)
+  const rafRef        = useRef<number>(0)
+  const completedRef  = useRef(watched)   // true quando completou (evita double-fire)
+  const isRewatchRef  = useRef(false)     // true quando está revendo (bloqueia auto-advance)
+
   const [playing, setPlaying] = useState(false)
   const [started, setStarted] = useState(false)
-  const [muted, setMuted] = useState(false)
+  const [muted,   setMuted]   = useState(false)
   const [fraction, setFraction] = useState(watched ? 1 : 0)
-  const [canMark, setCanMark] = useState(watched)
-  const [marked, setMarked] = useState(watched)
+  const [marked,   setMarked]   = useState(watched)
 
-  const notify = useCallback(
-    (p: boolean) => {
-      setPlaying(p)
-      onPlayingChange?.(p)
-    },
-    [onPlayingChange],
-  )
+  const notify = useCallback((p: boolean) => {
+    setPlaying(p)
+    onPlayingChange?.(p)
+  }, [onPlayingChange])
 
+  // dispara quando vídeo chega a 100%
   const update = useCallback((f: number) => {
     const c = Math.min(1, Math.max(0, f))
     setFraction(c)
-    if (c >= WATCH_THRESHOLD) setCanMark(true)
     onProgress?.(c)
-  }, [onProgress])
+
+    if (c >= WATCH_THRESHOLD && !completedRef.current) {
+      completedRef.current = true
+      notify(false)
+      setPlaying(false)
+      setMarked(true)
+      soundDing()
+      onWatched()
+      if (!isRewatchRef.current) {
+        // primeira conclusão: avança automaticamente
+        setTimeout(() => onAutoAdvance?.(), 350)
+      }
+      isRewatchRef.current = false
+    }
+  }, [notify, onProgress, onWatched, onAutoAdvance])
 
   // player real
   useEffect(() => {
     const v = videoRef.current
     if (!v || !src) return
     const onTime = () => update(v.duration ? v.currentTime / v.duration : 0)
-    const onEnd = () => notify(false)
+    const onEnd  = () => notify(false)
     v.addEventListener('timeupdate', onTime)
     v.addEventListener('ended', onEnd)
     return () => {
@@ -75,17 +84,14 @@ export function VideoCard({
     }
   }, [src, update, notify])
 
-  // placeholder simulado — uma vez iniciado, roda até 100% (não pausa por toque)
+  // placeholder simulado — não pausa por toque
   useEffect(() => {
     if (src || !started || fraction >= 1) return
     const start = performance.now() - fraction * SIM_SECONDS * 1000
     const tick = (now: number) => {
       const f = (now - start) / (SIM_SECONDS * 1000)
       update(f)
-      if (f >= 1) {
-        notify(false)
-        return
-      }
+      if (f >= 1) { notify(false); return }
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
@@ -93,7 +99,7 @@ export function VideoCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started, src])
 
-  // pausa só quando a aba perde o foco (anti-fraude do placeholder)
+  // pausa ao perder foco da aba
   useEffect(() => {
     const onVisibility = () => {
       if (document.hidden) {
@@ -108,36 +114,22 @@ export function VideoCard({
 
   const startPlayback = () => {
     hapticTap()
-    if (src && videoRef.current) {
-      void videoRef.current.play()
+    if (marked) {
+      // rewatch — reseta progresso mas mantém marcado
+      completedRef.current = false
+      isRewatchRef.current = true
+      setFraction(0)
+      cancelAnimationFrame(rafRef.current)
+      if (src && videoRef.current) videoRef.current.currentTime = 0
     }
+    if (src && videoRef.current) void videoRef.current.play()
     setStarted(true)
     notify(true)
   }
 
-  const handleMark = () => {
-    soundDing()
-    hapticTap()
-    setMarked(true)
-    onWatched()
-  }
-
-  const handleRewatch = () => {
-    hapticTap()
-    setMarked(false)
-    setStarted(false)
-    setFraction(0)
-    setCanMark(false)
-    setPlaying(false)
-    cancelAnimationFrame(rafRef.current)
-    if (src && videoRef.current) {
-      videoRef.current.pause()
-      videoRef.current.currentTime = 0
-    }
-  }
-
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
+
       {/* vídeo ou placeholder */}
       {src ? (
         <video
@@ -158,36 +150,37 @@ export function VideoCard({
             animate={playing ? { scale: [1, 1.08, 1] } : {}}
             transition={{ repeat: Infinity, duration: 1.6 }}
           />
-          <span
-            style={{ fontFamily: 'Montserrat, sans-serif', fontStyle: 'italic', fontSize: 14, color: 'rgba(232,207,160,0.60)', marginTop: 12 }}
-          >
+          <span style={{ fontFamily: 'Montserrat, sans-serif', fontStyle: 'italic', fontSize: 14, color: 'rgba(232,207,160,0.60)', marginTop: 12 }}>
             {playing ? 'reproduzindo…' : 'toque para assistir'}
           </span>
         </div>
       )}
 
-      {/* botão play central — só antes de iniciar */}
+      {/* botão play — aparece quando não está tocando */}
       <AnimatePresence>
-        {!playing && !marked && (
+        {!playing && (
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={startPlayback}
             className="absolute inset-0 flex items-center justify-center"
-            aria-label="Reproduzir"
+            aria-label={marked ? 'Rever vídeo' : 'Reproduzir'}
           >
             <span
               className="flex h-[72px] w-[72px] items-center justify-center rounded-full"
-              style={{ background: '#f37435', boxShadow: '0 8px 32px rgba(243,116,53,0.5)' }}
+              style={{ background: marked ? 'rgba(0,0,0,0.55)' : '#f37435', boxShadow: marked ? 'none' : '0 8px 32px rgba(243,116,53,0.5)' }}
             >
-              <Play size={32} color="#fff" fill="#fff" style={{ marginLeft: 4 }} />
+              {marked
+                ? <RotateCcw size={28} color="rgba(232,207,160,0.85)" />
+                : <Play size={32} color="#fff" fill="#fff" style={{ marginLeft: 4 }} />
+              }
             </span>
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* mute (vídeo real) */}
+      {/* mute (só com vídeo real) */}
       {src && (
         <button
           onClick={() => setMuted((m) => !m)}
@@ -198,91 +191,61 @@ export function VideoCard({
         </button>
       )}
 
-      {/* botão DEV SKIP — só em dev mode */}
+      {/* DEV SKIP */}
       {isDevMode() && !marked && (
         <button
-          onClick={() => { setCanMark(true); setMarked(true); setFraction(1); onWatched(); soundDing() }}
+          onClick={() => {
+            completedRef.current = true
+            setFraction(1)
+            setMarked(true)
+            setPlaying(false)
+            notify(false)
+            soundDing()
+            onWatched()
+            setTimeout(() => onAutoAdvance?.(), 350)
+          }}
           style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            zIndex: 20,
-            background: '#b8860b',
-            border: 'none',
-            borderRadius: 8,
-            padding: '5px 10px',
-            color: '#fff',
-            fontFamily: 'Montserrat, sans-serif',
-            fontWeight: 700,
-            fontSize: 11,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
+            position: 'absolute', top: 12, left: 12, zIndex: 20,
+            background: '#b8860b', border: 'none', borderRadius: 8,
+            padding: '5px 10px', color: '#fff',
+            fontFamily: 'Montserrat, sans-serif', fontWeight: 700, fontSize: 11,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
           }}
         >
           <Zap size={12} /> Skip (Dev)
         </button>
       )}
 
-      {/* gradiente inferior + info + botão assistido */}
+      {/* gradiente inferior + info do vídeo */}
       <div
-        className="absolute inset-x-0 bottom-0 px-5 pb-9 pt-16"
+        className="absolute inset-x-0 bottom-0 px-5 pb-9 pt-16 pointer-events-none"
         style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)' }}
       >
-        {/* progresso (somente leitura — sem seek) */}
+        {/* barra de progresso */}
         <div className="mb-3 h-[3px] w-full overflow-hidden rounded-full bg-white/25">
-          <div
-            className="h-full rounded-full"
-            style={{ width: `${fraction * 100}%`, background: '#f37435' }}
-          />
+          <div className="h-full rounded-full transition-all" style={{ width: `${fraction * 100}%`, background: '#f37435' }} />
         </div>
+
         <p className="font-display text-2xl text-white">{title}</p>
         <p className="font-body text-[13px] text-white/60">
           {duration ?? '—'} · narrado pela Lis{description ? ` · ${description}` : ''}
         </p>
 
-        <AnimatePresence mode="wait">
-          {marked ? (
+        {/* indicador de assistido — substitui o botão */}
+        <AnimatePresence>
+          {marked && (
             <motion.div
-              key="done"
-              initial={{ opacity: 0, y: 12 }}
+              key="watched-hint"
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-5 flex items-center gap-3"
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-4 flex items-center gap-2 font-body text-sm font-semibold"
+              style={{ color: 'rgba(74,222,128,0.9)' }}
             >
-              <div
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 font-body font-bold tracking-wide"
-                style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.4)', color: '#4ade80' }}
-              >
-                <CheckCircle size={18} /> Vídeo assistido
-              </div>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={handleRewatch}
-                aria-label="Rever vídeo"
-                className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-2xl"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(232,207,160,0.70)' }}
-              >
-                <RotateCcw size={18} />
-              </motion.button>
+              <CheckCircle size={16} />
+              Assistido · deslize para continuar
             </motion.div>
-          ) : (
-            <motion.button
-              key="mark"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              disabled={!canMark}
-              onClick={handleMark}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-body font-bold tracking-wide transition-opacity"
-              style={
-                canMark
-                  ? { background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.4)', color: '#4ade80' }
-                  : { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)' }
-              }
-            >
-              <CheckCircle size={18} />
-              {canMark ? 'Marcar como assistido' : 'Assista o vídeo completo para liberar'}
-            </motion.button>
           )}
         </AnimatePresence>
       </div>
