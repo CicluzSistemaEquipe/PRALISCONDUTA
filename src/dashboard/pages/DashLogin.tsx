@@ -61,7 +61,7 @@ export default function DashLogin() {
           {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Entrar'}
         </button>
 
-        {!hasSupabase && (
+        {!hasSupabase && import.meta.env.DEV && (
           <p className="mt-4 text-center font-body text-xs text-pralis-creme/50">
             Modo demo — use qualquer e-mail e a senha <strong>pralis</strong>.
           </p>
