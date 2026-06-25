@@ -329,28 +329,12 @@
 }
 
 /* ------------------------------------------------------------
-   BLINDAGEM DO ADMIN — o painel /admin permanece SEMPRE dark,
-   mesmo com o app em white mode. Reapresenta os tokens dark
-   dentro de qualquer .adm-root, sem tocar em arquivos de src/admin/.
+   ADMIN — agora é SEMPRE CLARO (Design System v1).
+   Os tokens claros são definidos em .adm-root (src/admin/admin.css);
+   aqui apenas garantimos o color-scheme claro em qualquer tema do app.
+   Ver docs/ADMIN_DESIGN_SYSTEM.md.
    ------------------------------------------------------------ */
-[data-theme='light'] .adm-root {
-  --bg-base: #0d0800;
-  --bg-deep: #080400;
-  --glass-bg: rgba(255, 245, 220, 0.07);
-  --glass-border: rgba(255, 245, 220, 0.13);
-  --text-primary: #ffffff;
-  --text-secondary: #e8cfa0;
-  --text-muted: rgba(255, 255, 255, 0.55);
-  --cream: #e8cfa0;
-  --cream-muted: rgba(232, 207, 160, 0.65);
-  --gold: #b8860b;
-  --gold-light: #d4a017;
-  --orange: #f37435;
-  --stroke: rgba(184, 134, 11, 0.3);
-  --stroke-soft: rgba(255, 255, 255, 0.1);
-  --text-locked: rgba(255, 255, 255, 0.3);
-}
 [data-theme='light'] .adm-root,
 [data-theme='light'] .adm-root * {
-  color-scheme: dark;
+  color-scheme: light;
 }

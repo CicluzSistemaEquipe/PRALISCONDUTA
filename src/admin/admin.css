@@ -1,204 +1,226 @@
 /* ============================================================
-   ADMIN CMS — design tokens & componentes
-   Reaproveita as variáveis da marca (ver styles/pralis.css):
-   --gold --gold-light --orange --brown --cream --glass-bg etc.
-   Layout de painel web (sidebar + área), tema dark glassmorphism.
+   PRALÍS ADMIN — Design System v1
+   SaaS claro premium (Linear · Notion · Vercel) + leveza Apple.
+   Fundo branco · laranja = AÇÃO · marrom = detalhe · neutros quentes.
+   Spec completa: docs/ADMIN_DESIGN_SYSTEM.md
+   O admin é SEMPRE claro (independe do tema do app).
    ============================================================ */
 
 .adm-root {
+  /* ---------- Tokens do Design System ---------- */
+  --bg-app: #ffffff;
+  --bg-subtle: #faf9f8;   /* seções, header de tabela, hover de linha */
+  --bg-muted: #f5f4f2;    /* hover ghost, fills sutis */
+  --bg-inset: #f2f0ed;    /* divisórias, trilhos */
+
+  --border: #eceae7;        /* hairline padrão */
+  --border-strong: #dad6d1; /* inputs, botões secundários */
+
+  --ink: #1a1714;           /* texto primário / títulos */
+  --text-secondary: #57514b;
+  --text-muted: #8a837c;
+  --text-disabled: #b8b2ab;
+
+  --accent: #f26b2a;        /* AÇÃO: primário, nav ativo, foco */
+  --accent-hover: #e25e1f;
+  --accent-active: #c9501a;
+  --accent-text: #c9501a;   /* laranja escuro p/ texto/legenda sobre branco (AA) */
+  --accent-tint: #fef1ea;
+
+  --brand-brown: #5e3731;   /* detalhe/secundário */
+  --brown-tint: #f4efee;
+
+  --success: #1e7e4e; --success-bg: #ecf7f0;
+  --danger:  #c0392b; --danger-bg:  #fceeec;
+  --warning: #b7791f; --warning-bg: #fbf3e5;
+
+  --ring: 0 0 0 3px rgba(242, 107, 42, 0.25);
+  --radius-sm: 6px; --radius: 8px; --radius-lg: 12px;
+  --shadow-xs: 0 1px 2px rgba(26, 23, 20, 0.05);
+  --shadow-sm: 0 1px 3px rgba(26, 23, 20, 0.06), 0 1px 2px rgba(26, 23, 20, 0.04);
+  --shadow-md: 0 8px 24px rgba(26, 23, 20, 0.10);
+
+  /* ---------- Remapeamento dos tokens legados ----------
+     As telas ainda não migradas usam estes nomes (--cream, --gold...).
+     Reapontamos para valores CLAROS para que fiquem coerentes durante
+     a migração, tela por tela. */
+  --bg-base: var(--bg-app);
+  --bg-deep: #ffffff;
+  --glass-bg: #ffffff;
+  --glass-bg-warm: var(--bg-subtle);
+  --glass-border: var(--border);
+  --cream: var(--ink);
+  --cream-muted: var(--text-muted);
+  --gold: var(--accent);
+  --gold-light: var(--accent-text);
+  --gold-vivid: var(--accent);
+  --orange: var(--accent);
+  --orange-light: var(--accent-hover);
+  --brown: var(--brand-brown);
+  --green: var(--success);
+  --red: var(--danger);
+  --purple: #7c3aed;
+  --text-primary: var(--ink);
+  --text-locked: var(--text-disabled);
+  --stroke: var(--border-strong);
+  --stroke-soft: var(--border);
+  --border-gold: var(--border-strong);
+  --border-white: var(--border);
+
   min-height: 100dvh;
-  background:
-    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(243, 116, 53, 0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 45% at 0% 100%, rgba(184, 134, 11, 0.10) 0%, transparent 55%),
-    var(--bg-base);
-  color: var(--cream);
+  background: var(--bg-app);
+  color: var(--ink);
   font-family: 'Montserrat', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* números sempre tabulares no admin */
+.adm-root :where(table, .adm-kpi-val, .adm-tabular) { font-variant-numeric: tabular-nums; }
 
 /* ---------- Superfícies ---------- */
 .adm-card {
-  background: var(--glass-bg);
-  border: 1px solid rgba(184, 134, 11, 0.20);
-  border-radius: 20px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
 }
-.adm-card--gold {
-  border-color: rgba(184, 134, 11, 0.35);
-  box-shadow: 0 0 40px rgba(184, 134, 11, 0.15), 0 18px 50px rgba(0, 0, 0, 0.4);
+.adm-card--gold { /* legado: agora é apenas um card de leve destaque */
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-xs);
 }
 
+/* ---------- Cabeçalho de página padrão ---------- */
+.adm-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.adm-divider { height: 1px; background: var(--border); border: 0; }
+
 /* ---------- Títulos ---------- */
-.adm-h1 {
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.015em;
-  color: #fff;
-}
+.adm-h1 { font-family: 'Montserrat', sans-serif; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
 .adm-eyebrow {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--gold-light);
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-muted);
 }
 
 /* ---------- Inputs ---------- */
-.adm-label {
-  display: block;
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--cream-muted);
-  margin-bottom: 6px;
-}
+.adm-label { display: block; font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
 .adm-input,
 textarea.adm-input,
 select.adm-input {
   width: 100%;
-  background: rgba(255, 245, 220, 0.06);
-  border: 1px solid rgba(184, 134, 11, 0.22);
-  border-radius: 12px;
-  padding: 11px 14px;
+  background: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 9px 12px;
   font-family: 'Montserrat', sans-serif;
-  font-size: 0.92rem;
-  color: #fff;
+  font-size: 0.875rem;
+  color: var(--ink);
   outline: none;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.adm-input::placeholder { color: rgba(232, 207, 160, 0.4); }
+.adm-input::placeholder { color: var(--text-muted); }
 .adm-input:focus,
 textarea.adm-input:focus,
 select.adm-input:focus {
-  border-color: var(--gold);
-  background: rgba(255, 245, 220, 0.09);
-  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.18), 0 0 22px rgba(184, 134, 11, 0.15);
+  border-color: var(--accent);
+  box-shadow: var(--ring);
 }
 textarea.adm-input { resize: vertical; line-height: 1.5; }
-select.adm-input option { background: #1a1003; color: #fff; }
+select.adm-input option { background: #fff; color: var(--ink); }
 
 /* ---------- Botões ---------- */
 .adm-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 700;
-  font-size: 0.88rem;
-  padding: 11px 18px;
-  border-radius: 12px;
-  border: 1px solid rgba(184, 134, 11, 0.25);
-  background: rgba(255, 245, 220, 0.05);
-  color: var(--cream);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.875rem;
+  height: 36px; padding: 0 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: #ffffff;
+  color: var(--ink);
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
 }
-.adm-btn:hover { background: rgba(255, 245, 220, 0.1); }
-.adm-btn:active { transform: scale(0.97); }
-.adm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.adm-btn:hover { background: var(--bg-subtle); }
+.adm-btn:active { transform: scale(0.98); }
+.adm-btn:focus-visible { outline: none; box-shadow: var(--ring); }
+.adm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .adm-btn--primary {
-  border: none;
-  color: #fff;
-  background: linear-gradient(135deg, var(--gold) 0%, var(--orange) 100%);
-  box-shadow: 0 8px 26px rgba(243, 116, 53, 0.3);
+  border-color: var(--accent);
+  color: #ffffff;
+  background: var(--accent);
 }
-.adm-btn--primary:hover { box-shadow: 0 10px 32px rgba(243, 116, 53, 0.42); }
-.adm-btn--ghost { background: transparent; }
-.adm-btn--danger {
-  border-color: rgba(192, 57, 43, 0.4);
-  color: #e2604f;
-  background: rgba(192, 57, 43, 0.1);
-}
+.adm-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.adm-btn--ghost { background: transparent; border-color: transparent; color: var(--text-secondary); }
+.adm-btn--ghost:hover { background: var(--bg-muted); }
+.adm-btn--danger { border-color: var(--danger); color: var(--danger); background: #ffffff; }
+.adm-btn--danger:hover { background: var(--danger-bg); }
 
 /* ---------- Badges / chips ---------- */
 .adm-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.6875rem; font-weight: 600;
+  padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid transparent;
 }
-.adm-badge--gold { background: rgba(184, 134, 11, 0.16); color: var(--gold-light); border: 1px solid rgba(184, 134, 11, 0.3); }
-.adm-badge--green { background: rgba(74, 222, 128, 0.14); color: #7ee29a; border: 1px solid rgba(74, 222, 128, 0.32); }
-.adm-badge--green-dk { background: rgba(34, 139, 84, 0.2); color: #5dd87a; border: 1px solid rgba(34, 139, 84, 0.45); }
-.adm-badge--muted { background: rgba(232, 207, 160, 0.1); color: var(--cream-muted); border: 1px solid rgba(232, 207, 160, 0.18); }
-.adm-badge--red { background: rgba(226, 96, 79, 0.16); color: #e2604f; border: 1px solid rgba(226, 96, 79, 0.4); }
+.adm-badge--gold { background: var(--accent-tint); color: var(--accent-text); border-color: #f6d9c8; }
+.adm-badge--green { background: var(--success-bg); color: var(--success); border-color: #cdebd9; }
+.adm-badge--green-dk { background: var(--success-bg); color: var(--success); border-color: #cdebd9; }
+.adm-badge--muted { background: var(--bg-muted); color: var(--text-secondary); border-color: var(--border); }
+.adm-badge--red { background: var(--danger-bg); color: var(--danger); border-color: #f3d2cd; }
 
-/* ---------- Tabela ---------- */
-.adm-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.86rem; }
+/* ---------- Tabela (componente herói) ---------- */
+.adm-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.875rem; }
 .adm-table th {
   text-align: left;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  color: var(--cream-muted);
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(184, 134, 11, 0.2);
+  font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
+  color: var(--text-muted);
+  padding: 0 16px; height: 40px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
 }
-.adm-table td { padding: 13px 14px; border-bottom: 1px solid rgba(255, 245, 220, 0.07); color: var(--cream); }
-.adm-table tbody tr:nth-child(even) td { background: rgba(255, 245, 220, 0.04); }
-.adm-table tbody tr:hover td { background: rgba(184, 134, 11, 0.08); }
+.adm-table td { padding: 14px 16px; border-bottom: 1px solid var(--bg-inset); color: var(--ink); }
+.adm-table tbody tr:last-child td { border-bottom: 0; }
+.adm-table tbody tr:hover td { background: var(--bg-subtle); }
 
 /* ---------- KPI ---------- */
 .adm-kpi-val {
-  font-size: clamp(1.6rem, 3vw, 2.3rem);
-  font-weight: 800;
-  line-height: 1;
-  background: linear-gradient(120deg, var(--cream), var(--gold-light));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-weight: 700; line-height: 1; letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
 /* ---------- Barra de progresso ---------- */
-.adm-pbar { height: 7px; border-radius: 7px; background: rgba(232, 207, 160, 0.14); overflow: hidden; }
-.adm-pbar > i { display: block; height: 100%; border-radius: 7px; background: linear-gradient(90deg, var(--gold), var(--orange)); transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.adm-pbar { height: 6px; border-radius: 999px; background: var(--bg-inset); overflow: hidden; }
+.adm-pbar > i { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
 
-/* ---------- Toast "Salvo ✓" ---------- */
+/* ---------- Toast ---------- */
 .adm-toast {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 60;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 12px 18px;
-  border-radius: 14px;
-  font-weight: 700;
-  font-size: 0.86rem;
-  color: #fff;
-  background: linear-gradient(135deg, var(--gold), var(--orange));
-  box-shadow: 0 12px 36px rgba(243, 116, 53, 0.4);
+  position: fixed; right: 24px; bottom: 24px; z-index: 60;
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 12px 16px; border-radius: var(--radius-lg);
+  font-weight: 600; font-size: 0.875rem; color: var(--ink);
+  background: #ffffff; border: 1px solid var(--border); box-shadow: var(--shadow-md);
 }
 
 /* ---------- Shake (erro no login) ---------- */
 @keyframes adm-shake {
   10%, 90% { transform: translateX(-2px); }
   20%, 80% { transform: translateX(4px); }
-  30%, 50%, 70% { transform: translateX(-8px); }
-  40%, 60% { transform: translateX(8px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60% { transform: translateX(7px); }
 }
-.adm-shake { animation: adm-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
-
-/* glow dourado pulsante (logo do login) */
-@keyframes adm-pulse-gold {
-  0%, 100% { box-shadow: 0 0 26px rgba(184, 134, 11, 0.3); }
-  50% { box-shadow: 0 0 52px rgba(184, 134, 11, 0.6); }
-}
-.adm-pulse-gold { animation: adm-pulse-gold 4.5s ease-in-out infinite; }
+.adm-shake { animation: adm-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
 
 /* esconder scrollbar em navs roláveis */
 .adm-no-scrollbar::-webkit-scrollbar { display: none; }
 .adm-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* preview renderizado dos termos */
-.adm-terms-preview h3 { font-size: 0.95rem; font-weight: 800; color: var(--gold-light); margin: 14px 0 4px; }
+.adm-terms-preview h3 { font-size: 0.95rem; font-weight: 700; color: var(--ink); margin: 14px 0 4px; }
 .adm-terms-preview h3:first-child { margin-top: 0; }
-.adm-terms-preview p { font-size: 0.84rem; line-height: 1.6; color: rgba(247, 236, 214, 0.85); margin-bottom: 8px; }
-.adm-terms-preview strong { color: #fff; }
+.adm-terms-preview p { font-size: 0.875rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 8px; }
+.adm-terms-preview strong { color: var(--ink); }
+
+/* respeitar preferência de redução de movimento */
+@media (prefers-reduced-motion: reduce) {
+  .adm-root *, .adm-shake { animation: none !important; transition: none !important; }
+}
