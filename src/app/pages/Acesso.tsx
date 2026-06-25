@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useSession } from '../context/SessionContext'
 import { ROLES, type Role } from '@/lib/types'
 import { Loading } from '../components/Loading'
@@ -43,6 +43,7 @@ export default function Acesso() {
           <p className="font-body text-sm text-pralis-creme/70">
             Este link de acesso está incompleto. Peça um novo ao seu gestor.
           </p>
+          <Link to="/login" className="btn-ghost mt-2">Entrar manualmente</Link>
         </div>
       </div>
     )

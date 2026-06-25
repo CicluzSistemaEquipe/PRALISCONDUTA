@@ -3,28 +3,18 @@
 // ============================================================
 
 export type Role =
-  | 'Padeiro'
-  | 'Confeiteiro'
-  | 'Atendente de Balcão'
+  | 'Preparo de alimentos'
+  | 'Atendimento ao cliente'
   | 'Caixa'
-  | 'Auxiliar de Cozinha'
-  | 'Auxiliar de Produção'
-  | 'Gerente de Loja'
-  | 'Estoquista'
-  | 'Entregador'
-  | 'Serviços Gerais'
+  | 'Limpeza'
+  | 'Função externa'
 
 export const ROLES: Role[] = [
-  'Padeiro',
-  'Confeiteiro',
-  'Atendente de Balcão',
+  'Preparo de alimentos',
+  'Atendimento ao cliente',
   'Caixa',
-  'Auxiliar de Cozinha',
-  'Auxiliar de Produção',
-  'Gerente de Loja',
-  'Estoquista',
-  'Entregador',
-  'Serviços Gerais',
+  'Limpeza',
+  'Função externa',
 ]
 
 export interface Employee {
@@ -136,7 +126,7 @@ export type Story =
   | ({ type: 'quiz' } & QuizConfig)
   | { type: 'completion'; badge: string; message: string }
 
-export type ModuleIconType = 'flower' | 'sprout' | 'grain' | 'wheat' | 'bread' | 'croissant' | 'cake' | 'star' | 'heart' | 'chef'
+export type ModuleIconType = 'flower' | 'sprout' | 'grain' | 'wheat'
 
 export interface Module {
   id: string

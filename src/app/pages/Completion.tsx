@@ -14,7 +14,6 @@ import { LisAvatar } from '../components/LisAvatar'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { fireConfetti, hapticSuccess, soundComplete } from '@/lib/effects'
 import { fadeUp, spring, staggerChildren } from '@/lib/animations'
-import { isDevMode } from '@/lib/devMode'
 
 function stripHtml(html: string) {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -80,7 +79,7 @@ export default function Completion() {
     : ''
 
   const sign = async () => {
-    if (!allChecked || busy || (!allModulesDone && !isDevMode())) return
+    if (!allChecked || busy || !allModulesDone) return
     setBusy(true)
     const sig: SignatureRecord = {
       signed_at: new Date().toISOString(),
@@ -98,142 +97,57 @@ export default function Completion() {
 
   if (signature) {
     const date = new Date(signature.signed_at)
-    const firstName = employee.name.trim().split(/\s+/)[0]
     return (
       <div className="app-shell">
-        <AnimatedBackground accent="#b8860b" />
-        <main className="no-scrollbar relative z-10 flex-1 overflow-y-auto px-5 pb-10 pt-10">
-
-          {/* ── avatar celebrando ── */}
+        <AnimatedBackground />
+        <motion.main
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={spring}
+          className="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 pb-10 pt-12 text-center"
+        >
           <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mb-5 flex flex-col items-center gap-2"
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ ...spring, delay: 0.15 }}
+            className="flex h-32 w-32 items-center justify-center rounded-full bg-pralis-ouro/15 ring-2 ring-pralis-ouro/40"
           >
-            <LisAvatar state="celebrating" size={88} />
-            <p className="font-display text-2xl text-pralis-branco">
-              Parabéns, {firstName}!
-            </p>
-            <p className="font-body text-sm text-pralis-creme/70">
-              Você concluiu sua jornada na Pralís.
-            </p>
+            <PralisSymbolX size={96} animate delay={0.2} />
           </motion.div>
 
-          {/* ── card certificado ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.45 }}
-            className="relative mb-5 overflow-hidden rounded-[28px] px-6 py-7 text-center"
-            style={{
-              background: 'linear-gradient(160deg, rgba(60,35,18,0.95) 0%, rgba(30,16,8,0.98) 100%)',
-              border: '1px solid rgba(184,134,11,0.45)',
-              boxShadow: '0 0 0 1px rgba(184,134,11,0.12), 0 24px 64px rgba(0,0,0,0.55)',
-            }}
-          >
-            {/* decoração de fundo */}
-            <img
-              src={brand.simboloEspiga}
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 opacity-[0.055]"
-            />
-            <img
-              src={brand.simboloEspiga}
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-6 -left-6 h-32 w-32 rotate-180 opacity-[0.055]"
-            />
+          <div className="flex flex-col items-center">
+            <img src={brand.logoBege} alt="Padaria Pralís" className="h-10 w-auto" />
+            <p className="mt-2 font-body text-xs uppercase tracking-widest text-pralis-creme/60">
+              Certificado de Conclusão
+            </p>
+          </div>
 
-            {/* logo */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.28, duration: 0.35 }}
-              className="mb-4 flex flex-col items-center gap-2"
-            >
-              <PralisSymbolX size={52} animate delay={0.3} />
-              <img src={brand.logoBege} alt="Padaria Pralís" className="h-7 w-auto opacity-90" />
-            </motion.div>
-
-            {/* separador */}
-            <div className="mb-4 flex items-center gap-3">
-              <div className="h-px flex-1" style={{ background: 'rgba(184,134,11,0.3)' }} />
-              <span className="font-body text-[9px] font-black uppercase tracking-[0.25em] text-pralis-ouro-lt opacity-80">
-                Certificado de Conclusão
-              </span>
-              <div className="h-px flex-1" style={{ background: 'rgba(184,134,11,0.3)' }} />
+          <div className="w-full rounded-card border border-pralis-ouro/30 bg-pralis-marrom-dk/50 p-6">
+            <p className="font-body text-sm text-pralis-creme/80">Certificamos que</p>
+            <p className="my-2 font-display text-2xl text-pralis-branco">{employee.name}</p>
+            <p className="font-body text-sm leading-relaxed text-pralis-creme/80">
+              concluiu o <strong className="text-pralis-creme">Código de Ética e Conduta</strong> da Padaria Pralís e assinou todos os termos.
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-2 font-body text-xs text-pralis-ouro-lt">
+              <ShieldCheck className="h-4 w-4" />
+              {date.toLocaleDateString('pt-BR')} às {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </div>
+          </div>
 
-            {/* nome */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.35, duration: 0.35 }}
-            >
-              <p className="font-body text-xs text-pralis-creme/60">Certificamos que</p>
-              <p className="my-1.5 font-display text-3xl leading-tight text-pralis-branco">
-                {employee.name}
-              </p>
-              <p className="font-body text-sm leading-relaxed text-pralis-creme/80">
-                concluiu o{' '}
-                <strong className="font-semibold text-pralis-creme">Código de Ética e Conduta</strong>{' '}
-                da Padaria Pralís e assinou todos os termos de compromisso.
-              </p>
-            </motion.div>
+          <div className="flex items-center gap-3">
+            <LisAvatar state="celebrating" size={48} />
+            <p className="font-body text-xl italic text-pralis-creme">Parabéns, {employee.name.split(' ')[0]}!</p>
+          </div>
 
-            {/* separador */}
-            <div className="my-5 h-px w-full" style={{ background: 'rgba(184,134,11,0.2)' }} />
-
-            {/* data + cargo */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.42, duration: 0.3 }}
-              className="flex items-center justify-between"
-            >
-              <div className="text-left">
-                <p className="font-body text-[10px] text-pralis-creme/50 uppercase tracking-widest">Cargo</p>
-                <p className="font-body text-sm font-semibold text-pralis-creme/90">{employee.role}</p>
-              </div>
-              <div className="text-right">
-                <p className="font-body text-[10px] text-pralis-creme/50 uppercase tracking-widest">Assinado em</p>
-                <div className="flex items-center justify-end gap-1 font-body text-sm font-semibold text-pralis-ouro-lt">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  {date.toLocaleDateString('pt-BR')}
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* ── tagline ── */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
-            className="mb-6 text-center font-body text-sm italic text-pralis-creme/50"
-          >
-            é provar e ser feliz 🌾
-          </motion.p>
-
-          {/* ── botão ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55, duration: 0.35 }}
-          >
-            <button onClick={() => navigate('/feed')} className="btn-ghost w-full">
-              <ArrowLeft className="h-5 w-5" /> Voltar para home
-            </button>
-          </motion.div>
-
-        </main>
+          <button onClick={() => navigate('/feed')} className="btn-ghost w-full">
+            <ArrowLeft className="h-5 w-5" /> Voltar para home
+          </button>
+        </motion.main>
       </div>
     )
   }
 
-  if (!allModulesDone && !isDevMode()) {
+  if (!allModulesDone) {
     return (
       <div className="app-shell">
         <AnimatedBackground />

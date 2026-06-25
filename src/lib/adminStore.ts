@@ -50,7 +50,7 @@ export function defaultAdminData(): AdminData {
     termsVersion: 'v1.0',
     termsEffectiveDate: '2024-03-09',
     splashConfig: {
-      welcomeText: 'é provar e ser feliz',
+      welcomeText: 'a prova é ser feliz',
       mission:
         'Levar felicidade através de produtos de qualidade, feitos com respeito e cuidado em cada detalhe.',
       vision:

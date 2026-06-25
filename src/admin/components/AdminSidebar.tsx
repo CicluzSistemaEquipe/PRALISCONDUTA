@@ -7,6 +7,7 @@ import {
   Sparkles,
   Users,
   ScrollText,
+  Activity,
   LogOut,
   ExternalLink,
   Menu,
@@ -21,6 +22,7 @@ const NAV = [
   { to: '/admin/inicio', label: 'Início', icon: Sparkles },
   { to: '/admin/colaboradores', label: 'Colaboradores', icon: Users },
   { to: '/admin/termos', label: 'Termos', icon: ScrollText },
+  { to: '/admin/acompanhamento', label: 'Acompanhamento', icon: Activity },
 ]
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {

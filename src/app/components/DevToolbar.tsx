@@ -20,6 +20,7 @@ export function DevToolbar() {
     { label: 'Onboarding', path: '/conheca' },
     { label: 'Login', path: '/login' },
     { label: 'Feed', path: '/feed' },
+    { label: 'Lis', path: '/lis' },
     { label: 'Perfil', path: '/perfil' },
     { label: 'Progresso', path: '/progresso' },
     { label: 'Conclusão', path: '/conclusao' },

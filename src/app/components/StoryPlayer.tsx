@@ -77,10 +77,6 @@ export function StoryPlayer({
       const waitingForNarration =
         current?.type === 'text' && Boolean(current.audioSrc) && direction > 0 && target > index
       if (!force && waitingForNarration && fraction < 0.995) return
-      // bloqueia avanço em slide de vídeo enquanto não assistido
-      const waitingForVideo =
-        current?.type === 'video' && !watchedVideos.has(current.videoId) && direction > 0
-      if (!force && waitingForVideo) return
       if (target >= stories.length) {
         onModuleComplete()
         onClose()
@@ -91,7 +87,7 @@ export function StoryPlayer({
       onIndexChange?.(target)
       soundDing()
     },
-    [stories, index, fraction, watchedVideos, onClose, onModuleComplete, onIndexChange],
+    [stories, index, fraction, onClose, onModuleComplete, onIndexChange],
   )
 
   const handleQuizAnswer = useCallback(
@@ -429,8 +425,10 @@ function StoryContent({
           duration={story.duration}
           src={story.src}
           watched={watchedVideos.has(story.videoId)}
-          onWatched={() => onVideoWatched(story.videoId)}
-          onAutoAdvance={onNext}
+          onWatched={() => {
+            onVideoWatched(story.videoId)
+            setTimeout(onNext, 1400)
+          }}
           onPlayingChange={onVideoPlayingChange}
           onProgress={onProgress}
         />
