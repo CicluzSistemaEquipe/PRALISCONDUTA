@@ -8,7 +8,16 @@ import type { AdminUser } from '@/lib/types'
 
 const SESSION_KEY = 'pralis:admin-session'
 const USERS_KEY = 'pralis:admin-users'
-const LEGACY_PASSWORD = 'pralis2024'
+
+// ── Senhas do modo demo (sem Supabase) ───────────────────────
+// VITE_* é PÚBLICO (vai no bundle) — isto NÃO é segredo real; a auth de
+// verdade é o Supabase Auth (Fase 2). Sem a env var definida:
+//   • DEV  → usa um default conhecido p/ o fluxo local seguir funcionando;
+//   • PROD → login demo desativado (string vazia ⇒ nenhuma senha confere).
+const ADMIN_PASSWORD =
+  import.meta.env.VITE_ADMIN_PASSWORD ?? (import.meta.env.DEV ? 'pralis2024' : '')
+const LEGACY_PASSWORD =
+  import.meta.env.VITE_ADMIN_LEGACY_PASSWORD ?? (import.meta.env.DEV ? 'pralis2024' : '')
 
 // ── Usuários demo (sementes iniciais) ────────────────────────
 export const DEMO_USERS: AdminUser[] = [
@@ -102,8 +111,8 @@ function setSession(user: AdminUser) {
  *  - senha legada única no 1º argumento (ex.: "pralis2024") → entra como Dono
  */
 export function adminLogin(emailOrPassword: string, password?: string): boolean {
-  // modo legado: senha única (dono)
-  if (!password && emailOrPassword === LEGACY_PASSWORD) {
+  // modo legado: senha única (dono) — só quando há senha legada configurada
+  if (!password && LEGACY_PASSWORD && emailOrPassword === LEGACY_PASSWORD) {
     const dono = getAdminUsers().find((u) => u.role === 'dono') ?? DEMO_USERS[0]
     setSession(dono)
     return true
@@ -114,8 +123,9 @@ export function adminLogin(emailOrPassword: string, password?: string): boolean 
   const user = getAdminUsers().find((u) => u.email === email)
   if (!user) return false
 
-  // Fase 2: validar senha no Supabase. Em demo, qualquer senha 4+ serve.
-  if (password && password.length >= 4) {
+  // Fase 2: validar senha no Supabase. Em demo, exige a senha configurada
+  // (ADMIN_PASSWORD). Sem senha configurada (prod sem env) ⇒ rejeita.
+  if (password && ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
     setSession(user)
     return true
   }
