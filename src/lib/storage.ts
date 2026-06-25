@@ -88,6 +88,7 @@ export async function createEmployee(input: {
   role: Role
   token?: string
   access_code?: string
+  gerenteId?: string
 }): Promise<Employee> {
   const employee: Employee = {
     id: uid(),
@@ -96,6 +97,7 @@ export async function createEmployee(input: {
     role: input.role,
     token: input.token ?? makeToken(),
     access_code: input.access_code ?? makeAccessCode(),
+    gerenteId: input.gerenteId,
     created_at: new Date().toISOString(),
   }
 
@@ -132,7 +134,7 @@ export async function preRegisterEmployee(input: {
 
 export async function updateEmployee(
   id: string,
-  patch: Partial<Pick<Employee, 'name' | 'phone' | 'role' | 'token' | 'access_code'>>,
+  patch: Partial<Pick<Employee, 'name' | 'phone' | 'role' | 'token' | 'access_code' | 'gerenteId'>>,
 ): Promise<Employee | null> {
   if (hasSupabase && supabase) {
     const { data, error } = await supabase

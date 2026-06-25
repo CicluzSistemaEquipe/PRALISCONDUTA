@@ -4,32 +4,48 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   LayoutDashboard,
   BookOpen,
-  Sparkles,
   Users,
+  ShieldCheck,
   ScrollText,
+  BarChart3,
   LogOut,
   ExternalLink,
   Menu,
   X,
 } from 'lucide-react'
 import { brand, FILTER_WHITE } from '@/lib/brand'
-import { adminLogout } from '../auth'
+import { adminLogout, getAdminSession } from '../auth'
 
-const NAV = [
+type NavEntry = { to: string; label: string; icon: typeof LayoutDashboard }
+
+const NAV_DONO: NavEntry[] = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/modulos', label: 'Módulos', icon: BookOpen },
-  { to: '/admin/inicio', label: 'Início', icon: Sparkles },
   { to: '/admin/colaboradores', label: 'Colaboradores', icon: Users },
+  { to: '/admin/gerentes', label: 'Gerentes', icon: ShieldCheck },
+  { to: '/admin/modulos', label: 'Módulos', icon: BookOpen },
   { to: '/admin/termos', label: 'Termos', icon: ScrollText },
+  { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 },
 ]
 
-function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+const NAV_GERENTE: NavEntry[] = [
+  { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/colaboradores', label: 'Minha equipe', icon: Users },
+  { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 },
+]
+
+function initials(name: string) {
+  const p = name.trim().split(/\s+/)
+  return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
+}
+
+function NavItems({ items, onNavigate }: { items: NavEntry[]; onNavigate?: () => void }) {
   return (
     <nav className="flex flex-1 flex-col gap-1">
-      {NAV.map((n) => (
+      {items.map((n) => (
         <NavLink
           key={n.to}
           to={n.to}
+          end
           onClick={onNavigate}
           className={({ isActive }) =>
             `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
@@ -51,6 +67,11 @@ export function AdminSidebar() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
 
+  const session = getAdminSession()
+  const isDono = session?.role === 'dono'
+  const items = isDono ? NAV_DONO : NAV_GERENTE
+  const roleLabel = isDono ? 'Dono' : 'Gerente'
+
   const logout = () => {
     adminLogout()
     navigate('/admin/login', { replace: true })
@@ -65,9 +86,25 @@ export function AdminSidebar() {
         </span>
       </div>
 
-      <NavItems onNavigate={onNavigate} />
+      <NavItems items={items} onNavigate={onNavigate} />
 
-      <div className="mt-auto flex flex-col gap-1 border-t border-[rgba(184,134,11,0.18)] pt-3">
+      <div className="mt-auto flex flex-col gap-2 border-t border-[rgba(184,134,11,0.18)] pt-3">
+        {/* usuário logado */}
+        {session && (
+          <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2.5">
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-[0.8rem] font-bold text-white"
+              style={{ background: 'linear-gradient(135deg,#b8860b,#7a5a07)', fontFamily: 'Playfair Display, serif' }}
+            >
+              {initials(session.nome)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[0.8rem] font-bold text-[var(--cream)]">{session.nome}</p>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--gold-light)]">{roleLabel}</p>
+            </div>
+          </div>
+        )}
+
         <a
           href="/feed"
           target="_blank"

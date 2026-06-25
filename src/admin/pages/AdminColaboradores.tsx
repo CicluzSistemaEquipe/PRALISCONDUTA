@@ -9,14 +9,17 @@ import {
 } from 'lucide-react'
 import { createEmployee, updateEmployee, deleteEmployee } from '@/lib/storage'
 import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
-import { ROLES, type Role } from '@/lib/types'
+import { ROLES, type Role, type AdminUser } from '@/lib/types'
+import { getAdminSession, isDono, listGerentes } from '../auth'
+import { enviarNotificacao } from '@/lib/notifications'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { statusOf } from '../components/StatusBadge'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-function loginLink(token: string): string {
-  return `${window.location.origin}/login?t=${encodeURIComponent(token)}`
+/** Link personalizado de acesso do colaborador (entra autenticado pelo id). */
+function acessoLink(id: string): string {
+  return `${window.location.origin}/acesso?id=${encodeURIComponent(id)}`
 }
 
 function maskCPF(v: string) {
@@ -53,22 +56,24 @@ function roleColor(role: string): [string, string] {
 }
 
 // ── Card de colaborador ───────────────────────────────────────────────────────
-function ColaboradorCard({ row, onCopy, copied, onEdit }: {
+function ColaboradorCard({ row, onCopy, copied, onEdit, gerenteName }: {
   row: EmployeeRow; onCopy: (link: string, id: string) => void; copied: string | null; onEdit: (row: EmployeeRow) => void
+  gerenteName?: string
 }) {
   const [c1, c2]    = roleColor(row.employee.role)
-  const link        = loginLink(row.employee.token)
+  const link        = acessoLink(row.employee.id)
   const isCopied    = copied === row.employee.id
   const status      = statusOf(row)
   const pct         = Math.round(row.progress * 100)
   const quizPct     = row.quizTotal > 0 ? Math.round((row.quizCorrect / row.quizTotal) * 100) : null
 
-  const statusColors = {
-    Assinado:       { text: '#4ade80', bg: 'rgba(74,222,128,0.12)',  border: 'rgba(74,222,128,0.3)',  left: '#4ade80' },
-    Concluído:      { text: '#4ade80', bg: 'rgba(74,222,128,0.12)',  border: 'rgba(74,222,128,0.3)',  left: '#4ade80' },
-    'Em andamento': { text: '#f37435', bg: 'rgba(243,116,53,0.12)',  border: 'rgba(243,116,53,0.3)',  left: '#f37435' },
-    Pendente:       { text: 'rgba(232,207,160,0.5)', bg: 'rgba(232,207,160,0.06)', border: 'rgba(232,207,160,0.15)', left: 'rgba(232,207,160,0.2)' },
-  }[status] ?? { text: 'rgba(232,207,160,0.5)', bg: 'rgba(232,207,160,0.06)', border: 'rgba(232,207,160,0.15)', left: 'rgba(232,207,160,0.2)' }
+  const STATUS_META = {
+    assinou:   { label: 'Assinado',     text: '#4ade80', bg: 'rgba(74,222,128,0.12)',  border: 'rgba(74,222,128,0.3)',  left: '#4ade80' },
+    concluido: { label: 'Concluído',    text: '#4ade80', bg: 'rgba(74,222,128,0.12)',  border: 'rgba(74,222,128,0.3)',  left: '#4ade80' },
+    andamento: { label: 'Em andamento', text: '#f37435', bg: 'rgba(243,116,53,0.12)',  border: 'rgba(243,116,53,0.3)',  left: '#f37435' },
+    pendente:  { label: 'Pendente',     text: 'rgba(232,207,160,0.5)', bg: 'rgba(232,207,160,0.06)', border: 'rgba(232,207,160,0.15)', left: 'rgba(232,207,160,0.2)' },
+  } as const
+  const statusColors = STATUS_META[status]
 
   return (
     <motion.div
@@ -106,6 +111,11 @@ function ColaboradorCard({ row, onCopy, copied, onEdit }: {
           }}>
             {row.employee.role}
           </span>
+          {gerenteName && (
+            <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 9.5, color: 'rgba(232,207,160,0.4)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <ShieldCheck size={9} /> {gerenteName}
+            </p>
+          )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
           <span style={{
@@ -114,7 +124,7 @@ function ColaboradorCard({ row, onCopy, copied, onEdit }: {
             color: statusColors.text, background: statusColors.bg, border: `1px solid ${statusColors.border}`,
             borderRadius: 8, padding: '3px 8px', whiteSpace: 'nowrap' as const,
           }}>
-            {status === 'Assinado' ? '✓ ' : ''}{status}
+            {status === 'assinou' ? '✓ ' : ''}{statusColors.label}
           </span>
           <span style={{
             fontFamily: 'Montserrat, sans-serif', fontSize: 9, color: 'rgba(232,207,160,0.3)',
@@ -204,24 +214,17 @@ function ColaboradorCard({ row, onCopy, copied, onEdit }: {
   )
 }
 
-// ── Stat mini ─────────────────────────────────────────────────────────────────
-function MiniStat({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div style={{ background: 'rgba(22,10,2,0.7)', border: '1px solid rgba(232,207,160,0.1)', borderRadius: 14, padding: '12px 16px' }}>
-      <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 700, color, lineHeight: 1, display: 'block' }}>{value}</span>
-      <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 10, color: 'rgba(232,207,160,0.45)' }}>{label}</span>
-    </div>
-  )
-}
-
 // ── Modal novo colaborador ────────────────────────────────────────────────────
-interface NewEmployee { name: string; cpf: string; start: string; role: Role }
+interface NewEmployee { name: string; cpf: string; start: string; role: Role; gerenteId: string }
 
-function NovoColaboradorModal({ onClose, onSaved }: {
+function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lockGerente }: {
   onClose: () => void
   onSaved: (emp: { name: string; role: string; link: string }) => void
+  gerentes: AdminUser[]
+  defaultGerenteId: string
+  lockGerente: boolean
 }) {
-  const [form, setForm]   = useState<NewEmployee>({ name: '', cpf: '', start: todayISO(), role: ROLES[0] })
+  const [form, setForm]   = useState<NewEmployee>({ name: '', cpf: '', start: todayISO(), role: ROLES[0], gerenteId: defaultGerenteId })
   const [err, setErr]     = useState('')
   const [saving, setSaving] = useState(false)
   const [c1, c2]          = roleColor(form.role)
@@ -237,8 +240,18 @@ function NovoColaboradorModal({ onClose, onSaved }: {
     if (cpf.length !== 11) { setErr('CPF inválido — informe os 11 dígitos.'); return }
     setSaving(true)
     try {
-      const emp = await createEmployee({ name, phone: cpf, role: form.role })
-      const link = loginLink(emp.token)
+      const emp = await createEmployee({ name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined })
+      const link = acessoLink(emp.id)
+      const gerente = gerentes.find((g) => g.id === form.gerenteId)
+      void enviarNotificacao({
+        tipo: 'colaborador_novo',
+        colaboradorNome: emp.name,
+        colaboradorId: emp.id,
+        gerenteNome: gerente?.nome,
+        gerenteEmail: gerente?.email,
+        data: new Date().toISOString(),
+        extra: { cargo: emp.role },
+      })
       onSaved({ name: emp.name, role: emp.role, link })
     } catch {
       setErr('Erro ao cadastrar. Tente novamente.')
@@ -354,6 +367,24 @@ function NovoColaboradorModal({ onClose, onSaved }: {
               </select>
             </div>
 
+            {/* gerente responsável */}
+            <div>
+              <label style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 10, fontWeight: 700, color: 'rgba(232,207,160,0.6)', letterSpacing: '0.12em', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+                <ShieldCheck size={11} /> Gerente responsável
+              </label>
+              <select
+                style={{ ...fieldBase, cursor: lockGerente ? 'not-allowed' : 'pointer', opacity: lockGerente ? 0.7 : 1 }}
+                value={form.gerenteId}
+                disabled={lockGerente}
+                onChange={(e) => setForm((f) => ({ ...f, gerenteId: e.target.value }))}
+              >
+                <option value="" style={{ background: '#1a0a02', color: '#fff' }}>Sem gerente</option>
+                {gerentes.map((g) => (
+                  <option key={g.id} value={g.id} style={{ background: '#1a0a02', color: '#fff' }}>{g.nome}</option>
+                ))}
+              </select>
+            </div>
+
             {/* preview do colaborador */}
             {form.name.trim() && (
               <motion.div
@@ -430,17 +461,20 @@ function NovoColaboradorModal({ onClose, onSaved }: {
 }
 
 // ── Modal editar / excluir colaborador ───────────────────────────────────────
-function EditColaboradorModal({ row, onClose, onSaved, onDeleted }: {
+function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lockGerente }: {
   row: EmployeeRow
   onClose: () => void
   onSaved: () => void
   onDeleted: () => void
+  gerentes: AdminUser[]
+  lockGerente: boolean
 }) {
   const emp = row.employee
   const [form, setForm] = useState({
     name: emp.name,
     cpf:  maskCPF(emp.phone ?? ''),
     role: emp.role as Role,
+    gerenteId: emp.gerenteId ?? '',
   })
   const [saving,  setSaving]  = useState(false)
   const [confirm, setConfirm] = useState(false)
@@ -459,7 +493,7 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted }: {
     if (cpf.length !== 11) { setErr('CPF inválido.'); return }
     setSaving(true)
     try {
-      await updateEmployee(emp.id, { name, phone: cpf, role: form.role })
+      await updateEmployee(emp.id, { name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined })
       onSaved()
     } catch {
       setErr('Erro ao salvar. Tente novamente.')
@@ -478,7 +512,7 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted }: {
     }
   }
 
-  const link = loginLink(emp.token)
+  const link = acessoLink(emp.id)
 
   const fieldBase: React.CSSProperties = {
     width: '100%', background: 'rgba(255,255,255,0.04)',
@@ -560,6 +594,24 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted }: {
                     {ROLES.map((r) => <option key={r} value={r} style={{ background: '#1a0a02', color: '#fff' }}>{r}</option>)}
                   </select>
                 </div>
+              </div>
+
+              {/* gerente responsável */}
+              <div>
+                <label style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 10, fontWeight: 700, color: 'rgba(232,207,160,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+                  <ShieldCheck size={10} /> Gerente responsável
+                </label>
+                <select
+                  style={{ ...fieldBase, cursor: lockGerente ? 'not-allowed' : 'pointer', opacity: lockGerente ? 0.7 : 1 }}
+                  value={form.gerenteId}
+                  disabled={lockGerente}
+                  onChange={(e) => setForm((f) => ({ ...f, gerenteId: e.target.value }))}
+                >
+                  <option value="" style={{ background: '#1a0a02', color: '#fff' }}>Sem gerente</option>
+                  {gerentes.map((g) => (
+                    <option key={g.id} value={g.id} style={{ background: '#1a0a02', color: '#fff' }}>{g.nome}</option>
+                  ))}
+                </select>
               </div>
 
               {/* link de acesso (somente leitura) */}
@@ -994,6 +1046,15 @@ function ChartsSection({ rows }: { rows: EmployeeRow[] }) {
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function AdminColaboradores() {
+  const session = getAdminSession()
+  const dono = isDono()
+  const gerentes = useMemo(() => listGerentes(), [])
+  const gerenteName = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const g of gerentes) map[g.id] = g.nome
+    return map
+  }, [gerentes])
+
   const [rows, setRows]         = useState<EmployeeRow[] | null>(null)
   const [openForm, setOpenForm] = useState(false)
   const [success, setSuccess]   = useState<{ name: string; role: string; link: string } | null>(null)
@@ -1001,8 +1062,12 @@ export default function AdminColaboradores() {
   const [copied, setCopied]     = useState<string | null>(null)
   const [search, setSearch]     = useState('')
 
-  const reload = () => loadEmployeeRows().then(setRows)
-  useEffect(() => { reload() }, [])
+  // Dono vê todos; Gerente vê apenas os colaboradores sob sua responsabilidade.
+  const reload = () =>
+    loadEmployeeRows().then((all) =>
+      setRows(dono ? all : all.filter((r) => r.employee.gerenteId === session?.id)),
+    )
+  useEffect(() => { reload() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const copy = async (link: string, id: string) => {
     try { await navigator.clipboard.writeText(link) } catch { /* noop */ }
@@ -1025,16 +1090,6 @@ export default function AdminColaboradores() {
           r.employee.role.toLowerCase().includes(q))
       : rows
   }, [rows, search])
-
-  const stats = useMemo(() => {
-    const r = rows ?? []
-    return {
-      total:     r.length,
-      andamento: r.filter((e) => e.progress > 0 && !e.signed).length,
-      concluido: r.filter((e) => e.completedModules >= e.totalModules && !e.signed).length,
-      assinado:  r.filter((e) => e.signed).length,
-    }
-  }, [rows])
 
   return (
     <>
@@ -1095,14 +1150,29 @@ export default function AdminColaboradores() {
           className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3"
         >
           {filtered.map((row) => (
-            <ColaboradorCard key={row.employee.id} row={row} onCopy={copy} copied={copied} onEdit={setEditing} />
+            <ColaboradorCard
+              key={row.employee.id}
+              row={row}
+              onCopy={copy}
+              copied={copied}
+              onEdit={setEditing}
+              gerenteName={dono && row.employee.gerenteId ? gerenteName[row.employee.gerenteId] : undefined}
+            />
           ))}
         </motion.div>
       )}
 
       {/* modais */}
       <AnimatePresence>
-        {openForm && <NovoColaboradorModal onClose={() => setOpenForm(false)} onSaved={handleSaved} />}
+        {openForm && (
+          <NovoColaboradorModal
+            onClose={() => setOpenForm(false)}
+            onSaved={handleSaved}
+            gerentes={gerentes}
+            defaultGerenteId={dono ? '' : (session?.id ?? '')}
+            lockGerente={!dono}
+          />
+        )}
       </AnimatePresence>
       <AnimatePresence>
         {success && <SuccessModal {...success} onClose={() => setSuccess(null)} />}
@@ -1114,6 +1184,8 @@ export default function AdminColaboradores() {
             onClose={() => setEditing(null)}
             onSaved={() => { setEditing(null); reload() }}
             onDeleted={() => { setEditing(null); reload() }}
+            gerentes={gerentes}
+            lockGerente={!dono}
           />
         )}
       </AnimatePresence>

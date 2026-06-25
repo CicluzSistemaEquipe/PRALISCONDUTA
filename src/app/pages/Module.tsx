@@ -4,6 +4,7 @@ import { getModule, modulesForRole } from '@/lib/content'
 import { useSession } from '../context/SessionContext'
 import { StoryPlayer } from '../components/StoryPlayer'
 import { getVideoViews, markVideoWatched, saveQuizAnswer } from '@/lib/storage'
+import { registrarEvento } from '@/lib/tracking'
 import type { QuizQuestion } from '@/lib/types'
 
 export default function ModulePage() {
@@ -27,6 +28,14 @@ export default function ModulePage() {
       active = false
     }
   }, [employee])
+
+  // tracking: início do módulo
+  useEffect(() => {
+    if (employee && module) {
+      void registrarEvento({ tipo: 'modulo_inicio', colaboradorId: employee.id, moduloId: module.id })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employee?.id, module?.id])
 
   if (!employee) {
     return <Navigate to="/login" replace />
@@ -55,6 +64,7 @@ export default function ModulePage() {
       correct,
       answered_at: new Date().toISOString(),
     })
+    void registrarEvento({ tipo: 'quiz_resposta', colaboradorId: employee.id, moduloId: moduleId })
   }
 
   const handleQuizReview = (
@@ -87,7 +97,10 @@ export default function ModulePage() {
       watchedVideos={watched}
       onClose={() => navigate('/feed')}
       onIndexChange={(i) => setStoryIndex(module.id, i)}
-      onModuleComplete={() => completeModule(module.id)}
+      onModuleComplete={() => {
+        completeModule(module.id)
+        void registrarEvento({ tipo: 'modulo_conclusao', colaboradorId: employee.id, moduloId: module.id })
+      }}
       onNextModule={nextModule ? () => navigate(`/modulo/${nextModule.id}`) : undefined}
       onQuizAnswer={handleQuizAnswer}
       onQuizReview={handleQuizReview}

@@ -3,9 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion, Reorder } from 'framer-motion'
 import {
   ArrowLeft, Check, Plus, Info, Layers, Video as VideoIcon, HelpCircle,
-  Trash2, ChevronUp, ChevronDown, Users, Film,
+  Trash2, ChevronDown, Users, Film,
   ClipboardList, Flag, MessageSquare, FileText, Sparkles, Eye,
-  Clock, Tag, ToggleLeft, Palette, UploadCloud, FileVideo, X as XIcon,
+  Tag, ToggleLeft, Palette, UploadCloud, FileVideo, X as XIcon,
   GripVertical,
 } from 'lucide-react'
 import { useAdminStore } from '@/lib/adminStore'
@@ -98,7 +98,7 @@ export default function AdminModuloEditor() {
   const [mod,        setMod]        = useState<Module | null>(original ?? null)
   const [tab,        setTab]        = useState<Tab>('info')
   const [sel,        setSel]        = useState(0)
-  const [toast,      setToast]      = useState(false)
+  const [toast]                     = useState(false)
   const [iconsOpen,  setIconsOpen]  = useState(false)
 
   // IDs estáveis por referência de objeto para o Reorder funcionar corretamente
@@ -660,7 +660,7 @@ export default function AdminModuloEditor() {
                   </p>
                   {/* toolbar de adição compacta */}
                   <div style={{ display: 'flex', gap: 6 }}>
-                    {ADD_KINDS.map(({ id: kid, label, Icon, hint }) => (
+                    {ADD_KINDS.map(({ id: kid, label, hint }) => (
                       <button key={kid} title={hint} onClick={() => addSlide(kid)} style={{
                         display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 10, cursor: 'pointer',
                         background: 'rgba(243,116,53,0.1)', border: '1px solid rgba(243,116,53,0.25)',

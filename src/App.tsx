@@ -6,6 +6,7 @@ import { Loading } from './app/components/Loading'
 import { DevToolbar } from './app/components/DevToolbar'
 import { isDevMode } from './lib/devMode'
 import { hasRequiredOnboarding } from './lib/onboarding'
+import { AdminGuard } from './admin/components/AdminGuard'
 
 // code splitting por rota
 const Splash = lazy(() => import('./app/pages/Splash'))
@@ -18,7 +19,7 @@ const Profile = lazy(() => import('./app/pages/Profile'))
 const ModulePage = lazy(() => import('./app/pages/Module'))
 const Completion = lazy(() => import('./app/pages/Completion'))
 
-// Admin CMS
+// Admin CMS (Dono + Gerente)
 const AdminLogin = lazy(() => import('./admin/pages/AdminLogin'))
 const AdminLayout = lazy(() => import('./admin/layout/AdminLayout'))
 const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard'))
@@ -26,15 +27,9 @@ const AdminModulos = lazy(() => import('./admin/pages/AdminModulos'))
 const AdminModuloEditor = lazy(() => import('./admin/pages/AdminModuloEditor'))
 const AdminInicio = lazy(() => import('./admin/pages/AdminInicio'))
 const AdminColaboradores = lazy(() => import('./admin/pages/AdminColaboradores'))
+const AdminGerentes = lazy(() => import('./admin/pages/AdminGerentes'))
 const AdminTermos = lazy(() => import('./admin/pages/AdminTermos'))
-
-// dashboard RH
-const DashLogin = lazy(() => import('./dashboard/pages/DashLogin'))
-const DashLayout = lazy(() => import('./dashboard/pages/DashLayout'))
-const Overview = lazy(() => import('./dashboard/pages/Overview'))
-const Employees = lazy(() => import('./dashboard/pages/Employees'))
-const AddEmployee = lazy(() => import('./dashboard/pages/AddEmployee'))
-const Reports = lazy(() => import('./dashboard/pages/Reports'))
+const AdminAcompanhamento = lazy(() => import('./admin/pages/AdminAcompanhamento'))
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { employee, loading } = useSession()
@@ -106,25 +101,20 @@ function AnimatedRoutes() {
                 </RequireAuth>
               }
             />
-            {/* Admin CMS */}
+            {/* Admin — Dono + Gerente */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="modulos" element={<AdminModulos />} />
-              <Route path="modulos/:id" element={<AdminModuloEditor />} />
-              <Route path="inicio" element={<AdminInicio />} />
               <Route path="colaboradores" element={<AdminColaboradores />} />
-              <Route path="termos" element={<AdminTermos />} />
-            </Route>
-
-            {/* Dashboard RH */}
-            <Route path="/dashboard/login" element={<DashLogin />} />
-            <Route path="/dashboard" element={<DashLayout />}>
-              <Route index element={<Overview />} />
-              <Route path="colaboradores" element={<Employees />} />
-              <Route path="novo" element={<AddEmployee />} />
-              <Route path="relatorios" element={<Reports />} />
+              <Route path="colaboradores/novo" element={<AdminColaboradores />} />
+              <Route path="relatorios" element={<AdminAcompanhamento />} />
+              {/* Somente Dono */}
+              <Route path="gerentes" element={<AdminGuard requireDono><AdminGerentes /></AdminGuard>} />
+              <Route path="modulos" element={<AdminGuard requireDono><AdminModulos /></AdminGuard>} />
+              <Route path="modulos/:id" element={<AdminGuard requireDono><AdminModuloEditor /></AdminGuard>} />
+              <Route path="termos" element={<AdminGuard requireDono><AdminTermos /></AdminGuard>} />
+              <Route path="inicio" element={<AdminGuard requireDono><AdminInicio /></AdminGuard>} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

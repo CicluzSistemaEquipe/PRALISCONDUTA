@@ -4,12 +4,12 @@ import { motion, Reorder } from 'framer-motion'
 import {
   Plus, Pencil, Trash2,
   HelpCircle, Video, Layers, Users, Globe, Award,
-  EyeOff, ToggleRight, GripVertical,
+  GripVertical,
 } from 'lucide-react'
 import { useAdminStore } from '@/lib/adminStore'
 import type { Module } from '@/lib/types'
 import { AdminPageHeader } from '../components/AdminPageHeader'
-import { makeBlankModule, moveItem } from '../lib/modules'
+import { makeBlankModule } from '../lib/modules'
 import { ModuleIcon } from '@/app/components/ModuleIcon'
 
 type SectionKey = 'geral' | 'cargo' | 'final'
@@ -52,8 +52,8 @@ function ContentChip({ icon: Icon, label, accent }: { icon: typeof Layers; label
 }
 
 // ── card de módulo ────────────────────────────────────────────────────────────
-function ModuleCard({ m, i, highlight, cardRef, onToggle, onEdit, onDelete }: {
-  m: Module; i: number
+function ModuleCard({ m, highlight, cardRef, onToggle, onEdit, onDelete }: {
+  m: Module
   highlight?: boolean
   cardRef?: React.Ref<HTMLDivElement>
   onToggle: (id: string) => void
@@ -212,11 +212,6 @@ export default function AdminModulos() {
     }
   }, [savedId])
 
-  const move = (index: number, dir: -1 | 1) => {
-    const ids = mods.map((m) => m.id)
-    reorderModules(moveItem(ids, index, index + dir))
-  }
-
   const createNew = () => {
     const m = makeBlankModule(mods.length + 1)
     saveModule(m)
@@ -327,10 +322,10 @@ export default function AdminModulos() {
                 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
               >
-                {modules.map(({ m, i }) => (
+                {modules.map(({ m }) => (
                   <Reorder.Item as="div" key={m.id} value={m} style={{ listStyle: 'none' }}>
                     <ModuleCard
-                      m={m} i={i}
+                      m={m}
                       highlight={m.id === savedId}
                       cardRef={m.id === savedId ? savedRef : undefined}
                       onToggle={toggleActive}

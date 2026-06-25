@@ -6,6 +6,9 @@ import { TERMS, modulesForRole } from '@/lib/content'
 import { useAdminStore } from '@/lib/adminStore'
 import { useSession } from '../context/SessionContext'
 import { getSignature, saveSignature } from '@/lib/storage'
+import { getAdminUsers } from '@/admin/auth'
+import { enviarNotificacao } from '@/lib/notifications'
+import { registrarEvento } from '@/lib/tracking'
 import type { SignatureRecord } from '@/lib/types'
 import { SproutLogo } from '../components/SproutLogo'
 import { PralisSymbolX } from '../components/PralisSymbol'
@@ -69,6 +72,26 @@ export default function Completion() {
     return { modules: completedModules, totalModules: contentModules.length, quizzes }
   }, [completedModules, contentModules])
 
+  // notifica (uma única vez) quando o colaborador conclui todos os módulos
+  useEffect(() => {
+    if (!employee || !allModulesDone) return
+    const flag = `pralis:notif:treinamento:${employee.id}`
+    if (localStorage.getItem(flag)) return
+    localStorage.setItem(flag, new Date().toISOString())
+    const gerente = employee.gerenteId
+      ? getAdminUsers().find((u) => u.id === employee.gerenteId)
+      : undefined
+    void enviarNotificacao({
+      tipo: 'treinamento_concluido',
+      colaboradorNome: employee.name,
+      colaboradorId: employee.id,
+      gerenteNome: gerente?.nome,
+      gerenteEmail: gerente?.email,
+      data: new Date().toISOString(),
+      extra: { cargo: employee.role, modulos: contentModules.length },
+    })
+  }, [employee, allModulesDone, contentModules.length])
+
   if (!employee) {
     return <Navigate to="/login" replace />
   }
@@ -94,6 +117,21 @@ export default function Completion() {
     fireConfetti(2600)
     soundComplete()
     hapticSuccess()
+
+    // tracking + notificação de assinatura concluída
+    void registrarEvento({ tipo: 'assinatura', colaboradorId: employee.id })
+    const gerente = employee.gerenteId
+      ? getAdminUsers().find((u) => u.id === employee.gerenteId)
+      : undefined
+    void enviarNotificacao({
+      tipo: 'assinatura_concluida',
+      colaboradorNome: employee.name,
+      colaboradorId: employee.id,
+      gerenteNome: gerente?.nome,
+      gerenteEmail: gerente?.email,
+      data: sig.signed_at,
+      extra: { cargo: employee.role },
+    })
   }
 
   if (signature) {
@@ -214,7 +252,7 @@ export default function Completion() {
             transition={{ delay: 0.5, duration: 0.4 }}
             className="mb-6 text-center font-body text-sm italic text-pralis-creme/50"
           >
-            é provar e ser feliz 🌾
+            a prova é ser feliz 🌾
           </motion.p>
 
           {/* ── botão ── */}

@@ -13,6 +13,12 @@ export type Role =
   | 'Estoquista'
   | 'Entregador'
   | 'Serviços Gerais'
+  // Segmentos amplos usados para direcionar módulos em content.ts (não são
+  // cargos selecionáveis — por isso ficam fora de ROLES).
+  | 'Preparo de alimentos'
+  | 'Atendimento ao cliente'
+  | 'Limpeza'
+  | 'Função externa'
 
 export const ROLES: Role[] = [
   'Padeiro',
@@ -34,6 +40,8 @@ export interface Employee {
   role: Role
   token: string
   access_code?: string
+  /** ID do AdminUser com role 'gerente' responsável por este colaborador */
+  gerenteId?: string
   created_at: string
 }
 
@@ -65,6 +73,19 @@ export interface VideoView {
   module_id: string
   video_id: string
   watched_at: string
+}
+
+// ── Controle de acesso (diferente dos cargos de trabalho) ──────────
+export type UserRole = 'dono' | 'gerente' | 'colaborador'
+
+export interface AdminUser {
+  id: string
+  email: string
+  nome: string
+  role: UserRole
+  /** Apenas para gerente: IDs dos colaboradores sob sua responsabilidade */
+  colaboradoresIds?: string[]
+  createdAt: string
 }
 
 // ---------- Conteúdo dos módulos ----------

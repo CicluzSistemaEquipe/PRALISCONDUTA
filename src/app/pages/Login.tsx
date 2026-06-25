@@ -6,6 +6,7 @@ import { AnimatedBackground } from '../components/AnimatedBackground'
 import { Loading } from '../components/Loading'
 import { brand, FILTER_WHITE } from '@/lib/brand'
 import { hasRequiredOnboarding } from '@/lib/onboarding'
+import { registrarEvento } from '@/lib/tracking'
 import { useTheme } from '../context/ThemeContext'
 
 export default function Login() {
@@ -31,6 +32,7 @@ export default function Login() {
     resumeByToken(token)
       .then((emp) => {
         if (!emp) { setStatus('error'); return }
+        void registrarEvento({ tipo: 'login', colaboradorId: emp.id })
         // redireciona para onboarding (primeira vez) ou feed (já viu)
         navigate(hasRequiredOnboarding(emp.id) ? '/feed' : '/conheca?entry=1', { replace: true })
       })

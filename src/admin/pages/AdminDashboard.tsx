@@ -6,7 +6,9 @@ import {
 } from 'lucide-react'
 import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
 import { useAdminStore } from '@/lib/adminStore'
+import { getAdminSession, isDono } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
+import { StatusBadge, statusOf } from '../components/StatusBadge'
 
 // ── paleta ────────────────────────────────────────────────────────────────────
 const C = {
@@ -215,8 +217,8 @@ function LineChart({
   )
 }
 
-// ── componente principal ──────────────────────────────────────────────────────
-export default function AdminDashboard() {
+// ── Dashboard do Dono (visão global) ──────────────────────────────────────────
+function DonoDashboard() {
   const { data } = useAdminStore()
   const [rows, setRows] = useState<EmployeeRow[] | null>(null)
 
@@ -485,4 +487,121 @@ export default function AdminDashboard() {
 
     </>
   )
+}
+
+// ── Dashboard do Gerente (apenas a equipe sob responsabilidade) ────────────────
+function GerenteDashboard() {
+  const session = getAdminSession()
+  const [rows, setRows] = useState<EmployeeRow[] | null>(null)
+
+  useEffect(() => {
+    let active = true
+    loadEmployeeRows().then((all) => {
+      if (active) setRows(all.filter((r) => r.employee.gerenteId === session?.id))
+    })
+    return () => { active = false }
+  }, [session?.id])
+
+  const team = rows ?? []
+  const concluded = team.filter((e) => e.totalModules > 0 && e.completedModules >= e.totalModules).length
+  const signed = team.filter((e) => e.signed).length
+  const avg = team.length ? Math.round((team.reduce((a, e) => a + e.progress, 0) / team.length) * 100) : 0
+
+  const kpiCards = [
+    { label: 'Minha equipe',   value: team.length,                       sub: 'colaboradores',                  icon: Users,        accent: C.gold   },
+    { label: 'Concluíram',     value: `${pct(concluded, team.length)}%`, sub: `${concluded}/${team.length} pessoas`, icon: CheckCircle2, accent: C.orange },
+    { label: 'Assinaram',      value: `${pct(signed, team.length)}%`,    sub: `${signed}/${team.length} pessoas`,    icon: PenLine,      accent: C.green  },
+    { label: 'Progresso médio',value: `${avg}%`,                         sub: 'da equipe',                      icon: TrendingUp,   accent: C.goldLt },
+  ]
+
+  const card: React.CSSProperties = { background: C.card, border: `1px solid ${C.stroke}`, borderRadius: 18, padding: '18px 20px' }
+  const statVal: React.CSSProperties = { fontFamily: 'Playfair Display, serif', fontSize: 32, fontWeight: 700, color: C.cream, lineHeight: 1 }
+  const statSub: React.CSSProperties = { fontFamily: 'Montserrat, sans-serif', fontSize: 11, color: C.muted, marginTop: 2 }
+
+  return (
+    <>
+      <AdminPageHeader
+        eyebrow={session ? session.nome : 'Gerente'}
+        title="Minha equipe"
+        description="Acompanhe o progresso dos colaboradores sob sua responsabilidade."
+      />
+
+      {/* KPIs */}
+      <motion.div
+        initial="hidden" animate="visible"
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+        className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4"
+      >
+        {kpiCards.map((k) => (
+          <motion.div key={k.label}
+            variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0 } }}
+            style={{ ...card, borderColor: `${k.accent}28` }}
+          >
+            <div style={{
+              width: 36, height: 36, borderRadius: 10, marginBottom: 12,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: `${k.accent}18`, border: `1px solid ${k.accent}38`,
+            }}>
+              <k.icon style={{ width: 16, height: 16, color: k.accent }} />
+            </div>
+            <div style={statVal}>{rows === null ? '—' : k.value}</div>
+            <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 11, fontWeight: 700, color: C.cream, marginTop: 4 }}>{k.label}</div>
+            <div style={statSub}>{k.sub}</div>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* tabela clara da equipe */}
+      <div className="adm-card overflow-hidden">
+        {rows === null ? (
+          <div className="px-5 py-6 text-sm text-[var(--cream-muted)]">Carregando…</div>
+        ) : team.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-[var(--cream-muted)]">
+            Nenhum colaborador vinculado a você ainda.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="adm-table">
+              <thead>
+                <tr>
+                  <th>Colaborador</th>
+                  <th>Cargo</th>
+                  <th className="w-[26%]">Progresso</th>
+                  <th>Quiz</th>
+                  <th>Assinou</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {team.map((r) => {
+                  const p = Math.round(r.progress * 100)
+                  const quizPct = r.quizTotal > 0 ? Math.round((r.quizCorrect / r.quizTotal) * 100) : null
+                  return (
+                    <tr key={r.employee.id}>
+                      <td className="font-semibold text-white">{r.employee.name}</td>
+                      <td className="text-[var(--cream-muted)]">{r.employee.role}</td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="adm-pbar flex-1"><i style={{ width: `${p}%` }} /></div>
+                          <span className="w-12 text-right text-xs text-[var(--cream-muted)]">{r.completedModules}/{r.totalModules}</span>
+                        </div>
+                      </td>
+                      <td className="text-xs text-[var(--cream-muted)]">{quizPct != null ? `${quizPct}%` : '—'}</td>
+                      <td className="text-xs text-[var(--cream-muted)]">{r.signed ? 'Sim' : 'não'}</td>
+                      <td><StatusBadge status={statusOf(r)} /></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+// ── seletor por papel ──────────────────────────────────────────────────────────
+export default function AdminDashboard() {
+  return isDono() ? <DonoDashboard /> : <GerenteDashboard />
 }
