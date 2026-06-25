@@ -343,7 +343,7 @@ export default function Onboarding() {
   const total = reviewMode ? STORIES.length + 1 : STORIES.length + 2
   const finish = useCallback(() => {
     if (reviewMode) {
-      navigate('/lis', { replace: true })
+      navigate('/perfil', { replace: true })
       return
     }
     const current = employee?.id ?? localStorage.getItem('pralis:current-employee')
