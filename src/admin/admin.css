@@ -95,6 +95,8 @@
 .adm-divider { height: 1px; background: var(--border); border: 0; }
 
 /* ---------- Títulos ---------- */
+/* Admin é SaaS clean: toda heading em Montserrat (sem a fonte display da marca). */
+.adm-root h1, .adm-root h2, .adm-root h3, .adm-root h4 { font-family: 'Montserrat', system-ui, sans-serif; }
 .adm-h1 { font-family: 'Montserrat', sans-serif; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
 .adm-eyebrow {
   font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em;
