@@ -62,6 +62,13 @@ export interface QuizAnswerRecord {
   reviewed_at?: string
 }
 
+export interface PollAnswerRecord {
+  module_id: string
+  question: string
+  selected: string[]
+  answered_at: string
+}
+
 export interface SignatureRecord {
   signed_at: string
   ip_address: string | null
@@ -155,6 +162,8 @@ export type Story =
     }
   | { type: 'summary'; title: string; bullets: string[] }
   | ({ type: 'quiz' } & QuizConfig)
+  // Enquete (aditivo): coleta a opinião do colaborador, sem resposta certa/errada.
+  | { type: 'poll'; question: string; options: string[]; allowMultiple?: boolean; anonymous?: boolean }
   | { type: 'completion'; badge: string; message: string }
 
 export type ModuleIconType = 'flower' | 'sprout' | 'grain' | 'wheat' | 'bread' | 'croissant' | 'cake' | 'star' | 'heart' | 'chef'

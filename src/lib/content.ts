@@ -1,4 +1,5 @@
 import type { Module, ModuleIconType, Story } from './types'
+import { isDevMode } from './devMode'
 
 // ============================================================
 // CONTEÚDO DOS MÓDULOS
@@ -1123,32 +1124,175 @@ function applyRuntimeContentOverrides(module: Module): Module {
   }
 }
 
+/**
+ * Módulo de teste (Fase 0) — exercita TODOS os tipos de story usando a lógica
+ * atual: fala da Lis (com vídeo), texto sincronizado (áudio), destaque, resumo,
+ * vídeo MP4, quiz e enquete (poll). Só aparece em modo dev (?dev=1); não afeta
+ * o fluxo do colaborador real. Mídia referencia assets já existentes em /public.
+ */
+const TEST_MODULE: Module = {
+  id: 'modulo-teste',
+  title: 'Módulo de Teste (Fase 0)',
+  icon: 'Sparkles',
+  color: '#f37435',
+  estimatedMinutes: 4,
+  mandatory: false,
+  roles: 'all',
+  section: 'geral',
+  description: 'Valida o fluxo completo de conteúdo localmente: Lis, áudio, texto sincronizado, vídeo MP4, quiz e enquete.',
+  number: 'T1',
+  gradient: ['#3a1d15', '#1f0f0a'],
+  accent: '#f37435',
+  iconType: 'star',
+  tag: 'TESTE',
+  subtitle: 'Fluxo de conteúdo completo',
+  kind: 'stories',
+  active: true,
+  stories: [
+    {
+      type: 'lis',
+      state: 'talking',
+      videoSrc: '/lis-conduta1.mp4',
+      text: 'Oi! Este é um módulo de teste. Vou te mostrar cada tipo de conteúdo: minha fala, texto narrado, vídeo, quiz e uma enquete. Bora?',
+    },
+    {
+      type: 'text',
+      tag: 'Texto sincronizado',
+      title: 'Leitura narrada',
+      paragraphs: [
+        'Este parágrafo é acompanhado por áudio. Conforme a narração avança, a leitura é destacada palavra a palavra.',
+        'Quando o áudio terminar, o avanço é liberado — exatamente como nos módulos reais.',
+      ],
+      highlights: ['áudio', 'narração'],
+      audioSrc: '/audio-boas-vindas-codigo-existe.mp3',
+      audioIncludesTitle: false,
+    },
+    {
+      type: 'text',
+      tag: 'Destaque',
+      title: 'Frase em destaque',
+      paragraphs: ['Cards de texto podem ter uma frase de destaque ao final, reforçando a mensagem principal.'],
+      highlight: 'A qualidade está nos detalhes.',
+    },
+    {
+      type: 'summary',
+      title: 'Resumo rápido',
+      bullets: [
+        'Fala da Lis com vídeo',
+        'Texto sincronizado com áudio',
+        'Vídeo MP4 com gate de avanço',
+        'Quiz adaptativo e enquete',
+      ],
+    },
+    {
+      type: 'video',
+      videoId: 'modulo-teste-video',
+      title: 'Vídeo de demonstração',
+      description: 'um clipe curto em MP4',
+      duration: '0:20',
+      src: '/videocirculo-dashboard.mp4',
+    },
+    {
+      type: 'quiz',
+      intro: {
+        eyebrow: 'Quiz',
+        title: 'Vamos testar?',
+        description: 'Duas perguntas rápidas para validar o fluxo de quiz.',
+        cta: 'Começar',
+      },
+      sampleSize: 2,
+      randomize: true,
+      questions: [
+        {
+          id: 'mt-q1',
+          prompt: 'Qual tipo de conteúdo acompanha a leitura com narração?',
+          options: ['Texto sincronizado', 'Vídeo', 'Enquete'],
+          correctIndex: 0,
+          explain: 'O card de texto com áudio sincroniza a leitura com a narração.',
+          reviewTarget: { storyIndex: 1, label: 'Rever o texto sincronizado' },
+        },
+        {
+          id: 'mt-q2',
+          prompt: 'A enquete tem resposta certa ou errada?',
+          options: ['Tem resposta certa', 'Não tem — é opinião', 'Depende do cargo'],
+          correctIndex: 1,
+          explain: 'A enquete coleta a opinião do colaborador, sem certo ou errado.',
+          reviewTarget: { storyIndex: 3, label: 'Rever o resumo' },
+        },
+      ],
+    },
+    {
+      type: 'poll',
+      question: 'Como você avalia este módulo de teste?',
+      options: ['Muito bom', 'Bom', 'Pode melhorar'],
+    },
+    {
+      type: 'completion',
+      badge: 'Fluxo Validado',
+      message: 'Você percorreu todos os tipos de conteúdo. O fluxo local está funcionando!',
+    },
+  ],
+}
+
+/** Em modo dev, anexa o módulo de teste à lista (não afeta colaboradores reais). */
+function withTestModule(mods: Module[]): Module[] {
+  return isDevMode() ? [...mods, TEST_MODULE] : mods
+}
+
 function activeModules(): Module[] {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(ADMIN_DATA_KEY) : null
     if (raw) {
       const parsed = JSON.parse(raw) as { modules?: Module[] }
       if (Array.isArray(parsed.modules) && parsed.modules.length) {
-        return parsed.modules
-          .filter((m) => m.active !== false)
-          .map((m) => ({
-            ...m,
-            stories: prepareStories(m),
-          }))
-          .map(applyRuntimeContentOverrides)
+        return withTestModule(
+          parsed.modules
+            .filter((m) => m.active !== false)
+            .map((m) => ({
+              ...m,
+              stories: prepareStories(m),
+            }))
+            .map(applyRuntimeContentOverrides),
+        )
       }
     }
   } catch {
     /* fallback para o conteúdo padrão */
   }
-  return MODULES.map(applyRuntimeContentOverrides)
+  return withTestModule(MODULES.map(applyRuntimeContentOverrides))
 }
 
-/** Módulos visíveis para um cargo: gerais + os específicos do cargo. */
+/**
+ * Mapa cargo → segmentos de treinamento.
+ *
+ * Os 5 módulos de seção 'cargo' têm `roles` por SEGMENTO amplo
+ * (ex.: ['Preparo de alimentos']), mas o `employee.role` é sempre um dos 10
+ * cargos selecionáveis (ROLES). Sem este mapa, só 'Caixa' casaria (porque o
+ * módulo `caixa` usa roles ['Caixa']); os demais cargos não receberiam o
+ * módulo de cargo correto. Este mapa traduz cargo → segmento(s).
+ *
+ * Cargos sem entrada (Caixa, Gerente de Loja, Estoquista) seguem o casamento
+ * direto por nome do cargo — preservando o comportamento atual.
+ */
+const ROLE_SEGMENTS: Record<string, string[]> = {
+  Padeiro: ['Preparo de alimentos'],
+  Confeiteiro: ['Preparo de alimentos'],
+  'Auxiliar de Cozinha': ['Preparo de alimentos'],
+  'Auxiliar de Produção': ['Preparo de alimentos'],
+  'Atendente de Balcão': ['Atendimento ao cliente'],
+  Entregador: ['Função externa'],
+  'Serviços Gerais': ['Limpeza'],
+}
+
+/** Módulos visíveis para um cargo: gerais + os específicos do cargo/segmento. */
 export function modulesForRole(role: string | null): Module[] {
+  const segments = role ? ROLE_SEGMENTS[role] ?? [] : []
   return activeModules().filter((m) => {
     if (m.roles === 'all') return true
-    return role ? m.roles.includes(role as never) : false
+    if (!role) return false
+    const roles = m.roles as string[]
+    if (roles.includes(role)) return true
+    return segments.some((seg) => roles.includes(seg))
   })
 }
 

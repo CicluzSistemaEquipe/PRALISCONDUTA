@@ -10,6 +10,7 @@ import { supabase, hasSupabase } from './supabase'
 import type {
   Employee,
   ModuleProgress,
+  PollAnswerRecord,
   QuizAnswerRecord,
   SignatureRecord,
   Role,
@@ -19,6 +20,7 @@ const LS = {
   employees: 'pralis:employees',
   progress: (id: string) => `pralis:progress:${id}`,
   quiz: (id: string) => `pralis:quiz:${id}`,
+  poll: (id: string) => `pralis:poll:${id}`,
   signature: (id: string) => `pralis:signature:${id}`,
   videos: (id: string) => `pralis:videos:${id}`,
 }
@@ -271,6 +273,22 @@ export async function getQuizAnswers(employeeId: string): Promise<QuizAnswerReco
     return (data as QuizAnswerRecord[]) ?? []
   }
   return read<QuizAnswerRecord[]>(LS.quiz(employeeId), [])
+}
+
+// ------------------------------------------------------------
+// Enquetes (poll) — opinião do colaborador, sem certo/errado.
+// Persistência local por enquanto (sem tabela Supabase nesta etapa).
+
+export async function savePollAnswer(employeeId: string, a: PollAnswerRecord): Promise<void> {
+  const all = read<PollAnswerRecord[]>(LS.poll(employeeId), [])
+  const idx = all.findIndex((item) => item.module_id === a.module_id && item.question === a.question)
+  if (idx >= 0) all[idx] = a
+  else all.push(a)
+  write(LS.poll(employeeId), all)
+}
+
+export async function getPollAnswers(employeeId: string): Promise<PollAnswerRecord[]> {
+  return read<PollAnswerRecord[]>(LS.poll(employeeId), [])
 }
 
 // ------------------------------------------------------------

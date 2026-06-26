@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { getModule, modulesForRole } from '@/lib/content'
 import { useSession } from '../context/SessionContext'
 import { StoryPlayer } from '../components/StoryPlayer'
-import { getVideoViews, markVideoWatched, saveQuizAnswer } from '@/lib/storage'
+import { getVideoViews, markVideoWatched, savePollAnswer, saveQuizAnswer } from '@/lib/storage'
 import { registrarEvento } from '@/lib/tracking'
 import type { QuizQuestion } from '@/lib/types'
 
@@ -89,6 +89,15 @@ export default function ModulePage() {
     setWatched((prev) => new Set(prev).add(videoId))
   }
 
+  const handlePollAnswer = (moduleId: string, question: string, selected: string[]) => {
+    void savePollAnswer(employee.id, {
+      module_id: moduleId,
+      question,
+      selected,
+      answered_at: new Date().toISOString(),
+    })
+  }
+
   return (
     <StoryPlayer
       module={module}
@@ -104,6 +113,7 @@ export default function ModulePage() {
       onNextModule={nextModule ? () => navigate(`/modulo/${nextModule.id}`) : undefined}
       onQuizAnswer={handleQuizAnswer}
       onQuizReview={handleQuizReview}
+      onPollAnswer={handlePollAnswer}
       onVideoWatched={handleVideoWatched}
     />
   )

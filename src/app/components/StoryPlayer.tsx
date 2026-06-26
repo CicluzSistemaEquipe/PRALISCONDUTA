@@ -12,6 +12,7 @@ import { TextCard } from './TextCard'
 import { VideoCard } from './VideoCard'
 import { SummaryCard } from './SummaryCard'
 import { QuizCard, type QuizRuntimeState } from './QuizCard'
+import { PollCard } from './PollCard'
 import { CompletionCard } from './CompletionCard'
 
 interface StoryPlayerProps {
@@ -23,6 +24,7 @@ interface StoryPlayerProps {
   onNextModule?: () => void
   onQuizAnswer: (moduleId: string, q: QuizQuestion, selectedIndex: number, correct: boolean) => void
   onQuizReview?: (moduleId: string, q: QuizQuestion, selectedIndex: number, correct: boolean) => void
+  onPollAnswer?: (moduleId: string, question: string, selected: string[]) => void
   onVideoWatched: (moduleId: string, videoId: string) => void
   watchedVideos: Set<string>
   quizSeed?: string
@@ -35,6 +37,7 @@ function storyPatternAssets(story: Story, index: number) {
     video: [brand.simboloPar, brand.simboloEspiga],
     summary: [brand.simboloPar, brand.symbolUrl],
     quiz: [brand.simboloEspiga, brand.simboloPar],
+    poll: [brand.simboloEspiga, brand.simboloPar],
     completion: [brand.simboloPar, brand.simboloEspiga],
   }
   const assets = byType[story.type]
@@ -53,6 +56,7 @@ export function StoryPlayer({
   onNextModule,
   onQuizAnswer,
   onQuizReview,
+  onPollAnswer,
   onVideoWatched,
   watchedVideos,
   quizSeed,
@@ -164,6 +168,7 @@ export function StoryPlayer({
   const showNextArrow =
     story.type !== 'lis' &&
     story.type !== 'quiz' &&
+    story.type !== 'poll' &&
     story.type !== 'completion' &&
     story.type !== 'video' &&
     !(story.type === 'text' && story.audioSrc)
@@ -283,6 +288,7 @@ export function StoryPlayer({
               onNextModule={onNextModule}
               onQuizAnswer={handleQuizAnswer}
               onQuizReview={(q, sel, ok) => onQuizReview?.(module.id, q, sel, ok)}
+              onPollAnswer={(question, selected) => onPollAnswer?.(module.id, question, selected)}
               onReviewStory={(storyIndex) => go(storyIndex, -1)}
               quizState={quizStates[index]}
               onQuizStateChange={(state) => setQuizStates((prev) => ({ ...prev, [index]: state }))}
@@ -358,6 +364,7 @@ interface StoryContentProps {
   onNextModule?: () => void
   onQuizAnswer: (q: QuizQuestion, selectedIndex: number, correct: boolean) => void
   onQuizReview: (q: QuizQuestion, selectedIndex: number, correct: boolean) => void
+  onPollAnswer: (question: string, selected: string[]) => void
   onReviewStory: (storyIndex: number) => void
   quizState?: QuizRuntimeState
   onQuizStateChange: (state: QuizRuntimeState) => void
@@ -380,6 +387,7 @@ function StoryContent({
   onNextModule,
   onQuizAnswer,
   onQuizReview,
+  onPollAnswer,
   onReviewStory,
   quizState,
   onQuizStateChange,
@@ -452,6 +460,17 @@ function StoryContent({
           initialState={quizState}
           onStateChange={onQuizStateChange}
           accent={accent}
+        />
+      )
+    case 'poll':
+      return (
+        <PollCard
+          question={story.question}
+          options={story.options}
+          allowMultiple={story.allowMultiple}
+          accent={accent}
+          onAnswer={(selected) => onPollAnswer(story.question, selected)}
+          onNext={onNext}
         />
       )
     case 'completion':
