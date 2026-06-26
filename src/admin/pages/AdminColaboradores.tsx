@@ -16,10 +16,10 @@ import { StatusBadge, statusOf } from '../components/StatusBadge'
 import { EmptyState, Skeleton } from '../components/ui'
 
 // ── helpers ─────────────────────────────────────────────────────────────────
-function acessoLink(id: string) {
+export function acessoLink(id: string) {
   return `${window.location.origin}/acesso?id=${encodeURIComponent(id)}`
 }
-function waLink(name: string, link: string) {
+export function waLink(name: string, link: string) {
   const msg = `Olá, ${name.split(' ')[0]}! 👋\n\nAqui está o seu link de acesso ao treinamento da Padaria Pralís:\n\n${link}\n\nClique no link para começar a sua jornada! 🥐`
   return `https://wa.me/?text=${encodeURIComponent(msg)}`
 }
@@ -474,10 +474,10 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof Mail; label: strin
   )
 }
 
-// ── Modal: visão 360° do colaborador (interligado) ───────────────────────────
-function ColaboradorDetailModal({ row, gerenteName, onClose, onEdit, onCopy, copied }: {
+// ── Modal: visão 360° do colaborador (interligado, reutilizável) ─────────────
+export function ColaboradorDetailModal({ row, gerenteName, onClose, onEdit, onCopy, copied }: {
   row: EmployeeRow; gerenteName?: string
-  onClose: () => void; onEdit: (r: EmployeeRow) => void; onCopy: (link: string, id: string) => void; copied: string | null
+  onClose: () => void; onEdit?: (r: EmployeeRow) => void; onCopy: (link: string, id: string) => void; copied: string | null
 }) {
   const emp = row.employee
   const link = acessoLink(emp.id)
@@ -581,9 +581,11 @@ function ColaboradorDetailModal({ row, gerenteName, onClose, onEdit, onCopy, cop
           className="adm-btn flex-1 no-underline border-[#cdebd9] bg-[#ecf7f0] text-[#1e7e4e]">
           <MessageCircle className="h-4 w-4" /> WhatsApp
         </a>
-        <button onClick={() => onEdit(row)} className="adm-btn adm-btn--primary flex-1">
-          <Pencil className="h-4 w-4" /> Editar
-        </button>
+        {onEdit && (
+          <button onClick={() => onEdit(row)} className="adm-btn adm-btn--primary flex-1">
+            <Pencil className="h-4 w-4" /> Editar
+          </button>
+        )}
       </div>
     </ModalShell>
   )

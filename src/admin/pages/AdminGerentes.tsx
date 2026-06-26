@@ -2,12 +2,24 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Plus, X, Mail, User, Lock, Users, Trash2, ShieldCheck, AlertTriangle, UserCog,
+  MessageCircle, Copy, Check, ChevronRight, FileSignature,
 } from 'lucide-react'
-import { listEmployees } from '@/lib/storage'
-import type { AdminUser, Employee } from '@/lib/types'
+import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
+import type { AdminUser } from '@/lib/types'
 import { listGerentes, addGerente, removeGerente } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { EmptyState, Skeleton } from '../components/ui'
+import { StatusBadge, statusOf } from '../components/StatusBadge'
+import { ColaboradorDetailModal, acessoLink, waLink } from './AdminColaboradores'
+
+type TeamFilter = 'todos' | 'pendentes' | 'emdia' | 'assinou'
+const TEAM_FILTERS: { id: TeamFilter; label: string }[] = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'pendentes', label: 'Pendentes' },
+  { id: 'emdia', label: 'Em dia' },
+  { id: 'assinou', label: 'Assinaram' },
+]
+const isEmDia = (r: EmployeeRow) => r.progress >= 1 && r.signed
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function initials(name: string) {
@@ -172,11 +184,13 @@ function RemoverGerenteModal({ gerente, count, onClose, onConfirm }: {
 }
 
 // ── Linha da tabela (desktop) ────────────────────────────────────────────────
-function GerenteRow({ gerente, count, onRemove }: {
-  gerente: AdminUser; count: number; onRemove: (g: AdminUser) => void
+function GerenteRow({ gerente, count, pendentes, onRemove, onOpen }: {
+  gerente: AdminUser; count: number; pendentes: number; onRemove: (g: AdminUser) => void; onOpen: (g: AdminUser) => void
 }) {
   return (
-    <tr className="group">
+    <tr className="group cursor-pointer" tabIndex={0} aria-label={`Ver equipe de ${gerente.nome}`}
+      onClick={() => onOpen(gerente)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(gerente) } }}>
       <td>
         <div className="flex items-center gap-3">
           <Avatar name={gerente.nome} />
@@ -196,9 +210,25 @@ function GerenteRow({ gerente, count, onRemove }: {
         </div>
       </td>
       <td>
-        <div className="flex items-center justify-end opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+        {pendentes > 0 ? (
+          <span className="inline-flex items-center rounded-full border border-[#f5e2c0] bg-[#fdf4e3] px-2.5 py-0.5 text-[0.72rem] font-semibold text-[#9a6b15]">
+            {pendentes} pendente{pendentes === 1 ? '' : 's'}
+          </span>
+        ) : count > 0 ? (
+          <span className="inline-flex items-center rounded-full border border-[#cdebd9] bg-[#ecf7f0] px-2.5 py-0.5 text-[0.72rem] font-semibold text-[#1e7e4e]">
+            Equipe em dia
+          </span>
+        ) : (
+          <span className="text-[0.78rem] text-[var(--text-muted)]">—</span>
+        )}
+      </td>
+      <td onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1">
+          <span className="hidden items-center gap-1 text-[0.75rem] font-medium text-[var(--text-muted)] group-hover:flex">
+            Ver equipe <ChevronRight className="h-3.5 w-3.5" />
+          </span>
           <button onClick={() => onRemove(gerente)} aria-label={`Remover ${gerente.nome}`} title="Remover gerente"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--danger-bg)] hover:text-[var(--danger)]">
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] opacity-0 transition-opacity hover:bg-[var(--danger-bg)] hover:text-[var(--danger)] group-hover:opacity-100 focus-within:opacity-100">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -208,59 +238,205 @@ function GerenteRow({ gerente, count, onRemove }: {
 }
 
 // ── Card (mobile) ────────────────────────────────────────────────────────────
-function GerenteCardMobile({ gerente, count, onRemove }: {
-  gerente: AdminUser; count: number; onRemove: (g: AdminUser) => void
+function GerenteCardMobile({ gerente, count, pendentes, onRemove, onOpen }: {
+  gerente: AdminUser; count: number; pendentes: number; onRemove: (g: AdminUser) => void; onOpen: (g: AdminUser) => void
 }) {
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-white p-4">
+    <div className="rounded-xl border border-[var(--border)] bg-white p-4" onClick={() => onOpen(gerente)}>
       <div className="flex items-start gap-3">
         <Avatar name={gerente.nome} size={40} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-[var(--ink)]">{gerente.nome}</p>
           <p className="truncate text-[0.8125rem] text-[var(--text-muted)]">{gerente.email}</p>
         </div>
-        <span className="adm-badge adm-badge--muted shrink-0">Gerente</span>
+        <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-muted)]" />
       </div>
       <div className="mt-3 flex items-center gap-2 rounded-lg bg-[var(--bg-subtle)] px-3 py-2.5">
         <Users className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={1.8} />
-        <span className="text-[0.8125rem] text-[var(--text-secondary)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-          <strong className="text-[var(--ink)]">{count}</strong> {count === 1 ? 'colaborador' : 'colaboradores'} sob responsabilidade
+        <span className="flex-1 text-[0.8125rem] text-[var(--text-secondary)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <strong className="text-[var(--ink)]">{count}</strong> {count === 1 ? 'colaborador' : 'colaboradores'}
         </span>
+        {pendentes > 0 ? (
+          <span className="rounded-full border border-[#f5e2c0] bg-[#fdf4e3] px-2 py-0.5 text-[0.7rem] font-semibold text-[#9a6b15]">{pendentes} pend.</span>
+        ) : count > 0 ? (
+          <span className="rounded-full border border-[#cdebd9] bg-[#ecf7f0] px-2 py-0.5 text-[0.7rem] font-semibold text-[#1e7e4e]">Em dia</span>
+        ) : null}
       </div>
-      <button onClick={() => onRemove(gerente)}
-        className="adm-btn adm-btn--danger mt-3 h-9 w-full">
-        <Trash2 className="h-4 w-4" /> Remover gerente
-      </button>
+      <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
+        <button onClick={() => onOpen(gerente)} className="adm-btn adm-btn--primary h-9 flex-1">
+          <Users className="h-4 w-4" /> Ver equipe
+        </button>
+        <button onClick={() => onRemove(gerente)} aria-label="Remover gerente" className="adm-btn adm-btn--danger h-9 w-9 shrink-0 px-0">
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
     </div>
+  )
+}
+
+// ── Item da equipe (dentro do drill-down) ────────────────────────────────────
+function TeamMemberItem({ row, onOpen, onCopy, copied }: {
+  row: EmployeeRow; onOpen: (r: EmployeeRow) => void; onCopy: (link: string, id: string) => void; copied: string | null
+}) {
+  const pct = Math.round(row.progress * 100)
+  const link = acessoLink(row.employee.id)
+  const isCopied = copied === row.employee.id
+  return (
+    <div className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-white p-3 transition-colors hover:border-[var(--border-strong)]"
+      role="button" tabIndex={0} onClick={() => onOpen(row)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(row) } }}>
+      <Avatar name={row.employee.name} size={36} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[0.875rem] font-semibold text-[var(--ink)]">{row.employee.name}</p>
+        <div className="mt-1 flex items-center gap-2">
+          <div className="adm-pbar w-20"><i style={{ width: `${pct}%` }} /></div>
+          <span className="text-[0.7rem] text-[var(--text-muted)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{row.completedModules}/{row.totalModules}</span>
+        </div>
+      </div>
+      <StatusBadge status={statusOf(row)} />
+      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <button onClick={() => onCopy(link, row.employee.id)} title="Copiar link"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
+          {isCopied ? <Check className="h-4 w-4 text-[var(--success)]" /> : <Copy className="h-4 w-4" />}
+        </button>
+        <a href={waLink(row.employee.name, link)} target="_blank" rel="noopener noreferrer" title="WhatsApp"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[#1e7e4e] hover:bg-[#ecf7f0]">
+          <MessageCircle className="h-4 w-4" />
+        </a>
+        <ChevronRight className="h-4 w-4 text-[var(--text-muted)]" />
+      </div>
+    </div>
+  )
+}
+
+function TeamStat({ value, label, tone }: { value: ReactNode; label: string; tone?: 'amber' | 'green' }) {
+  const color = tone === 'amber' ? 'text-[#9a6b15]' : tone === 'green' ? 'text-[#1e7e4e]' : 'text-[var(--ink)]'
+  return (
+    <div className="rounded-lg border border-[var(--border)] bg-white px-2 py-2.5 text-center">
+      <p className={`text-[1.15rem] font-bold ${color}`} style={{ fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+      <p className="text-[0.66rem] text-[var(--text-muted)]">{label}</p>
+    </div>
+  )
+}
+
+// ── Modal: visão 360° do gerente (equipe interligada) ────────────────────────
+function GerenteDetailModal({ gerente, team, onClose, onOpenColab, onCopy, copied }: {
+  gerente: AdminUser; team: EmployeeRow[]
+  onClose: () => void; onOpenColab: (r: EmployeeRow) => void; onCopy: (link: string, id: string) => void; copied: string | null
+}) {
+  const [filter, setFilter] = useState<TeamFilter>('todos')
+  const total = team.length
+  const emDia = team.filter(isEmDia).length
+  const assinaram = team.filter((r) => r.signed).length
+  const pendentes = total - emDia
+  const avg = total ? Math.round((team.reduce((s, r) => s + r.progress, 0) / total) * 100) : 0
+
+  const filtered = team.filter((r) => {
+    if (filter === 'pendentes') return !isEmDia(r)
+    if (filter === 'emdia') return isEmDia(r)
+    if (filter === 'assinou') return r.signed
+    return true
+  })
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Avatar name={gerente.nome} size={48} />
+          <div className="min-w-0">
+            <h2 className="truncate text-[1.15rem] font-semibold text-[var(--ink)]">{gerente.nome}</h2>
+            <p className="truncate text-[0.8125rem] text-[var(--text-muted)]">{gerente.email}</p>
+          </div>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Fechar"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
+          <X className="h-[18px] w-[18px]" />
+        </button>
+      </div>
+
+      {/* status geral da equipe */}
+      <div className="grid grid-cols-4 gap-2">
+        <TeamStat value={total} label="Equipe" />
+        <TeamStat value={emDia} label="Em dia" tone={emDia > 0 ? 'green' : undefined} />
+        <TeamStat value={pendentes} label="Pendentes" tone={pendentes > 0 ? 'amber' : undefined} />
+        <TeamStat value={`${avg}%`} label="Progresso" />
+      </div>
+      <div className="mt-2 flex items-center gap-2 rounded-lg bg-[var(--bg-subtle)] px-3 py-2 text-[0.78rem] text-[var(--text-secondary)]">
+        <FileSignature className="h-4 w-4 text-[var(--text-muted)]" strokeWidth={1.8} />
+        <strong className="text-[var(--ink)]">{assinaram}</strong> de {total} já assinaram o termo
+      </div>
+
+      {/* filtros + equipe */}
+      {total === 0 ? (
+        <div className="mt-4 rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-subtle)] px-4 py-8 text-center">
+          <Users className="mx-auto mb-2 h-7 w-7 text-[var(--text-disabled)]" strokeWidth={1.6} />
+          <p className="text-[0.875rem] font-medium text-[var(--text-secondary)]">Nenhum colaborador vinculado</p>
+          <p className="mt-0.5 text-[0.78rem] text-[var(--text-muted)]">Atribua este gerente ao cadastrar ou editar um colaborador.</p>
+        </div>
+      ) : (
+        <>
+          <div className="adm-no-scrollbar mt-4 flex gap-2 overflow-x-auto pb-1">
+            {TEAM_FILTERS.map((f) => (
+              <button key={f.id} onClick={() => setFilter(f.id)}
+                className={`whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  filter === f.id ? 'border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent-text)]' : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
+                }`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-col gap-2">
+            {filtered.length === 0 ? (
+              <p className="px-1 py-6 text-center text-[0.82rem] text-[var(--text-muted)]">Ninguém neste filtro.</p>
+            ) : (
+              filtered.map((r) => (
+                <TeamMemberItem key={r.employee.id} row={r} onOpen={onOpenColab} onCopy={onCopy} copied={copied} />
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </ModalShell>
   )
 }
 
 // ── Página ───────────────────────────────────────────────────────────────────
 export default function AdminGerentes() {
   const [gerentes, setGerentes] = useState<AdminUser[] | null>(null)
-  const [employees, setEmployees] = useState<Employee[]>([])
+  const [rows, setRows] = useState<EmployeeRow[]>([])
   const [openForm, setOpenForm] = useState(false)
   const [removing, setRemoving] = useState<AdminUser | null>(null)
+  const [viewing, setViewing] = useState<AdminUser | null>(null)
+  const [viewingColab, setViewingColab] = useState<EmployeeRow | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
 
   const reload = () => {
     setGerentes(listGerentes())
-    listEmployees().then(setEmployees)
+    loadEmployeeRows().then(setRows)
   }
   useEffect(() => { reload() }, [])
 
-  const countByGerente = useMemo(() => {
-    const map: Record<string, number> = {}
-    for (const e of employees) {
-      if (e.gerenteId) map[e.gerenteId] = (map[e.gerenteId] ?? 0) + 1
+  const teamByGerente = useMemo(() => {
+    const map: Record<string, EmployeeRow[]> = {}
+    for (const r of rows) {
+      const gid = r.employee.gerenteId
+      if (gid) (map[gid] ??= []).push(r)
     }
     return map
-  }, [employees])
+  }, [rows])
+
+  const copy = async (link: string, id: string) => {
+    try { await navigator.clipboard.writeText(link) } catch { /* noop */ }
+    setCopied(id); setTimeout(() => setCopied(null), 1800)
+  }
 
   const handleRemove = (id: string) => {
     removeGerente(id)
     reload()
   }
 
+  const teamOf = (g: AdminUser) => teamByGerente[g.id] ?? []
+  const pendentesOf = (g: AdminUser) => teamOf(g).filter((r) => !isEmDia(r)).length
   const hasGerentes = gerentes !== null && gerentes.length > 0
 
   return (
@@ -307,12 +483,13 @@ export default function AdminGerentes() {
                     <th>Gerente</th>
                     <th>Função</th>
                     <th>Colaboradores</th>
+                    <th>Equipe</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {gerentes.map((g) => (
-                    <GerenteRow key={g.id} gerente={g} count={countByGerente[g.id] ?? 0} onRemove={setRemoving} />
+                    <GerenteRow key={g.id} gerente={g} count={teamOf(g).length} pendentes={pendentesOf(g)} onRemove={setRemoving} onOpen={setViewing} />
                   ))}
                 </tbody>
               </table>
@@ -325,7 +502,7 @@ export default function AdminGerentes() {
             className="flex flex-col gap-3 md:hidden">
             {gerentes.map((g) => (
               <motion.div key={g.id} variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
-                <GerenteCardMobile gerente={g} count={countByGerente[g.id] ?? 0} onRemove={setRemoving} />
+                <GerenteCardMobile gerente={g} count={teamOf(g).length} pendentes={pendentesOf(g)} onRemove={setRemoving} onOpen={setViewing} />
               </motion.div>
             ))}
           </motion.div>
@@ -345,9 +522,36 @@ export default function AdminGerentes() {
         {removing && (
           <RemoverGerenteModal
             gerente={removing}
-            count={countByGerente[removing.id] ?? 0}
+            count={teamOf(removing).length}
             onClose={() => setRemoving(null)}
             onConfirm={() => { handleRemove(removing.id); setRemoving(null) }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* drill-down: visão 360° do gerente */}
+      <AnimatePresence>
+        {viewing && (
+          <GerenteDetailModal
+            gerente={viewing}
+            team={teamOf(viewing)}
+            onClose={() => setViewing(null)}
+            onOpenColab={(r) => setViewingColab(r)}
+            onCopy={copy}
+            copied={copied}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* visão 360° do colaborador (reusada) sobre a equipe do gerente */}
+      <AnimatePresence>
+        {viewingColab && (
+          <ColaboradorDetailModal
+            row={viewingColab}
+            gerenteName={viewing?.nome}
+            onClose={() => setViewingColab(null)}
+            onCopy={copy}
+            copied={copied}
           />
         )}
       </AnimatePresence>
