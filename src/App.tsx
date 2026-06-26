@@ -2,7 +2,7 @@ import { Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { lazyWithRetry } from './lib/lazyWithRetry'
 import { ErrorBoundary } from './app/components/ErrorBoundary'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { SessionProvider, useSession } from './app/context/SessionContext'
 import { Loading } from './app/components/Loading'
 import { DevToolbar } from './app/components/DevToolbar'
@@ -47,16 +47,14 @@ function RequireAuth({ children }: { children: ReactNode }) {
 function AnimatedRoutes() {
   const location = useLocation()
   return (
-    <AnimatePresence mode="wait">
+    <Suspense fallback={<Loading />}>
       <motion.div
         key={location.pathname}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.18, ease: [0.2, 0, 0, 1] }}
       >
         <ErrorBoundary>
-        <Suspense fallback={<Loading />}>
           <Routes location={location}>
             {/* App do colaborador */}
             <Route path="/" element={<Splash />} />
@@ -122,10 +120,9 @@ function AnimatedRoutes() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </Suspense>
         </ErrorBoundary>
       </motion.div>
-    </AnimatePresence>
+    </Suspense>
   )
 }
 
