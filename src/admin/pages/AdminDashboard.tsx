@@ -2,137 +2,55 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Users, CheckCircle2, PenLine, BookOpen, TrendingUp, UserPlus, ChevronRight,
+  Users, CheckCircle2, PenLine, TrendingUp, UserPlus, ChevronRight, ArrowRight,
 } from 'lucide-react'
 import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
 import { useAdminStore } from '@/lib/adminStore'
 import { getAdminSession, isDono } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
-import { StatCard, SectionCard, EmptyState, AnimatedNumber } from '../components/ui'
+import { StatCard, SectionCard, EmptyState, AnimatedNumber, Skeleton } from '../components/ui'
 
-// ── paleta clara dos gráficos ───────────────────────────────────────────────
-const LC = {
-  grid: '#eceae7',
-  inset: '#f2f0ed',
-  axis: '#dad6d1',
-  text: '#8a837c',
-  ink: '#1a1714',
-  orange: '#f26b2a',
-  gold: '#b8860b',
-  green: '#1e7e4e',
-  brown: '#5e3731',
-  neutral: '#c9c3bc',
-}
+// cores das etapas (identidade Pralís)
+const SEG = { neutral: '#c9c3bc', orange: '#f26b2a', gold: '#b8860b', green: '#1e7e4e' }
 
-// ── helpers SVG ─────────────────────────────────────────────────────────────
-function polarToXY(cx: number, cy: number, r: number, deg: number) {
-  const rad = ((deg - 90) * Math.PI) / 180
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
-}
-function arcD(cx: number, cy: number, r: number, s: number, e: number) {
-  if (e - s >= 359.9) e = s + 359.9
-  const a = polarToXY(cx, cy, r, s), b = polarToXY(cx, cy, r, e)
-  return `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} A ${r} ${r} 0 ${e - s > 180 ? 1 : 0} 1 ${b.x.toFixed(1)} ${b.y.toFixed(1)}`
-}
-function smoothLine(pts: { x: number; y: number }[]) {
-  if (pts.length < 2) return ''
-  let d = `M ${pts[0].x} ${pts[0].y}`
-  for (let i = 1; i < pts.length; i++) {
-    const p = pts[i - 1], q = pts[i]
-    const cpx = (p.x + q.x) / 2
-    d += ` C ${cpx} ${p.y} ${cpx} ${q.y} ${q.x} ${q.y}`
-  }
-  return d
-}
 function pct(n: number, d: number) { return d ? Math.round((n / d) * 100) : 0 }
 function initials(name: string) {
   const p = name.trim().split(/\s+/)
   return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
 }
 
-// ── Rosca ───────────────────────────────────────────────────────────────────
 interface Seg { label: string; value: number; color: string }
 
-function Donut({ segs, total }: { segs: Seg[]; total: number }) {
-  const SZ = 150, cx = 75, cy = 75, R = 56, sw = 18
-  let cur = 0
-  const GAP = total > 1 ? 4 : 0
-  const ariaLabel = `Etapas da jornada, total ${total}: ${segs.map((s) => `${s.label} ${s.value}`).join(', ')}`
+/** Distribuição da jornada — barra empilhada horizontal (1 olhada = o time inteiro). */
+function StackedBar({ stages, total }: { stages: Seg[]; total: number }) {
   return (
-    <svg width={SZ} height={SZ} viewBox={`0 0 ${SZ} ${SZ}`} style={{ overflow: 'visible' }} role="img" aria-label={ariaLabel}>
-      <circle cx={cx} cy={cy} r={R} fill="none" stroke={LC.inset} strokeWidth={sw} />
-      {segs.map((s) => {
-        if (s.value === 0) return null
-        const deg = (s.value / total) * 360
-        const start = cur + GAP / 2, end = cur + deg - GAP / 2
-        cur += deg
-        return (
-          <motion.path key={s.label} d={arcD(cx, cy, R, start, end)}
-            fill="none" stroke={s.color} strokeWidth={sw} strokeLinecap="round"
-            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-            transition={{ duration: 0.9, ease: 'easeOut', delay: 0.1 }}
-          />
-        )
-      })}
-      <text x={cx} y={cy - 4} textAnchor="middle" fontSize={26} fontWeight={700}
-        fontFamily="Montserrat, sans-serif" fill={LC.ink} style={{ fontVariantNumeric: 'tabular-nums' }}>{total}</text>
-      <text x={cx} y={cy + 14} textAnchor="middle" fontSize={10}
-        fontFamily="Montserrat, sans-serif" fill={LC.text}>total</text>
-    </svg>
-  )
-}
-
-// ── Linha / área ────────────────────────────────────────────────────────────
-function LineChart({ data, maxVal = 100 }: { data: { label: string; value: number }[]; maxVal?: number }) {
-  const W = 520, H = 210, PAD = { l: 38, r: 18, t: 18, b: 34 }
-  const iW = W - PAD.l - PAD.r, iH = H - PAD.t - PAD.b
-  const n = data.length
-  const gridLines = [0, 25, 50, 75, 100]
-  const pts = data.map((d, i) => ({
-    x: PAD.l + (n > 1 ? (i / (n - 1)) * iW : iW / 2),
-    y: PAD.t + iH - (d.value / (maxVal || 1)) * iH,
-  }))
-  const linePath = smoothLine(pts)
-  const areaPath = pts.length > 0
-    ? `${linePath} L ${pts[pts.length - 1].x} ${PAD.t + iH} L ${pts[0].x} ${PAD.t + iH} Z` : ''
-  const ariaLabel = `Curva de retenção: ${data.map((d) => `${d.label} ${d.value}%`).join(', ')}`
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H }} role="img" aria-label={ariaLabel}>
-      <defs>
-        <linearGradient id="adm-areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={LC.orange} stopOpacity={0.14} />
-          <stop offset="100%" stopColor={LC.orange} stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      {gridLines.map((g) => {
-        const y = PAD.t + iH - (g / 100) * iH
-        return (
-          <g key={g}>
-            <line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke={LC.grid} strokeWidth={1} strokeDasharray={g === 0 ? '0' : '3 5'} />
-            <text x={PAD.l - 8} y={y + 3.5} textAnchor="end" fontSize={9} fontFamily="Montserrat, sans-serif" fill={LC.text}>{g}%</text>
-          </g>
-        )
-      })}
-      {areaPath && <path d={areaPath} fill="url(#adm-areaGrad)" />}
-      {linePath && (
-        <motion.path d={linePath} fill="none" stroke={LC.orange} strokeWidth={2.5} strokeLinecap="round"
-          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, ease: 'easeOut' }} />
-      )}
-      {pts.map((p, i) => (
-        <g key={i}>
-          <circle cx={p.x} cy={p.y} r={4} fill={LC.orange} />
-          <circle cx={p.x} cy={p.y} r={1.8} fill="#fff" />
-          <text x={p.x} y={PAD.t + iH + 16} textAnchor="middle" fontSize={9} fontFamily="Montserrat, sans-serif" fill={LC.text}>{data[i].label}</text>
-          {data[i].value > 0 && (
-            <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize={9.5} fontWeight={700}
-              fontFamily="Montserrat, sans-serif" fill={LC.ink} style={{ fontVariantNumeric: 'tabular-nums' }}>{data[i].value}%</text>
-          )}
-        </g>
-      ))}
-      <line x1={PAD.l} y1={PAD.t + iH} x2={W - PAD.r} y2={PAD.t + iH} stroke={LC.axis} strokeWidth={1} />
-    </svg>
+    <div>
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--bg-inset)]">
+        {total > 0 && stages.map((s, i) =>
+          s.value > 0 ? (
+            <motion.div
+              key={s.label}
+              initial={{ width: 0 }}
+              animate={{ width: `${(s.value / total) * 100}%` }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.1 + i * 0.06 }}
+              style={{ background: s.color }}
+              className={i > 0 ? 'border-l-2 border-white' : ''}
+            />
+          ) : null,
+        )}
+      </div>
+      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2.5">
+        {stages.map((s) => (
+          <div key={s.label} className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: s.color }} />
+            <span className="text-[0.8125rem] text-[var(--text-secondary)]">{s.label}</span>
+            <span className="text-[0.8125rem] font-semibold text-[var(--ink)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{s.value}</span>
+            <span className="text-[0.75rem] text-[var(--text-muted)]">{total > 0 ? `${pct(s.value, total)}%` : '—'}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -150,6 +68,7 @@ function DonoDashboard() {
 
   const loading = rows === null
   const total = rows?.length ?? 0
+  const hasPeople = !loading && total > 0
 
   const kpis = useMemo(() => {
     const r = rows ?? []
@@ -162,33 +81,10 @@ function DonoDashboard() {
   const stages = useMemo<Seg[]>(() => {
     const r = rows ?? []
     return [
-      { label: 'Pendente', value: r.filter((e) => e.progress === 0 && !e.signed).length, color: LC.neutral },
-      { label: 'Em andamento', value: r.filter((e) => e.progress > 0 && e.completedModules < e.totalModules && !e.signed).length, color: LC.orange },
-      { label: 'Concluído', value: r.filter((e) => e.completedModules >= e.totalModules && !e.signed).length, color: LC.gold },
-      { label: 'Assinado', value: r.filter((e) => e.signed).length, color: LC.green },
-    ]
-  }, [rows])
-
-  const attention = useMemo(() => {
-    const r = rows ?? []
-    const out: { e: EmployeeRow; reason: string; gold: boolean }[] = []
-    for (const e of r) {
-      if (!e.signed && e.progress === 0) out.push({ e, reason: 'Não começou', gold: false })
-      else if (!e.signed && e.totalModules > 0 && e.completedModules >= e.totalModules) out.push({ e, reason: 'Falta assinar', gold: true })
-    }
-    return out
-  }, [rows])
-
-  const funnelLine = useMemo(() => {
-    const r = rows ?? []
-    const n = r.length || 1
-    return [
-      { label: 'Cadastrou', value: pct(r.length, n) },
-      { label: '25%+', value: pct(r.filter((e) => e.progress >= 0.25).length, n) },
-      { label: '50%+', value: pct(r.filter((e) => e.progress >= 0.50).length, n) },
-      { label: '75%+', value: pct(r.filter((e) => e.progress >= 0.75).length, n) },
-      { label: 'Concluiu', value: pct(r.filter((e) => e.completedModules >= e.totalModules).length, n) },
-      { label: 'Assinou', value: pct(r.filter((e) => e.signed).length, n) },
+      { label: 'Pendente', value: r.filter((e) => e.progress === 0 && !e.signed).length, color: SEG.neutral },
+      { label: 'Em andamento', value: r.filter((e) => e.progress > 0 && e.completedModules < e.totalModules && !e.signed).length, color: SEG.orange },
+      { label: 'Concluído', value: r.filter((e) => e.completedModules >= e.totalModules && !e.signed).length, color: SEG.gold },
+      { label: 'Assinado', value: r.filter((e) => e.signed).length, color: SEG.green },
     ]
   }, [rows])
 
@@ -205,24 +101,56 @@ function DonoDashboard() {
     return Math.round((r.reduce((a, e) => a + e.progress, 0) / r.length) * 100)
   }, [rows])
 
+  const attention = useMemo(() => {
+    const r = rows ?? []
+    const out: { e: EmployeeRow; reason: string; gold: boolean }[] = []
+    for (const e of r) {
+      if (!e.signed && e.progress === 0) out.push({ e, reason: 'Não começou', gold: false })
+      else if (!e.signed && e.totalModules > 0 && e.completedModules >= e.totalModules) out.push({ e, reason: 'Falta assinar', gold: true })
+    }
+    return out
+  }, [rows])
+
+  const notStarted = (rows ?? []).filter((e) => !e.signed && e.progress === 0).length
+
   const kpiCards = [
-    { label: 'Colaboradores', value: kpis.total, sub: 'cadastrados', icon: Users, tone: 'orange' as const, to: '/admin/colaboradores' },
     { label: 'Concluíram tudo', value: `${pct(kpis.concluded, total)}%`, sub: `${kpis.concluded}/${total} pessoas`, icon: CheckCircle2, tone: 'green' as const, to: '/admin/colaboradores' },
     { label: 'Assinaram', value: `${pct(kpis.signed, total)}%`, sub: `${kpis.signed}/${total} pessoas`, icon: PenLine, tone: 'gold' as const, to: '/admin/colaboradores' },
-    { label: 'Módulos ativos', value: kpis.active, sub: `de ${data.modules.length} criados`, icon: BookOpen, tone: 'brown' as const, to: '/admin/modulos' },
+    { label: 'Colaboradores', value: kpis.total, sub: 'cadastrados', icon: Users, tone: 'orange' as const, to: '/admin/colaboradores' },
   ]
 
-  const hasPeople = !loading && total > 0
+  const saude = [
+    { l: 'Acertos nos quizzes', v: `${quizStats.pct}%`, s: `${quizStats.correct}/${quizStats.total}` },
+    { l: 'Módulos ativos', v: `${kpis.active}`, s: `de ${data.modules.length}` },
+    { l: 'Média de progresso', v: `${avgProgress}%`, s: 'da equipe' },
+  ]
 
   return (
     <>
-      <AdminPageHeader eyebrow="Visão geral" title="Dashboard" description="Métricas e progresso dos colaboradores." />
+      <AdminPageHeader eyebrow="Visão geral" title="Dashboard" />
 
-      {/* KPIs */}
+      {/* Status em linguagem humana — "como estamos?" em 1 olhada */}
+      {loading ? (
+        <Skeleton className="mb-6 h-5 w-80" />
+      ) : total === 0 ? (
+        <p className="mb-6 -mt-2 text-[0.95rem] text-[var(--text-secondary)]">Nenhum colaborador cadastrado ainda.</p>
+      ) : (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
+          className="mb-6 -mt-2 flex items-start gap-2.5">
+          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+          <p className="text-[0.95rem] leading-relaxed text-[var(--text-secondary)]">
+            <strong className="font-semibold text-[var(--ink)]">{kpis.concluded}</strong> de <strong className="font-semibold text-[var(--ink)]">{total}</strong> concluíram o treinamento
+            {' · '}<strong className="font-semibold text-[var(--ink)]">{kpis.signed}</strong> {kpis.signed === 1 ? 'assinou' : 'assinaram'}
+            {notStarted > 0 && (<>{' · '}<strong className="font-semibold text-[var(--ink)]">{notStarted}</strong> ainda não {notStarted === 1 ? 'começou' : 'começaram'}</>)}
+          </p>
+        </motion.div>
+      )}
+
+      {/* KPIs — outcomes primeiro, clicáveis (drill-down) */}
       <motion.div
         initial="hidden" animate="visible"
         variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
-        className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3"
       >
         {kpiCards.map((k) => (
           <motion.div key={k.label} variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
@@ -231,24 +159,19 @@ function DonoDashboard() {
         ))}
       </motion.div>
 
-      {/* Linha 2: rosca + barras */}
-      <div className="mb-4 grid gap-4 lg:grid-cols-[320px_1fr]">
-        <SectionCard title="Etapas da jornada">
-          <div className="flex flex-col items-center gap-5">
-            <Donut segs={stages} total={Math.max(total, 1)} />
-            <div className="flex w-full flex-col gap-2.5">
-              {stages.map((s) => (
-                <div key={s.label} className="flex items-center gap-2.5">
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: s.color }} />
-                  <span className="flex-1 text-[0.8125rem] text-[var(--text-secondary)]">{s.label}</span>
-                  <span className="text-[0.875rem] font-semibold text-[var(--ink)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{s.value}</span>
-                  <span className="min-w-[34px] text-right text-[0.75rem] text-[var(--text-muted)]">{total > 0 ? `${pct(s.value, total)}%` : '—'}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Distribuição da jornada — uma visão escaneável do time inteiro */}
+      <div className="mb-4">
+        <SectionCard title="Distribuição da jornada">
+          {!hasPeople ? (
+            <EmptyState icon={Users} title="Sem dados ainda" hint="A distribuição aparece quando houver colaboradores." compact />
+          ) : (
+            <StackedBar stages={stages} total={total} />
+          )}
         </SectionCard>
+      </div>
 
+      {/* Herói (ação) + Saúde do treinamento (contexto, quieto) */}
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_320px]">
         <SectionCard
           title="Precisam de atenção"
           action={attention.length > 0 ? <span className="adm-badge adm-badge--gold">{attention.length}</span> : undefined}
@@ -256,14 +179,18 @@ function DonoDashboard() {
           {!hasPeople ? (
             <EmptyState icon={UserPlus} title="Nenhum colaborador ainda" hint="Cadastre o primeiro colaborador para acompanhar por aqui." />
           ) : attention.length === 0 ? (
-            <EmptyState icon={CheckCircle2} title="Tudo em dia" hint="Ninguém parado ou pendente de assinatura." compact />
+            <EmptyState icon={CheckCircle2} title="Tudo certo" hint="Toda a equipe está em dia — ninguém parado ou pendente de assinatura." compact />
           ) : (
-            <ul className="-mx-1 flex flex-col">
-              {attention.slice(0, 6).map(({ e, reason, gold }) => (
-                <li key={e.employee.id}>
+            <motion.ul
+              initial="hidden" animate="visible"
+              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
+              className="-mx-1 flex flex-col"
+            >
+              {attention.slice(0, 7).map(({ e, reason, gold }) => (
+                <motion.li key={e.employee.id} variants={{ hidden: { opacity: 0, x: -6 }, visible: { opacity: 1, x: 0 } }}>
                   <button
                     type="button"
-                    onClick={() => navigate('/admin/colaboradores')}
+                    onClick={() => navigate(`/admin/colaboradores?q=${encodeURIComponent(e.employee.name)}`)}
                     className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[var(--bg-subtle)] focus-visible:bg-[var(--bg-subtle)] focus-visible:outline-none"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] text-[0.7rem] font-bold text-white">{initials(e.employee.name)}</span>
@@ -274,77 +201,41 @@ function DonoDashboard() {
                     <span className={`adm-badge ${gold ? 'adm-badge--gold' : 'adm-badge--muted'}`}>{reason}</span>
                     <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100" />
                   </button>
-                </li>
+                </motion.li>
               ))}
-              {attention.length > 6 && (
+              {attention.length > 7 && (
                 <li>
                   <button type="button" onClick={() => navigate('/admin/colaboradores')} className="mt-1 w-full rounded-lg px-2 py-2 text-left text-[0.8125rem] font-semibold text-[var(--accent-text)] transition-colors hover:bg-[var(--bg-subtle)]">
                     Ver todos os {attention.length} →
                   </button>
                 </li>
               )}
-            </ul>
-          )}
-        </SectionCard>
-      </div>
-
-      {/* Linha 3: retenção + quizzes/média */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
-        <SectionCard title="Curva de retenção">
-          <p className="-mt-2 mb-2 text-[0.8125rem] text-[var(--text-muted)]">% de colaboradores que chegaram a cada etapa da jornada</p>
-          {!hasPeople ? (
-            <EmptyState icon={TrendingUp} title="Sem dados ainda" hint="A curva aparece quando houver colaboradores em treinamento." compact />
-          ) : (
-            <LineChart data={funnelLine} maxVal={100} />
+            </motion.ul>
           )}
         </SectionCard>
 
-        <div className="flex flex-col gap-4">
-          <SectionCard title="Quizzes">
-            <div className="flex flex-col items-center gap-4">
-              {(() => {
-                const sz = 104, cx = 52, cy = 52, r = 38, sw = 9
-                const circ = 2 * Math.PI * r
-                const filled = quizStats.total > 0 ? (quizStats.correct / quizStats.total) * circ : 0
-                const col = quizStats.pct >= 70 ? LC.green : quizStats.pct >= 40 ? LC.gold : LC.orange
-                return (
-                  <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`} role="img" aria-label={`${loading ? 0 : quizStats.pct}% de acertos nos quizzes`}>
-                    <circle cx={cx} cy={cy} r={r} fill="none" stroke={LC.inset} strokeWidth={sw} />
-                    <motion.circle cx={cx} cy={cy} r={r} fill="none" stroke={col} strokeWidth={sw} strokeLinecap="round"
-                      strokeDasharray={circ} initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ - filled }}
-                      transition={{ duration: 0.9, ease: 'easeOut', delay: 0.2 }} transform={`rotate(-90 ${cx} ${cy})`} />
-                    <text x={cx} y={cy - 2} textAnchor="middle" fontSize={20} fontWeight={700} fontFamily="Montserrat, sans-serif" fill={LC.ink} style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {loading ? '—' : `${quizStats.pct}%`}
-                    </text>
-                    <text x={cx} y={cy + 14} textAnchor="middle" fontSize={9} fontFamily="Montserrat, sans-serif" fill={LC.text}>acertos</text>
-                  </svg>
-                )
-              })()}
-              <div className="flex w-full flex-col gap-2">
-                {[
-                  { l: 'Questões', v: loading ? '—' : `${quizStats.total}`, c: 'var(--ink)' },
-                  { l: 'Corretas', v: loading ? '—' : `${quizStats.correct}`, c: 'var(--success)' },
-                  { l: 'Erradas', v: loading ? '—' : `${quizStats.total - quizStats.correct}`, c: 'var(--danger)' },
-                ].map((item) => (
-                  <div key={item.l} className="flex items-center justify-between">
-                    <span className="text-[0.8125rem] text-[var(--text-secondary)]">{item.l}</span>
-                    <span className="text-[0.875rem] font-semibold" style={{ color: item.c, fontVariantNumeric: 'tabular-nums' }}>{item.v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Média geral">
-            <div className="text-center">
-              <span className="adm-kpi-val" style={{ fontSize: '2.4rem' }}><AnimatedNumber value={loading ? '—' : `${avgProgress}%`} /></span>
-              <p className="mt-1 text-[0.8125rem] text-[var(--text-muted)]">progresso médio dos colaboradores</p>
-            </div>
-            <div className="adm-pbar mt-3">
-              <motion.i initial={{ width: 0 }} animate={{ width: `${avgProgress}%` }} transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }} />
-            </div>
-          </SectionCard>
-        </div>
+        <SectionCard title="Saúde do treinamento">
+          <ul className="flex flex-col gap-3">
+            {saude.map((item) => (
+              <li key={item.l} className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[0.875rem] text-[var(--text-secondary)]">{item.l}</p>
+                  <p className="text-[0.72rem] text-[var(--text-muted)]">{item.s}</p>
+                </div>
+                <span className="text-[1.05rem] font-bold text-[var(--ink)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {loading ? '—' : <AnimatedNumber value={item.v} />}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={() => navigate('/admin/relatorios')}
+            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] py-2 text-[0.8125rem] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)] hover:text-[var(--ink)]"
+          >
+            Ver relatórios <ArrowRight className="h-4 w-4" />
+          </button>
+        </SectionCard>
       </div>
     </>
   )
@@ -399,7 +290,9 @@ function GerenteDashboard() {
 
       <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-white">
         {loading ? (
-          <div className="px-5 py-6 text-[0.875rem] text-[var(--text-muted)]">Carregando…</div>
+          <div className="flex flex-col gap-3 p-5">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-11 w-full" />)}
+          </div>
         ) : team.length === 0 ? (
           <EmptyState icon={Users} title="Nenhum colaborador vinculado" hint="Quando o Dono associar colaboradores a você, eles aparecem aqui." />
         ) : (

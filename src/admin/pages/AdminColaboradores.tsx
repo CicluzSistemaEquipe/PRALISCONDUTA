@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, type FormEvent, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Plus, Copy, Check, X, Search, MessageCircle, Link2, CheckCircle2,
@@ -448,7 +449,8 @@ export default function AdminColaboradores() {
   const [success, setSuccess] = useState<{ name: string; role: string; link: string } | null>(null)
   const [editing, setEditing] = useState<EmployeeRow | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
 
   const reload = () =>
     loadEmployeeRows().then((all) => setRows(dono ? all : all.filter((r) => r.employee.gerenteId === session?.id)))
