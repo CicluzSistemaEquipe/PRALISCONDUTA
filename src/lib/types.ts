@@ -33,9 +33,12 @@ export const ROLES: Role[] = [
   'Serviços Gerais',
 ]
 
+export type EmployeeStatus = 'ativo' | 'afastado' | 'inativo'
+
 export interface Employee {
   id: string
   name: string
+  /** mantém o CPF (apenas dígitos) por compatibilidade com o token/link atual */
   phone: string
   role: Role
   token: string
@@ -43,6 +46,18 @@ export interface Employee {
   /** ID do AdminUser com role 'gerente' responsável por este colaborador */
   gerenteId?: string
   created_at: string
+  // ── Cadastro completo (aditivo, opcional) — gestão documental/RH.
+  // O app do colaborador ignora estes campos; servem só ao Dashboard.
+  email?: string
+  whatsapp?: string
+  /** data de nascimento (YYYY-MM-DD) */
+  birth_date?: string
+  /** data de admissão (YYYY-MM-DD) */
+  admission_date?: string
+  /** loja/unidade (texto livre por enquanto) */
+  store?: string
+  status?: EmployeeStatus
+  notes?: string
 }
 
 export interface ModuleProgress {

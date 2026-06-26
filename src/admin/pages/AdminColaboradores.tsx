@@ -4,10 +4,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Plus, Copy, Check, X, Search, MessageCircle, Link2, CheckCircle2,
   UserPlus, Pencil, Trash2, AlertTriangle, Save,
+  Mail, Phone, CalendarDays, Building2, ShieldCheck, FileSignature, Clock, IdCard,
 } from 'lucide-react'
 import { createEmployee, updateEmployee, deleteEmployee } from '@/lib/storage'
 import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
-import { ROLES, type Role, type AdminUser } from '@/lib/types'
+import { ROLES, type Role, type AdminUser, type EmployeeStatus } from '@/lib/types'
 import { getAdminSession, isDono, listGerentes } from '../auth'
 import { enviarNotificacao } from '@/lib/notifications'
 import { AdminPageHeader } from '../components/AdminPageHeader'
@@ -89,6 +90,14 @@ function ModalHeader({ icon: Icon, eyebrow, title, onClose }: { icon: typeof Use
 }
 
 // ── Modal: novo colaborador ──────────────────────────────────────────────────
+const maskPhone = (v: string) => {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 2) return d
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+}
+
 function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lockGerente }: {
   onClose: () => void
   onSaved: (emp: { name: string; role: string; link: string }) => void
@@ -96,9 +105,13 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
   defaultGerenteId: string
   lockGerente: boolean
 }) {
-  const [form, setForm] = useState({ name: '', cpf: '', start: todayISO(), role: ROLES[0] as Role, gerenteId: defaultGerenteId })
+  const [form, setForm] = useState({
+    name: '', cpf: '', whatsapp: '', email: '', birth: '', admission: todayISO(),
+    role: ROLES[0] as Role, status: 'ativo' as EmployeeStatus, store: '', gerenteId: defaultGerenteId,
+  })
   const [err, setErr] = useState('')
   const [saving, setSaving] = useState(false)
+  const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -107,9 +120,18 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
     const cpf = rawCPF(form.cpf)
     if (!name) { setErr('Informe o nome do colaborador.'); return }
     if (cpf.length !== 11) { setErr('CPF inválido — informe os 11 dígitos.'); return }
+    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) { setErr('E-mail inválido.'); return }
     setSaving(true)
     try {
-      const emp = await createEmployee({ name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined })
+      const emp = await createEmployee({
+        name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined,
+        whatsapp: form.whatsapp.replace(/\D/g, '') || undefined,
+        email: form.email.trim() || undefined,
+        birth_date: form.birth || undefined,
+        admission_date: form.admission || undefined,
+        store: form.store.trim() || undefined,
+        status: form.status,
+      })
       const gerente = gerentes.find((g) => g.id === form.gerenteId)
       void enviarNotificacao({
         tipo: 'colaborador_novo', colaboradorNome: emp.name, colaboradorId: emp.id,
@@ -129,33 +151,64 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
         <div>
           <label className="adm-label" htmlFor="nc-nome">Nome completo</label>
           <input id="nc-nome" className="adm-input" autoFocus placeholder="Ex.: Marina Souza"
-            value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+            value={form.name} onChange={(e) => set({ name: e.target.value })} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="adm-label" htmlFor="nc-cpf">CPF</label>
             <input id="nc-cpf" className="adm-input" inputMode="numeric" placeholder="000.000.000-00"
-              value={form.cpf} onChange={(e) => setForm((f) => ({ ...f, cpf: maskCPF(e.target.value) }))} />
+              value={form.cpf} onChange={(e) => set({ cpf: maskCPF(e.target.value) })} />
           </div>
           <div>
-            <label className="adm-label" htmlFor="nc-start">Data de início</label>
-            <input id="nc-start" type="date" className="adm-input"
-              value={form.start} onChange={(e) => setForm((f) => ({ ...f, start: e.target.value }))} />
+            <label className="adm-label" htmlFor="nc-wa">WhatsApp</label>
+            <input id="nc-wa" className="adm-input" inputMode="tel" placeholder="(00) 00000-0000"
+              value={form.whatsapp} onChange={(e) => set({ whatsapp: maskPhone(e.target.value) })} />
           </div>
         </div>
         <div>
-          <label className="adm-label" htmlFor="nc-role">Cargo</label>
-          <select id="nc-role" className="adm-input" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}>
-            {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
+          <label className="adm-label" htmlFor="nc-email">E-mail <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+          <input id="nc-email" type="email" className="adm-input" placeholder="nome@exemplo.com"
+            value={form.email} onChange={(e) => set({ email: e.target.value })} />
         </div>
-        <div>
-          <label className="adm-label" htmlFor="nc-ger">Gerente responsável</label>
-          <select id="nc-ger" className="adm-input" value={form.gerenteId} disabled={lockGerente}
-            onChange={(e) => setForm((f) => ({ ...f, gerenteId: e.target.value }))}>
-            <option value="">Sem gerente</option>
-            {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
-          </select>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="adm-label" htmlFor="nc-birth">Nascimento</label>
+            <input id="nc-birth" type="date" className="adm-input" value={form.birth} onChange={(e) => set({ birth: e.target.value })} />
+          </div>
+          <div>
+            <label className="adm-label" htmlFor="nc-admission">Admissão</label>
+            <input id="nc-admission" type="date" className="adm-input" value={form.admission} onChange={(e) => set({ admission: e.target.value })} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="adm-label" htmlFor="nc-role">Cargo</label>
+            <select id="nc-role" className="adm-input" value={form.role} onChange={(e) => set({ role: e.target.value as Role })}>
+              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="adm-label" htmlFor="nc-status">Situação</label>
+            <select id="nc-status" className="adm-input" value={form.status} onChange={(e) => set({ status: e.target.value as EmployeeStatus })}>
+              <option value="ativo">Ativo</option>
+              <option value="afastado">Afastado</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="adm-label" htmlFor="nc-store">Loja/Unidade <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+            <input id="nc-store" className="adm-input" placeholder="Ex.: Vila Nova" value={form.store} onChange={(e) => set({ store: e.target.value })} />
+          </div>
+          <div>
+            <label className="adm-label" htmlFor="nc-ger">Gerente responsável</label>
+            <select id="nc-ger" className="adm-input" value={form.gerenteId} disabled={lockGerente}
+              onChange={(e) => set({ gerenteId: e.target.value })}>
+              <option value="">Sem gerente</option>
+              {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
+            </select>
+          </div>
         </div>
 
         <div className="flex items-start gap-2.5 rounded-lg bg-[var(--bg-subtle)] px-3.5 py-3">
@@ -183,7 +236,14 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
   row: EmployeeRow; onClose: () => void; onSaved: () => void; onDeleted: () => void; gerentes: AdminUser[]; lockGerente: boolean
 }) {
   const emp = row.employee
-  const [form, setForm] = useState({ name: emp.name, cpf: maskCPF(emp.phone ?? ''), role: emp.role as Role, gerenteId: emp.gerenteId ?? '' })
+  const [form, setForm] = useState({
+    name: emp.name, cpf: maskCPF(emp.phone ?? ''),
+    whatsapp: emp.whatsapp ? maskPhone(emp.whatsapp) : '', email: emp.email ?? '',
+    birth: emp.birth_date ?? '', admission: emp.admission_date ?? '',
+    store: emp.store ?? '', status: (emp.status ?? 'ativo') as EmployeeStatus,
+    role: emp.role as Role, gerenteId: emp.gerenteId ?? '',
+  })
+  const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
   const [saving, setSaving] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -197,9 +257,18 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
     const cpf = rawCPF(form.cpf)
     if (!name) { setErr('Informe o nome.'); return }
     if (cpf.length !== 11) { setErr('CPF inválido.'); return }
+    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) { setErr('E-mail inválido.'); return }
     setSaving(true)
     try {
-      await updateEmployee(emp.id, { name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined })
+      await updateEmployee(emp.id, {
+        name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined,
+        whatsapp: form.whatsapp.replace(/\D/g, '') || undefined,
+        email: form.email.trim() || undefined,
+        birth_date: form.birth || undefined,
+        admission_date: form.admission || undefined,
+        store: form.store.trim() || undefined,
+        status: form.status,
+      })
       onSaved()
     } catch {
       setErr('Erro ao salvar. Tente novamente.')
@@ -218,27 +287,61 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
       <form onSubmit={save} className="flex flex-col gap-4">
         <div>
           <label className="adm-label" htmlFor="ed-nome">Nome completo</label>
-          <input id="ed-nome" className="adm-input" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          <input id="ed-nome" className="adm-input" value={form.name} onChange={(e) => set({ name: e.target.value })} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="adm-label" htmlFor="ed-cpf">CPF</label>
-            <input id="ed-cpf" className="adm-input" inputMode="numeric" value={form.cpf} onChange={(e) => setForm((f) => ({ ...f, cpf: maskCPF(e.target.value) }))} />
+            <input id="ed-cpf" className="adm-input" inputMode="numeric" value={form.cpf} onChange={(e) => set({ cpf: maskCPF(e.target.value) })} />
           </div>
           <div>
-            <label className="adm-label" htmlFor="ed-role">Cargo</label>
-            <select id="ed-role" className="adm-input" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}>
-              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
+            <label className="adm-label" htmlFor="ed-wa">WhatsApp</label>
+            <input id="ed-wa" className="adm-input" inputMode="tel" placeholder="(00) 00000-0000" value={form.whatsapp} onChange={(e) => set({ whatsapp: maskPhone(e.target.value) })} />
           </div>
         </div>
         <div>
-          <label className="adm-label" htmlFor="ed-ger">Gerente responsável</label>
-          <select id="ed-ger" className="adm-input" value={form.gerenteId} disabled={lockGerente}
-            onChange={(e) => setForm((f) => ({ ...f, gerenteId: e.target.value }))}>
-            <option value="">Sem gerente</option>
-            {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
-          </select>
+          <label className="adm-label" htmlFor="ed-email">E-mail <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+          <input id="ed-email" type="email" className="adm-input" placeholder="nome@exemplo.com" value={form.email} onChange={(e) => set({ email: e.target.value })} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="adm-label" htmlFor="ed-birth">Nascimento</label>
+            <input id="ed-birth" type="date" className="adm-input" value={form.birth} onChange={(e) => set({ birth: e.target.value })} />
+          </div>
+          <div>
+            <label className="adm-label" htmlFor="ed-admission">Admissão</label>
+            <input id="ed-admission" type="date" className="adm-input" value={form.admission} onChange={(e) => set({ admission: e.target.value })} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="adm-label" htmlFor="ed-role">Cargo</label>
+            <select id="ed-role" className="adm-input" value={form.role} onChange={(e) => set({ role: e.target.value as Role })}>
+              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="adm-label" htmlFor="ed-status">Situação</label>
+            <select id="ed-status" className="adm-input" value={form.status} onChange={(e) => set({ status: e.target.value as EmployeeStatus })}>
+              <option value="ativo">Ativo</option>
+              <option value="afastado">Afastado</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="adm-label" htmlFor="ed-store">Loja/Unidade</label>
+            <input id="ed-store" className="adm-input" placeholder="Ex.: Vila Nova" value={form.store} onChange={(e) => set({ store: e.target.value })} />
+          </div>
+          <div>
+            <label className="adm-label" htmlFor="ed-ger">Gerente responsável</label>
+            <select id="ed-ger" className="adm-input" value={form.gerenteId} disabled={lockGerente}
+              onChange={(e) => set({ gerenteId: e.target.value })}>
+              <option value="">Sem gerente</option>
+              {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
+            </select>
+          </div>
         </div>
 
         <div>
@@ -341,6 +444,147 @@ function SuccessModal({ name, role, link, onClose }: { name: string; role: strin
         </a>
       </div>
       <button onClick={onClose} className="adm-btn adm-btn--ghost mt-2 w-full">Fechar</button>
+    </ModalShell>
+  )
+}
+
+// ── helpers de exibição ──────────────────────────────────────────────────────
+function fmtDate(d?: string | null) {
+  if (!d) return '—'
+  const dt = d.length === 10 ? new Date(d + 'T00:00:00') : new Date(d)
+  return isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+const STATUS_META: Record<EmployeeStatus, { label: string; cls: string }> = {
+  ativo: { label: 'Ativo', cls: 'border-[#cdebd9] bg-[#ecf7f0] text-[#1e7e4e]' },
+  afastado: { label: 'Afastado', cls: 'border-[#f5e2c0] bg-[#fdf4e3] text-[#9a6b15]' },
+  inativo: { label: 'Inativo', cls: 'border-[var(--border)] bg-[var(--bg-muted)] text-[var(--text-muted)]' },
+}
+function StatusPill({ status }: { status?: EmployeeStatus }) {
+  const m = STATUS_META[status ?? 'ativo']
+  return <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.7rem] font-semibold ${m.cls}`}>{m.label}</span>
+}
+
+function InfoRow({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 py-2">
+      <Icon className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={1.8} />
+      <span className="w-28 shrink-0 text-[0.78rem] text-[var(--text-muted)]">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-[0.85rem] font-medium text-[var(--ink)]">{value || '—'}</span>
+    </div>
+  )
+}
+
+// ── Modal: visão 360° do colaborador (interligado) ───────────────────────────
+function ColaboradorDetailModal({ row, gerenteName, onClose, onEdit, onCopy, copied }: {
+  row: EmployeeRow; gerenteName?: string
+  onClose: () => void; onEdit: (r: EmployeeRow) => void; onCopy: (link: string, id: string) => void; copied: string | null
+}) {
+  const emp = row.employee
+  const link = acessoLink(emp.id)
+  const isCopied = copied === emp.id
+  const pct = Math.round(row.progress * 100)
+  const pending = Math.max(0, row.totalModules - row.completedModules)
+  const quizPct = quizPctOf(row)
+  const emDia = pending === 0 && row.signed
+
+  return (
+    <ModalShell onClose={onClose}>
+      {/* cabeçalho */}
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Avatar name={emp.name} size={48} />
+          <div className="min-w-0">
+            <h2 className="truncate text-[1.15rem] font-semibold text-[var(--ink)]">{emp.name}</h2>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="adm-badge adm-badge--muted">{emp.role}</span>
+              <StatusPill status={emp.status} />
+            </div>
+          </div>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Fechar"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
+          <X className="h-[18px] w-[18px]" />
+        </button>
+      </div>
+
+      {/* situação do treinamento */}
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="adm-eyebrow">Treinamento</span>
+          <StatusBadge status={statusOf(row)} />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="adm-pbar flex-1"><i style={{ width: `${pct}%` }} /></div>
+          <span className="text-sm font-semibold text-[var(--ink)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{row.completedModules}/{row.totalModules}</span>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg bg-white px-2 py-2">
+            <p className="text-[1.05rem] font-bold text-[var(--ink)]">{pct}%</p>
+            <p className="text-[0.68rem] text-[var(--text-muted)]">Concluído</p>
+          </div>
+          <div className="rounded-lg bg-white px-2 py-2">
+            <p className="text-[1.05rem] font-bold text-[var(--ink)]">{quizPct != null ? `${quizPct}%` : '—'}</p>
+            <p className="text-[0.68rem] text-[var(--text-muted)]">Acerto quiz</p>
+          </div>
+          <div className="rounded-lg bg-white px-2 py-2">
+            <p className="text-[1.05rem] font-bold text-[var(--ink)]">{pending}</p>
+            <p className="text-[0.68rem] text-[var(--text-muted)]">Pendentes</p>
+          </div>
+        </div>
+      </div>
+
+      {/* assinatura + pendências */}
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-[var(--border)] p-3.5">
+          <div className="flex items-center gap-2">
+            <FileSignature className="h-4 w-4 text-[var(--text-muted)]" strokeWidth={1.8} />
+            <span className="adm-eyebrow">Assinatura</span>
+          </div>
+          {row.signed ? (
+            <p className="mt-1.5 text-[0.85rem] font-medium text-[#1e7e4e]">Assinada · {fmtDate(row.signedAt)}</p>
+          ) : (
+            <p className="mt-1.5 text-[0.85rem] font-medium text-[var(--text-secondary)]">Ainda não assinou</p>
+          )}
+        </div>
+        <div className={`rounded-xl border p-3.5 ${emDia ? 'border-[#cdebd9] bg-[#ecf7f0]' : 'border-[#f5e2c0] bg-[#fdf4e3]'}`}>
+          <div className="flex items-center gap-2">
+            <Clock className={`h-4 w-4 ${emDia ? 'text-[#1e7e4e]' : 'text-[#9a6b15]'}`} strokeWidth={1.8} />
+            <span className="adm-eyebrow">Pendências</span>
+          </div>
+          <p className={`mt-1.5 text-[0.85rem] font-medium ${emDia ? 'text-[#1e7e4e]' : 'text-[#9a6b15]'}`}>
+            {emDia ? 'Em dia — tudo concluído' : [pending > 0 ? `${pending} módulo(s)` : null, !row.signed ? 'assinatura' : null].filter(Boolean).join(' + ')}
+          </p>
+        </div>
+      </div>
+
+      {/* identificação */}
+      <div className="mt-4">
+        <span className="adm-eyebrow">Identificação</span>
+        <div className="mt-1 divide-y divide-[var(--border)]">
+          <InfoRow icon={IdCard} label="CPF" value={emp.phone ? maskCPF(emp.phone) : '—'} />
+          <InfoRow icon={Phone} label="WhatsApp" value={emp.whatsapp ? maskPhone(emp.whatsapp) : '—'} />
+          <InfoRow icon={Mail} label="E-mail" value={emp.email} />
+          <InfoRow icon={CalendarDays} label="Nascimento" value={fmtDate(emp.birth_date)} />
+          <InfoRow icon={CalendarDays} label="Admissão" value={fmtDate(emp.admission_date)} />
+          <InfoRow icon={Building2} label="Loja" value={emp.store} />
+          <InfoRow icon={ShieldCheck} label="Gerente" value={gerenteName} />
+          <InfoRow icon={Link2} label="Código" value={<span className="font-mono">{emp.access_code ?? '—'}</span>} />
+        </div>
+      </div>
+
+      {/* ações */}
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button onClick={() => onCopy(link, emp.id)} className="adm-btn flex-1">
+          {isCopied ? <><Check className="h-4 w-4 text-[var(--success)]" /> Copiado</> : <><Copy className="h-4 w-4" /> Copiar link</>}
+        </button>
+        <a href={waLink(emp.name, link)} target="_blank" rel="noopener noreferrer"
+          className="adm-btn flex-1 no-underline border-[#cdebd9] bg-[#ecf7f0] text-[#1e7e4e]">
+          <MessageCircle className="h-4 w-4" /> WhatsApp
+        </a>
+        <button onClick={() => onEdit(row)} className="adm-btn adm-btn--primary flex-1">
+          <Pencil className="h-4 w-4" /> Editar
+        </button>
+      </div>
     </ModalShell>
   )
 }
@@ -448,6 +692,7 @@ export default function AdminColaboradores() {
   const [openForm, setOpenForm] = useState(false)
   const [success, setSuccess] = useState<{ name: string; role: string; link: string } | null>(null)
   const [editing, setEditing] = useState<EmployeeRow | null>(null)
+  const [viewing, setViewing] = useState<EmployeeRow | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
@@ -538,7 +783,7 @@ export default function AdminColaboradores() {
                 </thead>
                 <tbody>
                   {filtered.map((row) => (
-                    <ColabRow key={row.employee.id} row={row} dono={dono} onEdit={setEditing} onCopy={copy} copied={copied}
+                    <ColabRow key={row.employee.id} row={row} dono={dono} onEdit={setViewing} onCopy={copy} copied={copied}
                       gerenteName={row.employee.gerenteId ? gerenteName[row.employee.gerenteId] : undefined} />
                   ))}
                 </tbody>
@@ -552,7 +797,7 @@ export default function AdminColaboradores() {
             className="flex flex-col gap-3 md:hidden">
             {filtered.map((row) => (
               <motion.div key={row.employee.id} variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
-                <ColabCardMobile row={row} onEdit={setEditing} onCopy={copy} copied={copied} />
+                <ColabCardMobile row={row} onEdit={setViewing} onCopy={copy} copied={copied} />
               </motion.div>
             ))}
           </motion.div>
@@ -567,6 +812,13 @@ export default function AdminColaboradores() {
         )}
       </AnimatePresence>
       <AnimatePresence>{success && <SuccessModal {...success} onClose={() => setSuccess(null)} />}</AnimatePresence>
+      <AnimatePresence>
+        {viewing && (
+          <ColaboradorDetailModal row={viewing} onClose={() => setViewing(null)}
+            gerenteName={viewing.employee.gerenteId ? gerenteName[viewing.employee.gerenteId] : undefined}
+            onEdit={(r) => { setViewing(null); setEditing(r) }} onCopy={copy} copied={copied} />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {editing && (
           <EditColaboradorModal row={editing} onClose={() => setEditing(null)}

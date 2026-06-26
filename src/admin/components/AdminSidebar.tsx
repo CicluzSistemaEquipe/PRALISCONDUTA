@@ -18,20 +18,32 @@ import { PralisSymbol } from '@/app/components/PralisSymbol'
 import { adminLogout, getAdminSession } from '../auth'
 
 type NavEntry = { to: string; label: string; icon: typeof LayoutDashboard }
+type NavGroup = { label?: string; items: NavEntry[] }
 
-const NAV_DONO: NavEntry[] = [
-  { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/colaboradores', label: 'Colaboradores', icon: Users },
-  { to: '/admin/gerentes', label: 'Gerentes', icon: ShieldCheck },
-  { to: '/admin/modulos', label: 'Módulos', icon: BookOpen },
-  { to: '/admin/termos', label: 'Termos', icon: ScrollText },
-  { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 },
+// Navegação agrupada por área — organização de plataforma (Pessoas / Conteúdo / Análise).
+const NAV_DONO: NavGroup[] = [
+  { items: [{ to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard }] },
+  {
+    label: 'Pessoas',
+    items: [
+      { to: '/admin/colaboradores', label: 'Colaboradores', icon: Users },
+      { to: '/admin/gerentes', label: 'Gerentes', icon: ShieldCheck },
+    ],
+  },
+  {
+    label: 'Conteúdo',
+    items: [
+      { to: '/admin/modulos', label: 'Módulos', icon: BookOpen },
+      { to: '/admin/termos', label: 'Termos', icon: ScrollText },
+    ],
+  },
+  { label: 'Análise', items: [{ to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 }] },
 ]
 
-const NAV_GERENTE: NavEntry[] = [
-  { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/colaboradores', label: 'Minha equipe', icon: Users },
-  { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 },
+const NAV_GERENTE: NavGroup[] = [
+  { items: [{ to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard }] },
+  { label: 'Pessoas', items: [{ to: '/admin/colaboradores', label: 'Minha equipe', icon: Users }] },
+  { label: 'Análise', items: [{ to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 }] },
 ]
 
 function initials(name: string) {
@@ -66,36 +78,45 @@ function Brand() {
   )
 }
 
-function NavItems({ items, onNavigate }: { items: NavEntry[]; onNavigate?: () => void }) {
+function NavItems({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () => void }) {
   return (
-    <nav className="flex flex-1 flex-col gap-0.5">
-      {items.map((n) => (
-        <NavLink
-          key={n.to}
-          to={n.to}
-          end
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            `group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[0.875rem] transition-colors ${
-              isActive
-                ? 'bg-[var(--accent-tint)] font-semibold text-[var(--accent-text)]'
-                : 'font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]'
-            }`
-          }
-        >
-          {({ isActive }) => (
-            <>
-              {isActive && (
-                <motion.span
-                  layoutId="adm-nav-active"
-                  className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-[var(--accent)]"
-                />
-              )}
-              <n.icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2.2 : 1.9} />
-              {n.label}
-            </>
+    <nav className="flex flex-1 flex-col gap-3">
+      {groups.map((group, gi) => (
+        <div key={group.label ?? `g${gi}`} className="flex flex-col gap-0.5">
+          {group.label && (
+            <p className="px-3 pb-1 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              {group.label}
+            </p>
           )}
-        </NavLink>
+          {group.items.map((n) => (
+            <NavLink
+              key={n.to}
+              to={n.to}
+              end
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                `group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[0.875rem] transition-colors ${
+                  isActive
+                    ? 'bg-[var(--accent-tint)] font-semibold text-[var(--accent-text)]'
+                    : 'font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="adm-nav-active"
+                      className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-[var(--accent)]"
+                    />
+                  )}
+                  <n.icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2.2 : 1.9} />
+                  {n.label}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
       ))}
     </nav>
   )
@@ -121,7 +142,7 @@ export function AdminSidebar() {
         <Brand />
       </div>
 
-      <NavItems items={items} onNavigate={onNavigate} />
+      <NavItems groups={items} onNavigate={onNavigate} />
 
       <div className="mt-auto flex flex-col gap-1 border-t border-[var(--border)] pt-3">
         {session && (

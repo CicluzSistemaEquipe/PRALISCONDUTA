@@ -105,6 +105,13 @@ export async function createEmployee(input: {
   token?: string
   access_code?: string
   gerenteId?: string
+  email?: string
+  whatsapp?: string
+  birth_date?: string
+  admission_date?: string
+  store?: string
+  status?: Employee['status']
+  notes?: string
 }): Promise<Employee> {
   const employee: Employee = {
     id: uid(),
@@ -115,6 +122,13 @@ export async function createEmployee(input: {
     access_code: input.access_code ?? makeAccessCode(),
     gerenteId: input.gerenteId,
     created_at: new Date().toISOString(),
+    email: input.email,
+    whatsapp: input.whatsapp,
+    birth_date: input.birth_date,
+    admission_date: input.admission_date,
+    store: input.store,
+    status: input.status ?? 'ativo',
+    notes: input.notes,
   }
 
   if (hasSupabase && supabase) {
@@ -150,7 +164,10 @@ export async function preRegisterEmployee(input: {
 
 export async function updateEmployee(
   id: string,
-  patch: Partial<Pick<Employee, 'name' | 'phone' | 'role' | 'token' | 'access_code' | 'gerenteId'>>,
+  patch: Partial<Pick<Employee,
+    'name' | 'phone' | 'role' | 'token' | 'access_code' | 'gerenteId'
+    | 'email' | 'whatsapp' | 'birth_date' | 'admission_date' | 'store' | 'status' | 'notes'
+  >>,
 ): Promise<Employee | null> {
   if (hasSupabase && supabase) {
     const { data, error } = await supabase
