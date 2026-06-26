@@ -1,32 +1,76 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Plus, X, Mail, User, Lock, Users, Trash2, ShieldCheck, AlertTriangle } from 'lucide-react'
+import {
+  Plus, X, Mail, User, Lock, Users, Trash2, ShieldCheck, AlertTriangle, UserCog,
+} from 'lucide-react'
 import { listEmployees } from '@/lib/storage'
 import type { AdminUser, Employee } from '@/lib/types'
 import { listGerentes, addGerente, removeGerente } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
+import { EmptyState, Skeleton } from '../components/ui'
 
+// ── helpers ──────────────────────────────────────────────────────────────────
 function initials(name: string) {
   const p = name.trim().split(/\s+/)
   return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
 }
 
-// ── Modal adicionar gerente ───────────────────────────────────────────────────
+function Avatar({ name, size = 36 }: { name: string; size?: number }) {
+  return (
+    <div
+      className="flex shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] font-bold text-white"
+      style={{ width: size, height: size, fontSize: size * 0.34 }}
+    >
+      {initials(name)}
+    </div>
+  )
+}
+
+// ── Modal shell (bottom-sheet no mobile, centralizado no desktop) ────────────
+function ModalShell({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  return (
+    <>
+      <motion.div className="fixed inset-0 z-50 bg-[rgba(26,23,20,0.45)]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" onClick={onClose}>
+        <motion.div role="dialog" aria-modal="true"
+          initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 28 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+          onClick={(e) => e.stopPropagation()}
+          className="max-h-[92dvh] w-full max-w-[460px] overflow-y-auto rounded-t-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-md)] sm:rounded-2xl"
+        >
+          {children}
+        </motion.div>
+      </div>
+    </>
+  )
+}
+
+function ModalHeader({ icon: Icon, eyebrow, title, onClose }: { icon: typeof ShieldCheck; eyebrow: string; title: string; onClose: () => void }) {
+  return (
+    <div className="mb-5 flex items-start justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--accent-tint)]">
+          <Icon className="h-5 w-5 text-[#f26b2a]" strokeWidth={1.9} />
+        </div>
+        <div>
+          <p className="adm-eyebrow">{eyebrow}</p>
+          <h2 className="mt-0.5 text-[1.15rem] font-semibold text-[var(--ink)]">{title}</h2>
+        </div>
+      </div>
+      <button type="button" onClick={onClose} aria-label="Fechar"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
+        <X className="h-[18px] w-[18px]" />
+      </button>
+    </div>
+  )
+}
+
+// ── Modal: adicionar gerente ─────────────────────────────────────────────────
 function NovoGerenteModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ nome: '', email: '', senha: '' })
   const [err, setErr] = useState('')
-
-  const fieldBase: React.CSSProperties = {
-    width: '100%', background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(232,207,160,0.18)', borderRadius: 12,
-    padding: '12px 14px 12px 40px', color: '#fff', outline: 'none',
-    fontFamily: 'Montserrat, sans-serif', fontSize: 14, boxSizing: 'border-box',
-  }
-  const labelBase: React.CSSProperties = {
-    fontFamily: 'Montserrat, sans-serif', fontSize: 10, fontWeight: 700,
-    color: 'rgba(232,207,160,0.6)', letterSpacing: '0.12em', textTransform: 'uppercase',
-    display: 'block', marginBottom: 7,
-  }
+  const [saving, setSaving] = useState(false)
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -36,197 +80,167 @@ function NovoGerenteModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
     if (!nome) { setErr('Informe o nome do gerente.'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('E-mail inválido.'); return }
     if (form.senha.length < 4) { setErr('A senha deve ter ao menos 4 caracteres.'); return }
+    setSaving(true)
     addGerente({ nome, email })
     onSaved()
   }
 
   return (
-    <>
-      <motion.div className="fixed inset-0 z-50 bg-black/75"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ overflowY: 'auto' }}>
-        <motion.form onSubmit={submit}
-          initial={{ opacity: 0, scale: 0.94, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-          style={{
-            background: 'linear-gradient(160deg, rgba(26,12,2,0.98), rgba(14,6,0,0.99))',
-            border: '1px solid rgba(184,134,11,0.3)', borderRadius: 24,
-            width: '100%', maxWidth: 440, padding: 28, boxShadow: '0 40px 100px rgba(0,0,0,0.85)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{
-                width: 42, height: 42, borderRadius: 13, background: 'rgba(184,134,11,0.15)',
-                border: '1px solid rgba(184,134,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <ShieldCheck size={18} color="#e8c96a" />
-              </div>
-              <div>
-                <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 10, fontWeight: 900, letterSpacing: '0.2em', color: '#e8c96a', marginBottom: 2 }}>EQUIPE</p>
-                <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, color: '#fff', lineHeight: 1 }}>Novo gerente</h2>
-              </div>
-            </div>
-            <button type="button" onClick={onClose} style={{
-              width: 34, height: 34, borderRadius: 10, background: 'rgba(232,207,160,0.07)',
-              border: '1px solid rgba(232,207,160,0.12)', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', color: 'rgba(232,207,160,0.5)', cursor: 'pointer',
-            }}>
-              <X size={16} />
-            </button>
+    <ModalShell onClose={onClose}>
+      <ModalHeader icon={ShieldCheck} eyebrow="Equipe" title="Novo gerente" onClose={onClose} />
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <div>
+          <label className="adm-label" htmlFor="ng-nome">Nome completo</label>
+          <div className="relative">
+            <User className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--text-muted)]" strokeWidth={1.8} />
+            <input id="ng-nome" className="adm-input" autoFocus placeholder="Ex.: João Mendes"
+              style={{ paddingLeft: 38 }}
+              value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} />
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <label style={labelBase}>Nome completo</label>
-              <div style={{ position: 'relative' }}>
-                <User size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'rgba(232,207,160,0.4)' }} />
-                <input style={fieldBase} autoFocus placeholder="Ex.: João Mendes"
-                  value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} />
-              </div>
-            </div>
-            <div>
-              <label style={labelBase}>E-mail</label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'rgba(232,207,160,0.4)' }} />
-                <input style={fieldBase} type="email" placeholder="gerente@pralis.com.br"
-                  value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-              </div>
-            </div>
-            <div>
-              <label style={labelBase}>Senha de acesso</label>
-              <div style={{ position: 'relative' }}>
-                <Lock size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'rgba(232,207,160,0.4)' }} />
-                <input style={fieldBase} type="password" placeholder="Mínimo 4 caracteres"
-                  value={form.senha} onChange={(e) => setForm((f) => ({ ...f, senha: e.target.value }))} />
-              </div>
-            </div>
-
-            {err && <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 12, fontWeight: 600, color: '#f87171' }}>{err}</p>}
-
-            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-              <button type="button" onClick={onClose} style={{
-                flex: 1, padding: '12px', borderRadius: 12, cursor: 'pointer',
-                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(232,207,160,0.15)',
-                fontFamily: 'Montserrat, sans-serif', fontSize: 13, fontWeight: 700, color: 'rgba(232,207,160,0.6)',
-              }}>
-                Cancelar
-              </button>
-              <button type="submit" style={{
-                flex: 2, padding: '12px', borderRadius: 12, cursor: 'pointer',
-                background: 'linear-gradient(135deg,#f37435,#b8860b)', border: 'none',
-                fontFamily: 'Montserrat, sans-serif', fontSize: 13, fontWeight: 700, color: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}>
-                <ShieldCheck size={15} /> Adicionar gerente
-              </button>
-            </div>
+        </div>
+        <div>
+          <label className="adm-label" htmlFor="ng-email">E-mail</label>
+          <div className="relative">
+            <Mail className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--text-muted)]" strokeWidth={1.8} />
+            <input id="ng-email" className="adm-input" type="email" placeholder="gerente@pralis.com.br"
+              style={{ paddingLeft: 38 }}
+              value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
           </div>
-        </motion.form>
-      </div>
-    </>
+        </div>
+        <div>
+          <label className="adm-label" htmlFor="ng-senha">Senha de acesso</label>
+          <div className="relative">
+            <Lock className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--text-muted)]" strokeWidth={1.8} />
+            <input id="ng-senha" className="adm-input" type="password" placeholder="Mínimo 4 caracteres"
+              style={{ paddingLeft: 38 }}
+              value={form.senha} onChange={(e) => setForm((f) => ({ ...f, senha: e.target.value }))} />
+          </div>
+        </div>
+
+        {err && <p className="text-[0.8125rem] font-medium text-[var(--danger)]">{err}</p>}
+
+        <div className="flex gap-3 pt-1">
+          <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
+          <button type="submit" disabled={saving} className="adm-btn adm-btn--primary flex-[2]">
+            {saving ? 'Adicionando…' : <><ShieldCheck className="h-[18px] w-[18px]" strokeWidth={2} /> Adicionar gerente</>}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
   )
 }
 
-// ── Card de gerente ───────────────────────────────────────────────────────────
-function GerenteCard({ gerente, count, onRemove }: {
-  gerente: AdminUser; count: number; onRemove: (id: string) => void
+// ── Modal: confirmar remoção ─────────────────────────────────────────────────
+function RemoverGerenteModal({ gerente, count, onClose, onConfirm }: {
+  gerente: AdminUser; count: number; onClose: () => void; onConfirm: () => void
 }) {
-  const [confirm, setConfirm] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const remove = () => { setRemoving(true); onConfirm() }
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-      style={{
-        background: 'rgba(22,10,2,0.9)', border: '1px solid rgba(232,207,160,0.1)',
-        borderRadius: 18, padding: 16, display: 'flex', flexDirection: 'column', gap: 14,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-        <div style={{
-          width: 46, height: 46, borderRadius: 13, flexShrink: 0,
-          background: 'linear-gradient(135deg,#b8860b,#7a5a07)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'Playfair Display, serif', fontSize: 17, fontWeight: 700, color: '#fff',
-        }}>
-          {initials(gerente.nome)}
+    <ModalShell onClose={onClose}>
+      <ModalHeader icon={Trash2} eyebrow="Remover gerente" title={gerente.nome} onClose={onClose} />
+
+      <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-3">
+        <Avatar name={gerente.nome} size={40} />
+        <div className="min-w-0">
+          <p className="truncate text-[0.875rem] font-semibold text-[var(--ink)]">{gerente.nome}</p>
+          <p className="truncate text-[0.8125rem] text-[var(--text-muted)]">{gerente.email}</p>
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 14, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
-            {gerente.nome}
-          </p>
-          <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 11, color: 'rgba(232,207,160,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {gerente.email}
-          </p>
-        </div>
-        <span style={{
-          fontFamily: 'Montserrat, sans-serif', fontSize: 9, fontWeight: 900, letterSpacing: '0.1em',
-          textTransform: 'uppercase', color: '#e8c96a', background: 'rgba(184,134,11,0.14)',
-          border: '1px solid rgba(184,134,11,0.3)', borderRadius: 8, padding: '3px 8px', flexShrink: 0,
-        }}>
-          Gerente
-        </span>
       </div>
 
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
-        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(232,207,160,0.08)', borderRadius: 12,
-      }}>
-        <Users size={14} color="#f37435" />
-        <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 12, color: 'rgba(232,207,160,0.7)' }}>
-          <strong style={{ color: '#fff' }}>{count}</strong> {count === 1 ? 'colaborador' : 'colaboradores'} sob responsabilidade
-        </span>
+      <div className="mt-4 rounded-xl border border-[#f3d2cd] bg-[var(--danger-bg)] p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-[var(--danger)]" />
+          <p className="text-[0.875rem] font-semibold text-[var(--danger)]">Confirma a remoção?</p>
+        </div>
+        <p className="text-[0.8125rem] text-[var(--text-muted)]">
+          {count > 0
+            ? <>Os <strong className="text-[var(--text-secondary)]">{count} {count === 1 ? 'colaborador' : 'colaboradores'}</strong> sob responsabilidade de {gerente.nome.split(' ')[0]} ficarão sem gerente.</>
+            : <>{gerente.nome.split(' ')[0]} não tem colaboradores vinculados. A remoção é segura.</>}
+        </p>
       </div>
 
-      <AnimatePresence mode="wait">
-        {!confirm ? (
-          <motion.button key="rm" onClick={() => setConfirm(true)}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              padding: '8px', borderRadius: 10, cursor: 'pointer',
-              background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-              fontFamily: 'Montserrat, sans-serif', fontSize: 12, fontWeight: 700, color: '#f87171',
-            }}>
-            <Trash2 size={13} /> Remover gerente
-          </motion.button>
-        ) : (
-          <motion.div key="confirm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <AlertTriangle size={13} color="#f87171" />
-              <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 11, color: '#f87171' }}>
-                Remover {gerente.nome.split(' ')[0]}? Os colaboradores ficam sem gerente.
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setConfirm(false)} style={{
-                flex: 1, padding: '7px', borderRadius: 9, cursor: 'pointer',
-                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(232,207,160,0.13)',
-                fontFamily: 'Montserrat, sans-serif', fontSize: 11, fontWeight: 700, color: 'rgba(232,207,160,0.6)',
-              }}>
-                Cancelar
-              </button>
-              <button onClick={() => onRemove(gerente.id)} style={{
-                flex: 1, padding: '7px', borderRadius: 9, cursor: 'pointer',
-                background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)',
-                fontFamily: 'Montserrat, sans-serif', fontSize: 11, fontWeight: 700, color: '#f87171',
-              }}>
-                Sim, remover
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      <div className="mt-4 flex gap-3">
+        <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
+        <button type="button" onClick={remove} disabled={removing}
+          className="adm-btn flex-[2] border-[var(--danger)] bg-[var(--danger)] text-white hover:bg-[#a93226]">
+          {removing ? 'Removendo…' : <><Trash2 className="h-4 w-4" /> Sim, remover</>}
+        </button>
+      </div>
+    </ModalShell>
   )
 }
 
-// ── Página ─────────────────────────────────────────────────────────────────────
+// ── Linha da tabela (desktop) ────────────────────────────────────────────────
+function GerenteRow({ gerente, count, onRemove }: {
+  gerente: AdminUser; count: number; onRemove: (g: AdminUser) => void
+}) {
+  return (
+    <tr className="group">
+      <td>
+        <div className="flex items-center gap-3">
+          <Avatar name={gerente.nome} />
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-[var(--ink)]">{gerente.nome}</p>
+            <p className="truncate text-[0.7rem] text-[var(--text-muted)]">{gerente.email}</p>
+          </div>
+        </div>
+      </td>
+      <td><span className="adm-badge adm-badge--muted">Gerente</span></td>
+      <td>
+        <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+          <Users className="h-4 w-4 text-[var(--text-muted)]" strokeWidth={1.8} />
+          <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <strong className="text-[var(--ink)]">{count}</strong> {count === 1 ? 'colaborador' : 'colaboradores'}
+          </span>
+        </div>
+      </td>
+      <td>
+        <div className="flex items-center justify-end opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <button onClick={() => onRemove(gerente)} aria-label={`Remover ${gerente.nome}`} title="Remover gerente"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--danger-bg)] hover:text-[var(--danger)]">
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  )
+}
+
+// ── Card (mobile) ────────────────────────────────────────────────────────────
+function GerenteCardMobile({ gerente, count, onRemove }: {
+  gerente: AdminUser; count: number; onRemove: (g: AdminUser) => void
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-white p-4">
+      <div className="flex items-start gap-3">
+        <Avatar name={gerente.nome} size={40} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-[var(--ink)]">{gerente.nome}</p>
+          <p className="truncate text-[0.8125rem] text-[var(--text-muted)]">{gerente.email}</p>
+        </div>
+        <span className="adm-badge adm-badge--muted shrink-0">Gerente</span>
+      </div>
+      <div className="mt-3 flex items-center gap-2 rounded-lg bg-[var(--bg-subtle)] px-3 py-2.5">
+        <Users className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={1.8} />
+        <span className="text-[0.8125rem] text-[var(--text-secondary)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <strong className="text-[var(--ink)]">{count}</strong> {count === 1 ? 'colaborador' : 'colaboradores'} sob responsabilidade
+        </span>
+      </div>
+      <button onClick={() => onRemove(gerente)}
+        className="adm-btn adm-btn--danger mt-3 h-9 w-full">
+        <Trash2 className="h-4 w-4" /> Remover gerente
+      </button>
+    </div>
+  )
+}
+
+// ── Página ───────────────────────────────────────────────────────────────────
 export default function AdminGerentes() {
-  const [gerentes, setGerentes] = useState<AdminUser[]>([])
+  const [gerentes, setGerentes] = useState<AdminUser[] | null>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [openForm, setOpenForm] = useState(false)
+  const [removing, setRemoving] = useState<AdminUser | null>(null)
 
   const reload = () => {
     setGerentes(listGerentes())
@@ -247,6 +261,8 @@ export default function AdminGerentes() {
     reload()
   }
 
+  const hasGerentes = gerentes !== null && gerentes.length > 0
+
   return (
     <>
       <AdminPageHeader
@@ -255,43 +271,83 @@ export default function AdminGerentes() {
         description="Cadastre gerentes e acompanhe quantos colaboradores cada um conduz."
         action={
           <button className="adm-btn adm-btn--primary" onClick={() => setOpenForm(true)}>
-            <Plus className="h-4 w-4" /> Adicionar gerente
+            <Plus className="h-[18px] w-[18px]" strokeWidth={2} /> Adicionar gerente
           </button>
         }
       />
 
-      {gerentes.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          style={{
-            background: 'rgba(22,10,2,0.5)', border: '1px solid rgba(232,207,160,0.08)', borderRadius: 20,
-            padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-          }}>
-          <ShieldCheck size={44} color="rgba(232,207,160,0.15)" />
-          <div>
-            <p style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, color: '#e8cfa0', marginBottom: 6 }}>Nenhum gerente cadastrado</p>
-            <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 12, color: 'rgba(232,207,160,0.4)' }}>Adicione o primeiro gerente para distribuir os colaboradores.</p>
+      {/* conteúdo */}
+      {gerentes === null ? (
+        <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+          <div className="flex flex-col gap-3 p-5">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
           </div>
-          <button className="adm-btn adm-btn--primary" onClick={() => setOpenForm(true)}>
-            <Plus size={15} /> Adicionar o primeiro
-          </button>
-        </motion.div>
+        </div>
+      ) : !hasGerentes ? (
+        <div className="rounded-xl border border-[var(--border)] bg-white">
+          <EmptyState
+            icon={UserCog}
+            title="Nenhum gerente cadastrado"
+            hint="Adicione o primeiro gerente para distribuir os colaboradores e acompanhar a equipe."
+            action={
+              <button className="adm-btn adm-btn--primary" onClick={() => setOpenForm(true)}>
+                <Plus className="h-[18px] w-[18px]" strokeWidth={2} /> Adicionar o primeiro
+              </button>
+            }
+          />
+        </div>
       ) : (
-        <motion.div
-          initial="hidden" animate="visible"
-          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
-          className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-        >
-          {gerentes.map((g) => (
-            <GerenteCard key={g.id} gerente={g} count={countByGerente[g.id] ?? 0} onRemove={handleRemove} />
-          ))}
-        </motion.div>
+        <>
+          {/* desktop: tabela */}
+          <div className="hidden overflow-hidden rounded-xl border border-[var(--border)] bg-white md:block">
+            <div className="overflow-x-auto">
+              <table className="adm-table">
+                <thead>
+                  <tr>
+                    <th>Gerente</th>
+                    <th>Função</th>
+                    <th>Colaboradores</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gerentes.map((g) => (
+                    <GerenteRow key={g.id} gerente={g} count={countByGerente[g.id] ?? 0} onRemove={setRemoving} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* mobile: cards */}
+          <motion.div initial="hidden" animate="visible"
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05 } } }}
+            className="flex flex-col gap-3 md:hidden">
+            {gerentes.map((g) => (
+              <motion.div key={g.id} variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
+                <GerenteCardMobile gerente={g} count={countByGerente[g.id] ?? 0} onRemove={setRemoving} />
+              </motion.div>
+            ))}
+          </motion.div>
+        </>
       )}
 
+      {/* modais */}
       <AnimatePresence>
         {openForm && (
           <NovoGerenteModal
             onClose={() => setOpenForm(false)}
             onSaved={() => { setOpenForm(false); reload() }}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {removing && (
+          <RemoverGerenteModal
+            gerente={removing}
+            count={countByGerente[removing.id] ?? 0}
+            onClose={() => setRemoving(null)}
+            onConfirm={() => { handleRemove(removing.id); setRemoving(null) }}
           />
         )}
       </AnimatePresence>
