@@ -111,10 +111,11 @@ export default function AdminAcompanhamento() {
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
-            className={`whitespace-nowrap rounded-pill px-4 py-2 text-xs font-semibold ${
-              filter === f.id ? 'text-[var(--gold-light)] ring-1 ring-[rgba(184,134,11,0.4)]' : 'text-[var(--cream-muted)]'
+            className={`whitespace-nowrap rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${
+              filter === f.id
+                ? 'border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent-text)]'
+                : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
             }`}
-            style={{ background: filter === f.id ? 'rgba(184,134,11,0.16)' : 'rgba(255,245,220,0.05)' }}
           >
             {f.label}
           </button>
@@ -146,32 +147,32 @@ export default function AdminAcompanhamento() {
                     <Fragment key={r.employee.id}>
                       <tr className="cursor-pointer" onClick={() => setExpanded(isOpen ? null : r.employee.id)}>
                         <td>{isOpen ? <ChevronDown className="h-4 w-4 text-[var(--cream-muted)]" /> : <ChevronRight className="h-4 w-4 text-[var(--cream-muted)]" />}</td>
-                        <td className="font-semibold text-white">{r.employee.name}</td>
-                        <td className="text-[var(--cream-muted)]">{r.employee.role}</td>
+                        <td className="font-semibold text-[var(--ink)]">{r.employee.name}</td>
+                        <td className="text-[var(--text-secondary)]">{r.employee.role}</td>
                         <td>
                           <div className="flex items-center gap-2">
                             <div className="adm-pbar flex-1"><i style={{ width: `${Math.round(r.progress * 100)}%` }} /></div>
                             <span className="w-12 text-right text-xs text-[var(--cream-muted)]">{r.done}/{r.total}</span>
                           </div>
                         </td>
-                        <td className="text-xs text-[var(--cream-muted)]">{r.signed ? fmt(r.signedAt) : 'não'}</td>
+                        <td className="text-xs text-[var(--text-secondary)]">{r.signed ? fmt(r.signedAt) : 'Não'}</td>
                         <td><StatusBadge status={statusOf(r)} /></td>
                       </tr>
                       {isOpen && (
                         <tr>
-                          <td colSpan={6} style={{ background: 'rgba(0,0,0,0.25)' }}>
-                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="grid gap-2 px-2 py-1 sm:grid-cols-2">
+                          <td colSpan={6} className="bg-[var(--bg-subtle)] p-0">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-2 p-3 sm:grid-cols-2">
                               {r.modules.map((m) => (
-                                <div key={m.id} className="flex items-center justify-between rounded-lg bg-[rgba(255,245,220,0.04)] px-3 py-2">
-                                  <span className="flex items-center gap-2 text-sm text-[var(--cream)]">
+                                <div key={m.id} className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-white px-3 py-2">
+                                  <span className="flex items-center gap-2 text-sm text-[var(--ink)]">
                                     {m.completed ? (
-                                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(93,216,122,0.18)] text-[#5dd87a]"><Check className="h-3 w-3" /></span>
+                                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#ecf7f0] text-[#1e7e4e]"><Check className="h-3 w-3" strokeWidth={2.5} /></span>
                                     ) : (
-                                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(255,245,220,0.08)] text-[var(--cream-muted)]"><X className="h-3 w-3" /></span>
+                                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--bg-muted)] text-[var(--text-muted)]"><X className="h-3 w-3" /></span>
                                     )}
                                     {m.title}
                                   </span>
-                                  <span className="text-[0.7rem] text-[var(--cream-muted)]">{m.completed ? fmt(m.completedAt) : 'pendente'}</span>
+                                  <span className="text-[0.7rem] text-[var(--text-muted)]">{m.completed ? fmt(m.completedAt) : 'pendente'}</span>
                                 </div>
                               ))}
                             </motion.div>
