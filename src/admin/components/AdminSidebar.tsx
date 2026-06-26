@@ -42,8 +42,8 @@ function initials(name: string) {
 function Brand() {
   return (
     <motion.div
-      className="flex cursor-default items-center gap-2.5"
-      whileHover={{ scale: 1.04 }}
+      className="flex cursor-default items-center gap-3"
+      whileHover={{ scale: 1.03 }}
       transition={{ type: 'spring', stiffness: 320, damping: 18 }}
     >
       <motion.div
@@ -52,12 +52,12 @@ function Brand() {
         whileHover={{ rotate: -10 }}
         transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.05 }}
       >
-        <PralisSymbol size={30} colorA="#5e3731" colorB="#f37435" animate={false} />
+        <PralisSymbol size={42} colorA="#5e3731" colorB="#f37435" animate={false} />
       </motion.div>
       <motion.img
         src={brand.logoSVGPreta}
         alt="Pralís"
-        className="h-[19px] w-auto"
+        className="h-[30px] w-auto"
         initial={{ opacity: 0, x: -6 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.45, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
