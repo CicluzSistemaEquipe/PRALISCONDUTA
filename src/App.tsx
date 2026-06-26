@@ -1,5 +1,7 @@
-import { lazy, Suspense, type ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { lazyWithRetry } from './lib/lazyWithRetry'
+import { ErrorBoundary } from './app/components/ErrorBoundary'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SessionProvider, useSession } from './app/context/SessionContext'
 import { Loading } from './app/components/Loading'
@@ -9,27 +11,27 @@ import { hasRequiredOnboarding } from './lib/onboarding'
 import { AdminGuard } from './admin/components/AdminGuard'
 
 // code splitting por rota
-const Splash = lazy(() => import('./app/pages/Splash'))
-const Onboarding = lazy(() => import('./app/pages/Onboarding'))
-const Login = lazy(() => import('./app/pages/Login'))
-const Acesso = lazy(() => import('./app/pages/Acesso'))
-const Feed = lazy(() => import('./app/pages/Feed'))
-const ProgressScreen = lazy(() => import('./app/pages/Progress'))
-const Profile = lazy(() => import('./app/pages/Profile'))
-const ModulePage = lazy(() => import('./app/pages/Module'))
-const Completion = lazy(() => import('./app/pages/Completion'))
+const Splash = lazyWithRetry(() => import('./app/pages/Splash'))
+const Onboarding = lazyWithRetry(() => import('./app/pages/Onboarding'))
+const Login = lazyWithRetry(() => import('./app/pages/Login'))
+const Acesso = lazyWithRetry(() => import('./app/pages/Acesso'))
+const Feed = lazyWithRetry(() => import('./app/pages/Feed'))
+const ProgressScreen = lazyWithRetry(() => import('./app/pages/Progress'))
+const Profile = lazyWithRetry(() => import('./app/pages/Profile'))
+const ModulePage = lazyWithRetry(() => import('./app/pages/Module'))
+const Completion = lazyWithRetry(() => import('./app/pages/Completion'))
 
 // Admin CMS (Dono + Gerente)
-const AdminLogin = lazy(() => import('./admin/pages/AdminLogin'))
-const AdminLayout = lazy(() => import('./admin/layout/AdminLayout'))
-const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard'))
-const AdminModulos = lazy(() => import('./admin/pages/AdminModulos'))
-const AdminModuloEditor = lazy(() => import('./admin/pages/AdminModuloEditor'))
-const AdminInicio = lazy(() => import('./admin/pages/AdminInicio'))
-const AdminColaboradores = lazy(() => import('./admin/pages/AdminColaboradores'))
-const AdminGerentes = lazy(() => import('./admin/pages/AdminGerentes'))
-const AdminTermos = lazy(() => import('./admin/pages/AdminTermos'))
-const AdminAcompanhamento = lazy(() => import('./admin/pages/AdminAcompanhamento'))
+const AdminLogin = lazyWithRetry(() => import('./admin/pages/AdminLogin'))
+const AdminLayout = lazyWithRetry(() => import('./admin/layout/AdminLayout'))
+const AdminDashboard = lazyWithRetry(() => import('./admin/pages/AdminDashboard'))
+const AdminModulos = lazyWithRetry(() => import('./admin/pages/AdminModulos'))
+const AdminModuloEditor = lazyWithRetry(() => import('./admin/pages/AdminModuloEditor'))
+const AdminInicio = lazyWithRetry(() => import('./admin/pages/AdminInicio'))
+const AdminColaboradores = lazyWithRetry(() => import('./admin/pages/AdminColaboradores'))
+const AdminGerentes = lazyWithRetry(() => import('./admin/pages/AdminGerentes'))
+const AdminTermos = lazyWithRetry(() => import('./admin/pages/AdminTermos'))
+const AdminAcompanhamento = lazyWithRetry(() => import('./admin/pages/AdminAcompanhamento'))
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { employee, loading } = useSession()
@@ -53,6 +55,7 @@ function AnimatedRoutes() {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       >
+        <ErrorBoundary>
         <Suspense fallback={<Loading />}>
           <Routes location={location}>
             {/* App do colaborador */}
@@ -120,6 +123,7 @@ function AnimatedRoutes() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </motion.div>
     </AnimatePresence>
   )
