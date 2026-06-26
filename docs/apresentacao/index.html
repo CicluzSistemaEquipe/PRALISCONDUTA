@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Sistema Pralís — Apresentação Oficial</title>
+<meta name="description" content="Plataforma de Treinamento e Conduta da Padaria Pralís — apresentação oficial e manual inicial." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   APRESENTAÇÃO PRALÍS — design system próprio (keynote dark)
+   Conceito "Do forno à jornada": fundo preto quente + glow dourado,
+   serifa editorial nos títulos, Lis como guia, trio de espigas como
+   assinatura. Editável: ver README.md desta pasta.
+   ============================================================ */
+
+:root{
+  --bg:#0c0a09; --bg2:#15100d;
+  --surface:#1b1410; --surface2:#241914;
+  --marrom:#5e3731; --marrom-soft:#3a2420;
+  --orange:#f37435; --orange-lt:#ff8f5a;
+  --gold:#b8860b; --gold-lt:#d4a017;
+  --cream:#e8cfa0;
+  --white:#fff;
+  --text:#f0e7dc; --muted:#b8a99c; --faint:#7e7065;
+  --green:#5dd87a; --red:#e5604a; --amber:#e3a92f;
+  --line:rgba(232,207,160,.14);
+  --line-strong:rgba(232,207,160,.26);
+  --radius:20px; --radius-sm:12px;
+  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --sans:'Montserrat',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --maxw:1120px;
+  --e1:cubic-bezier(.16,1,.3,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:var(--sans); font-size:18px; line-height:1.5;
+  overflow:hidden; -webkit-font-smoothing:antialiased;
+}
+
+/* glow dourado de forno no topo + textura sutil */
+.bg-fx{position:fixed; inset:0; pointer-events:none; z-index:0;}
+.bg-fx::before{
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(ellipse 90% 55% at 50% -8%, rgba(184,134,11,.30) 0%, rgba(243,116,53,.08) 32%, transparent 62%);
+}
+.bg-fx::after{
+  content:""; position:absolute; inset:0; opacity:.05;
+  background-image:url('assets/pattern-brand.svg');
+  background-size:520px; mix-blend-mode:screen;
+}
+
+/* ---------- chrome (barra de progresso, marca, contador) ---------- */
+.progress{position:fixed; top:0; left:0; height:3px; z-index:40;
+  background:linear-gradient(90deg,var(--gold),var(--orange)); width:0;
+  transition:width .5s var(--e1); box-shadow:0 0 14px rgba(243,116,53,.5);}
+.chrome{position:fixed; z-index:30; display:flex; align-items:center; gap:10px;
+  font-size:12px; letter-spacing:.04em; color:var(--muted);}
+.chrome.tl{top:22px; left:30px}
+.chrome.tr{top:22px; right:30px}
+.chrome .mark{height:20px; opacity:.92}
+.chrome .blk{color:var(--cream); font-weight:600; letter-spacing:.12em; text-transform:uppercase; font-size:10.5px}
+.counter b{color:var(--cream); font-weight:700}
+.counter{font-variant-numeric:tabular-nums}
+
+/* ---------- deck / slides ---------- */
+.deck{position:relative; z-index:10; height:100%}
+.slide{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  padding:84px 30px 72px; opacity:0; visibility:hidden;
+  transform:translateY(14px) scale(.992);
+  transition:opacity .5s var(--e1), transform .6s var(--e1), visibility .5s;}
+.slide.active{opacity:1; visibility:visible; transform:none}
+.slide.prev{transform:translateY(-14px) scale(.992)}
+.inner{width:100%; max-width:var(--maxw); margin:0 auto}
+
+/* ---------- tipografia / blocos de texto ---------- */
+.eyebrow{display:inline-flex; align-items:center; gap:9px; color:var(--orange-lt);
+  font-weight:700; font-size:12px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:18px}
+.eyebrow::before{content:""; width:22px; height:2px; background:linear-gradient(90deg,var(--orange),transparent); border-radius:2px}
+h1.title{font-family:var(--serif); font-weight:600; line-height:1.04; letter-spacing:-.018em;
+  font-size:clamp(34px,5.4vw,64px); color:var(--white)}
+h2.title{font-family:var(--serif); font-weight:600; line-height:1.07; letter-spacing:-.015em;
+  font-size:clamp(28px,4vw,46px); color:var(--white)}
+.title .accent{color:var(--orange); font-style:italic}
+.title .gold{color:var(--cream); font-style:italic}
+.lead{font-size:clamp(16px,1.5vw,20px); color:var(--muted); max-width:62ch; margin-top:18px; line-height:1.6}
+.lead strong{color:var(--cream); font-weight:600}
+.kicker{font-family:var(--serif); font-style:italic; color:var(--cream); font-size:18px}
+.hr-gold{height:1px; background:linear-gradient(90deg,var(--line-strong),transparent); border:0; margin:26px 0}
+
+/* ---------- grids & cards ---------- */
+.grid{display:grid; gap:18px; margin-top:34px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g5{grid-template-columns:repeat(5,1fr)}
+.card{background:linear-gradient(160deg,var(--surface),var(--bg2));
+  border:1px solid var(--line); border-radius:var(--radius); padding:24px 22px; position:relative; overflow:hidden}
+.card.warm{background:linear-gradient(160deg,#2a1c17,#1a1310); border-color:var(--line-strong)}
+.card .ic{width:42px; height:42px; border-radius:12px; display:grid; place-items:center; font-size:20px;
+  background:rgba(243,116,53,.12); border:1px solid rgba(243,116,53,.25); margin-bottom:14px}
+.card h3{font-size:18px; color:var(--white); font-weight:700; letter-spacing:-.01em; margin-bottom:7px}
+.card p{font-size:14.5px; color:var(--muted); line-height:1.55}
+.card .tag{position:absolute; top:16px; right:16px; font-size:10px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; padding:4px 9px; border-radius:999px}
+.tag.ok{color:var(--green); background:rgba(93,216,122,.12); border:1px solid rgba(93,216,122,.3)}
+.tag.soon{color:var(--amber); background:rgba(227,169,47,.12); border:1px solid rgba(227,169,47,.3)}
+.tag.plan{color:var(--muted); background:rgba(232,207,160,.07); border:1px solid var(--line)}
+.card .ico-gold{background:rgba(184,134,11,.14); border-color:rgba(184,134,11,.3)}
+
+/* lista com check */
+.checks{list-style:none; display:grid; gap:11px; margin-top:8px}
+.checks li{display:flex; gap:11px; align-items:flex-start; font-size:14.5px; color:var(--text)}
+.checks li::before{content:""; flex:none; width:18px; height:18px; margin-top:1px; border-radius:50%;
+  background:rgba(93,216,122,.14); border:1px solid rgba(93,216,122,.4);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235dd87a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+  background-size:11px; background-repeat:no-repeat; background-position:center}
+.checks.todo li::before{background:rgba(227,169,47,.12); border-color:rgba(227,169,47,.4);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e3a92f' stroke-width='3' stroke-linecap='round'%3E%3Cline x1='12' y1='6' x2='12' y2='13'/%3E%3Ccircle cx='12' cy='18' r='.5'/%3E%3C/svg%3E")}
+.checks li b{color:var(--white); font-weight:600}
+
+/* numerados (passo a passo) */
+.steps{display:grid; gap:14px; margin-top:26px; counter-reset:s}
+.steps.cols2{grid-template-columns:1fr 1fr; gap:14px 30px}
+.step{display:flex; gap:16px; align-items:flex-start}
+.step .n{flex:none; width:34px; height:34px; border-radius:50%; display:grid; place-items:center;
+  font-family:var(--serif); font-weight:600; color:var(--bg); font-size:16px;
+  background:linear-gradient(150deg,var(--gold-lt),var(--orange))}
+.step .tx b{display:block; color:var(--white); font-size:15.5px; font-weight:600; margin-bottom:2px}
+.step .tx span{color:var(--muted); font-size:13.5px; line-height:1.45}
+
+/* pills / legenda de status */
+.legend{display:flex; gap:20px; flex-wrap:wrap; margin-top:26px; font-size:12.5px; color:var(--muted)}
+.legend i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:middle}
+.dot-ok{background:var(--green)} .dot-soon{background:var(--amber)} .dot-plan{background:var(--faint)}
+
+/* fluxo / diagrama */
+.flow{display:flex; align-items:stretch; gap:0; margin-top:34px; flex-wrap:wrap}
+.node{flex:1; min-width:150px; background:linear-gradient(160deg,var(--surface),var(--bg2));
+  border:1px solid var(--line-strong); border-radius:16px; padding:18px 16px; text-align:center}
+.node .e{font-size:24px; margin-bottom:8px; display:block}
+.node b{display:block; color:var(--white); font-size:15px; font-weight:600}
+.node span{color:var(--muted); font-size:12.5px}
+.node.brand{border-color:rgba(243,116,53,.4); background:linear-gradient(160deg,#2a1c17,#1a1310)}
+.arrow{flex:none; align-self:center; color:var(--gold); font-size:24px; padding:0 12px; opacity:.8}
+.flow.col{flex-direction:column; align-items:stretch}
+.flow.col .arrow{transform:rotate(90deg); padding:6px 0; align-self:center}
+
+/* timeline horizontal (jornada / roadmap) */
+.tl{position:relative; margin-top:40px; padding-top:8px}
+.tl-line{position:absolute; top:30px; left:4%; right:4%; height:2px;
+  background:linear-gradient(90deg,var(--gold),var(--orange),var(--marrom))}
+.tl-row{display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:14px; position:relative}
+.tl-item{text-align:center; padding:0 6px}
+.tl-item .pt{width:14px; height:14px; border-radius:50%; margin:24px auto 16px; position:relative; z-index:2;
+  background:var(--orange); box-shadow:0 0 0 5px rgba(243,116,53,.16)}
+.tl-item.done .pt{background:var(--green); box-shadow:0 0 0 5px rgba(93,216,122,.16)}
+.tl-item.now .pt{background:var(--gold-lt); box-shadow:0 0 0 6px rgba(212,160,23,.22)}
+.tl-item h4{font-size:14px; color:var(--white); font-weight:700; margin-bottom:5px}
+.tl-item p{font-size:12px; color:var(--muted); line-height:1.45}
+.tl-item .ph{font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--orange-lt); margin-bottom:3px}
+
+/* tabela / matriz de permissões */
+.matrix{width:100%; border-collapse:separate; border-spacing:0; margin-top:30px; font-size:14px;
+  border:1px solid var(--line); border-radius:14px; overflow:hidden}
+.matrix th,.matrix td{padding:13px 16px; text-align:left; border-bottom:1px solid var(--line)}
+.matrix thead th{background:rgba(232,207,160,.05); color:var(--cream); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; font-weight:700}
+.matrix tbody tr:last-child td{border-bottom:0}
+.matrix td:first-child{color:var(--white); font-weight:600}
+.matrix .y{color:var(--green); font-weight:700}
+.matrix .n{color:var(--faint)}
+.matrix .p{color:var(--amber); font-size:12.5px}
+.matrix tbody tr:hover{background:rgba(232,207,160,.03)}
+
+/* nota da Lis */
+.lis-note{display:flex; gap:20px; align-items:center; margin-top:34px;
+  background:linear-gradient(160deg,#2a1c17,#1a1310); border:1px solid var(--line-strong);
+  border-radius:var(--radius); padding:20px 24px 20px 20px}
+.lis-note img{width:78px; height:78px; object-fit:cover; object-position:top center; border-radius:50%;
+  border:2px solid rgba(243,116,53,.5); flex:none; background:#0e0b09}
+.lis-note .sp{font-family:var(--serif); font-style:italic; color:var(--cream); font-size:17px; line-height:1.45}
+.lis-note .who{display:block; font-family:var(--sans); font-style:normal; font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--orange-lt); font-weight:700; margin-top:8px}
+
+/* kpi */
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:34px}
+.kpi{background:linear-gradient(160deg,var(--surface),var(--bg2)); border:1px solid var(--line);
+  border-radius:16px; padding:20px}
+.kpi .v{font-family:var(--serif); font-size:38px; font-weight:600; color:var(--white); line-height:1;
+  font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:18px; color:var(--orange)}
+.kpi .l{color:var(--muted); font-size:12.5px; margin-top:8px}
+
+/* code-ish chip */
+.code{font-family:'JetBrains Mono',ui-monospace,monospace; font-size:13px; color:var(--cream);
+  background:rgba(232,207,160,.07); border:1px solid var(--line); border-radius:7px; padding:2px 8px}
+
+/* ---------- slide de capa ---------- */
+.cover{text-align:center; position:relative}
+.cover .espiga{height:60px; margin:0 auto 30px; display:block; filter:drop-shadow(0 6px 24px rgba(243,116,53,.35))}
+.cover h1{font-size:clamp(40px,7vw,86px)}
+.cover .sub{font-family:var(--serif); font-style:italic; color:var(--cream); font-size:clamp(18px,2.4vw,28px); margin-top:14px}
+.cover .meta{margin-top:30px; color:var(--faint); font-size:13px; letter-spacing:.08em; text-transform:uppercase}
+.cover .lis{position:absolute; right:-2%; bottom:-72px; height:min(58vh,520px); pointer-events:none;
+  filter:drop-shadow(0 24px 50px rgba(0,0,0,.6))}
+
+/* ---------- slide divisor de bloco ---------- */
+.divider .inner{display:flex; align-items:center; gap:40px}
+.divider .big{font-family:var(--serif); font-size:clamp(120px,22vw,260px); font-weight:600; line-height:.8;
+  color:transparent; -webkit-text-stroke:2px var(--marrom); position:relative}
+.divider .big::after{content:attr(data-n); position:absolute; inset:0; color:transparent;
+  background:linear-gradient(160deg,var(--gold-lt),var(--orange)); -webkit-background-clip:text; background-clip:text;
+  -webkit-text-stroke:0; opacity:.18}
+.divider .dtx .eyebrow{margin-bottom:14px}
+.divider .dtx h2{font-size:clamp(30px,4.4vw,52px)}
+.divider .dtx p{color:var(--muted); margin-top:14px; max-width:46ch; font-size:16px}
+.divider .espiga{height:30px; margin-top:22px; opacity:.85}
+
+/* split layout */
+.split{display:grid; grid-template-columns:1.05fr .95fr; gap:46px; align-items:center}
+.split.media-r{grid-template-columns:1fr 1fr}
+.phone-mock{background:linear-gradient(170deg,#241914,#120d0a); border:1px solid var(--line-strong);
+  border-radius:30px; padding:16px; aspect-ratio:9/17; max-height:62vh; margin:0 auto; position:relative; overflow:hidden;
+  box-shadow:0 30px 60px rgba(0,0,0,.5)}
+.phone-mock .scr{position:absolute; inset:16px; border-radius:20px; background:radial-gradient(120% 60% at 50% 0,rgba(184,134,11,.18),transparent 60%),#0c0a09; padding:22px 18px; display:flex; flex-direction:column}
+
+/* utilitários */
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}
+.muted{color:var(--muted)} .cream{color:var(--cream)} .nowrap{white-space:nowrap}
+.two-col{column-count:2; column-gap:40px}
+
+/* ---------- navegação inferior ---------- */
+.nav{position:fixed; z-index:30; bottom:20px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:14px; background:rgba(20,15,12,.7); backdrop-filter:blur(10px);
+  border:1px solid var(--line); border-radius:999px; padding:7px 9px}
+.nav button{width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:transparent;
+  color:var(--cream); cursor:pointer; font-size:16px; display:grid; place-items:center; transition:.18s}
+.nav button:hover{background:rgba(243,116,53,.16); border-color:rgba(243,116,53,.4); color:var(--white)}
+.dots{display:flex; gap:6px; align-items:center; max-width:46vw; overflow:hidden}
+.dots i{width:7px; height:7px; border-radius:50%; background:var(--faint); cursor:pointer; transition:.2s; flex:none}
+.dots i.on{background:var(--orange); width:20px; border-radius:4px}
+.hint{position:fixed; bottom:24px; right:28px; z-index:30; font-size:11px; color:var(--faint); letter-spacing:.06em}
+.hint kbd{font-family:var(--sans); background:rgba(232,207,160,.08); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--muted)}
+
+/* reveal escalonado */
+[data-anim]{opacity:0; transform:translateY(16px); transition:opacity .55s var(--e1), transform .6s var(--e1)}
+.slide.active [data-anim]{opacity:1; transform:none}
+
+/* responsivo (apresentação roda bem em telas menores / preview) */
+@media (max-width:920px){
+  body{font-size:16px}
+  .g3,.g4,.g5,.kpis{grid-template-columns:repeat(2,1fr)}
+  .split,.split.media-r{grid-template-columns:1fr; gap:26px}
+  .divider .inner{flex-direction:column; align-items:flex-start; gap:18px}
+  .steps.cols2{grid-template-columns:1fr}
+  .cover .lis{display:none}
+  .two-col{column-count:1}
+  .tl-row{grid-auto-flow:row; grid-template-columns:1fr 1fr}
+  .tl-line{display:none}
+}
+@media (max-width:560px){
+  .g2,.g3,.g4,.g5,.kpis{grid-template-columns:1fr}
+  .chrome.tl .blk{display:none}
+}
+
+/* acessibilidade: respeita quem prefere menos movimento */
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.001ms !important; animation:none !important}
+  [data-anim]{opacity:1; transform:none}
+  .slide{transition:opacity .2s linear}
+}
+
+/* impressão / fallback PDF */
+@media print{
+  body{overflow:visible; height:auto}
+  .chrome,.nav,.hint,.progress,.bg-fx{display:none}
+  .slide{position:relative; opacity:1; visibility:visible; transform:none;
+    page-break-after:always; min-height:100vh; border-bottom:1px solid #222}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx" aria-hidden="true"></div>
+<div class="progress" id="progress"></div>
+
+<div class="chrome tl"><img class="mark" src="assets/logo-branca.svg" alt="Pralís" /><span class="blk" id="blk">Visão Geral</span></div>
+<div class="chrome tr counter"><b id="cur">01</b> / <span id="tot">00</span></div>
+
+<main class="deck" id="deck">
+
+  <!-- 01 · CAPA -->
+  <section class="slide cover" data-blk="Abertura">
+    <div class="inner">
+      <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      <div class="eyebrow" data-anim style="justify-content:center">Padaria Pralís · Apresentação oficial</div>
+      <h1 class="title" data-anim>Sistema <span class="accent">Pralís</span></h1>
+      <p class="sub" data-anim>Plataforma de Treinamento e Conduta</p>
+      <p class="meta" data-anim>Manual inicial do projeto · Equipe · Gestão · TI · Criação de conteúdo</p>
+    </div>
+    <img class="lis" src="assets/lis-full.png" alt="Lis, a guia do app" data-anim />
+  </section>
+
+  <!-- 02 · SUMÁRIO -->
+  <section class="slide" data-blk="Abertura">
+    <div class="inner">
+      <div class="eyebrow" data-anim>O que você vai ver</div>
+      <h2 class="title" data-anim>Dez blocos, uma <span class="gold">história só</span></h2>
+      <div class="grid g5" data-anim style="gap:12px">
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">1</div><h3 style="font-size:14px">Visão geral</h3></div>
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">2</div><h3 style="font-size:14px">Arquitetura</h3></div>
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">3</div><h3 style="font-size:14px">Colaborador</h3></div>
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">4</div><h3 style="font-size:14px">Admin / CMS</h3></div>
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">5</div><h3 style="font-size:14px">Criar treinamentos</h3></div>
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">6</div><h3 style="font-size:14px">Mídia & conteúdo</h3></div>
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">7</div><h3 style="font-size:14px">Regras & permissões</h3></div>
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">8</div><h3 style="font-size:14px">Backend / TI</h3></div>
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">9</div><h3 style="font-size:14px">Roadmap</h3></div>
+        <div class="card" style="padding:16px"><div class="ic" style="width:32px;height:32px;font-size:15px">10</div><h3 style="font-size:14px">Manual rápido</h3></div>
+      </div>
+      <p class="lead" data-anim>Use <span class="code">←</span> <span class="code">→</span> para navegar, <span class="code">F</span> para tela cheia. A apresentação é offline e cabe em qualquer navegador.</p>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 1 ===================== -->
+  <section class="slide divider" data-blk="Visão Geral">
+    <div class="inner">
+      <div class="big" data-n="01" data-anim>01</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 1</div>
+        <h2 class="title" data-anim>Visão geral</h2>
+        <p data-anim>O que é o Pralís, para que serve, qual problema resolve e quem usa.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Visão Geral">
+    <div class="inner">
+      <div class="eyebrow" data-anim>O que é · para que serve</div>
+      <h2 class="title" data-anim>Treinar a equipe com o <span class="accent">jeito Pralís</span></h2>
+      <div class="grid g3" data-anim>
+        <div class="card warm"><div class="ic">🥐</div><h3>O que é</h3><p>Um app de treinamento e conduta que transforma o Código da Pralís numa jornada interativa — vídeos, quizzes e a Lis guiando cada passo.</p></div>
+        <div class="card warm"><div class="ic">🎯</div><h3>Para que serve</h3><p>Padronizar a cultura, os deveres e as regras da casa. Cada colaborador aprende, responde e <b style="color:var(--cream)">assina</b> o que entendeu.</p></div>
+        <div class="card warm"><div class="ic">🔥</div><h3>Problema que resolve</h3><p>Fim do treinamento solto em papel e WhatsApp. Conteúdo vivo, rastreável e com prova de conclusão — tudo num lugar só.</p></div>
+      </div>
+      <div class="lis-note" data-anim>
+        <img src="assets/lis-bust.png" alt="Lis" />
+        <div><span class="sp">"Oi! Eu sou a Lis. É comigo que o colaborador caminha do primeiro 'oi' até a assinatura do termo."</span><span class="who">Lis · guia do colaborador</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Visão Geral">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Quem usa</div>
+      <h2 class="title" data-anim>Cinco públicos, uma plataforma</h2>
+      <div class="grid g5" data-anim>
+        <div class="card"><div class="ic ico-gold">👑</div><h3>Dono</h3><p>Rodrigo. Cria conteúdo, vê tudo, define regras.</p></div>
+        <div class="card"><div class="ic ico-gold">🧑‍🍳</div><h3>Gerente</h3><p>Acompanha a própria equipe e as pendências.</p></div>
+        <div class="card"><div class="ic ico-gold">📋</div><h3>RH / Admin</h3><p>Cadastra pessoas e acompanha relatórios.</p></div>
+        <div class="card"><div class="ic">🧑‍🌾</div><h3>Colaborador</h3><p>Faz a jornada, responde e assina o termo.</p></div>
+        <div class="card"><div class="ic">🛠️</div><h3>TI</h3><p>Liga backend, Storage e coloca no ar.</p></div>
+      </div>
+      <p class="lead" data-anim>O mesmo sistema serve do chão da padaria à sala da gestão — cada um vê só o que precisa.</p>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Visão Geral">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Visão do ecossistema</div>
+      <h2 class="title" data-anim>Como tudo se conecta</h2>
+      <div class="flow" data-anim>
+        <div class="node"><span class="e">🛠️</span><b>Admin / CMS</b><span>Dono cria módulos e conteúdo</span></div>
+        <div class="arrow">→</div>
+        <div class="node brand"><span class="e">📦</span><b>Conteúdo</b><span>Módulos, termos, mídia</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><span class="e">📱</span><b>App colaborador</b><span>Jornada + Lis + quizzes</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><span class="e">✍️</span><b>Assinatura</b><span>Prova de conclusão</span></div>
+        <div class="arrow">→</div>
+        <div class="node brand"><span class="e">📊</span><b>Relatórios</b><span>Gestão acompanha</span></div>
+      </div>
+      <p class="lead" data-anim>Um ciclo fechado: o que o dono publica vira jornada para o colaborador e volta como dado para a gestão.</p>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 2 ===================== -->
+  <section class="slide divider" data-blk="Arquitetura">
+    <div class="inner">
+      <div class="big" data-n="02" data-anim>02</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 2</div>
+        <h2 class="title" data-anim>Arquitetura do produto</h2>
+        <p data-anim>Como o sistema é dividido, como os dados fluem e o que já está pronto.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Arquitetura">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Três pilares</div>
+      <h2 class="title" data-anim>O sistema em <span class="gold">três partes</span></h2>
+      <div class="grid g3" data-anim>
+        <div class="card warm"><div class="ic">📱</div><h3>App do colaborador</h3><p>Tema escuro, emocional. Home "Trilha Viva", módulos, Lis, vídeos, quizzes, assinatura. É um PWA — instala no celular.</p></div>
+        <div class="card warm"><div class="ic">🗂️</div><h3>Admin / CMS</h3><p>Tema claro, produtivo. Cadastro de pessoas, editor de conteúdo, preview real e publicação.</p></div>
+        <div class="card warm"><div class="ic">📊</div><h3>Dashboard / Relatórios</h3><p>Visão da gestão: progresso, conclusões, pendências, drill-down gerente → equipe → colaborador.</p></div>
+      </div>
+      <p class="lead" data-anim>Mesma base de código, dois mundos visuais: <strong>quente para quem aprende</strong>, <strong>limpo para quem gerencia</strong>.</p>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Arquitetura">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Fluxo geral de dados</div>
+      <h2 class="title" data-anim>Da edição ao relatório</h2>
+      <div class="flow col" data-anim style="max-width:760px;margin-left:auto;margin-right:auto">
+        <div class="node brand"><b>Dono edita um módulo no Admin</b><span>Texto, vídeo, quiz, enquete, fala da Lis</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>Conteúdo salvo (contrato Module / Story)</b><span>Hoje no aparelho · amanhã no Supabase</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>Colaborador faz a jornada</b><span>Desbloqueio por etapa · quizzes · enquetes</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>Conclusão + assinatura registradas</b><span>Eventos de progresso e tracking</span></div>
+        <div class="arrow">→</div>
+        <div class="node brand"><b>Gestão acompanha nos relatórios</b><span>Quem fez, quem falta, quem assinou</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Arquitetura">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Hoje vs. amanhã</div>
+      <h2 class="title" data-anim>LocalStorage agora, <span class="accent">Supabase</span> depois</h2>
+      <div class="split media-r" style="align-items:start">
+        <div class="card" data-anim>
+          <div class="tag plan">Hoje</div>
+          <div class="ic">💾</div><h3>100% no aparelho (localStorage)</h3>
+          <p>O sistema roda inteiro sem internet e sem servidor. Ideal para validar produto, fluxo e conteúdo agora — sem custo e sem risco.</p>
+          <ul class="checks mt16"><li>Funciona offline, modo demonstração</li><li>Zero dependência externa</li><li>Perfeito para testar com a equipe</li></ul>
+        </div>
+        <div class="card warm" data-anim>
+          <div class="tag soon">Planejado</div>
+          <div class="ic ico-gold">☁️</div><h3>Supabase + Storage (na nuvem)</h3>
+          <p>Quando ligado, o conteúdo e as pessoas passam a viver na nuvem, compartilhados entre dispositivos — sem reescrever o app.</p>
+          <ul class="checks mt16"><li>Conteúdo central, multi-dispositivo</li><li>Mídia em Storage (vídeo/áudio)</li><li>Base para push e analytics</li></ul>
+        </div>
+      </div>
+      <p class="lead" data-anim>A virada é uma chave: <span class="code">hasSupabase</span>. Sem as credenciais, tudo continua local. <strong>Nada quebra na transição.</strong></p>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Arquitetura">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Estado atual</div>
+      <h2 class="title" data-anim>O que já está pronto · o que falta</h2>
+      <div class="split" style="align-items:start">
+        <div data-anim>
+          <h3 style="color:var(--green);font-size:15px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px">✓ Pronto e funcionando</h3>
+          <ul class="checks">
+            <li><b>App do colaborador completo</b> — Home, módulos, Lis, quizzes, enquetes, assinatura</li>
+            <li><b>Admin / CMS</b> — cadastro de pessoas, gerentes, editor de conteúdo</li>
+            <li><b>Relatórios Pro</b> com drill-down gerente → equipe → colaborador</li>
+            <li><b>Preview real</b> do módulo no celular dentro do editor</li>
+            <li><b>Rascunho → publicação</b> e enquetes (poll)</li>
+            <li><b>PWA</b> — instala no celular, service worker ativo</li>
+          </ul>
+        </div>
+        <div data-anim>
+          <h3 style="color:var(--amber);font-size:15px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px">○ Próximas fases</h3>
+          <ul class="checks todo">
+            <li><b>Ligar o Supabase real</b> (migrations já escritas)</li>
+            <li><b>Upload de mídia</b> no admin (vídeo/áudio)</li>
+            <li><b>Lis com áudio + texto sincronizado</b></li>
+            <li><b>Área de Avisos</b> e <b>push</b> notifications</li>
+            <li><b>Analytics</b> de engajamento e conclusão</li>
+            <li><b>Login com Supabase Auth</b> (produção)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 3 ===================== -->
+  <section class="slide divider" data-blk="Colaborador">
+    <div class="inner">
+      <div class="big" data-n="03" data-anim>03</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 3</div>
+        <h2 class="title" data-anim>Experiência do colaborador</h2>
+        <p data-anim>A jornada de quem aprende: Home, módulos, Lis, quizzes e assinatura.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Colaborador">
+    <div class="inner split">
+      <div data-anim>
+        <div class="eyebrow">Home · Trilha Viva</div>
+        <h2 class="title">A jornada começa <span class="gold">acolhendo</span></h2>
+        <p class="lead">A Home é uma trilha viva: a Lis dá as boas-vindas, mostra o próximo passo e celebra cada conquista. Leve, sem loops infinitos — feita para o ritmo de quem trabalha.</p>
+        <ul class="checks mt24">
+          <li><b>Lis como guia</b> — apresenta cada módulo com fala própria</li>
+          <li><b>Progresso visível</b> — o colaborador sempre sabe onde está</li>
+          <li><b>Próximo passo claro</b> — um caminho, não um mural confuso</li>
+        </ul>
+      </div>
+      <div class="phone-mock" data-anim>
+        <div class="scr">
+          <div style="font-family:var(--serif);color:var(--cream);font-size:20px">Olá, bem-vindo 👋</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:4px">Sua trilha na Pralís</div>
+          <div style="margin-top:20px;background:linear-gradient(150deg,#2a1c17,#160f0c);border:1px solid var(--line-strong);border-radius:16px;padding:16px">
+            <div style="font-size:11px;color:var(--orange-lt);font-weight:700;letter-spacing:.1em">EM ANDAMENTO</div>
+            <div style="color:#fff;font-weight:600;margin-top:6px">Código de Conduta</div>
+            <div style="height:6px;background:rgba(255,255,255,.1);border-radius:99px;margin-top:12px;overflow:hidden"><div style="width:60%;height:100%;background:linear-gradient(90deg,var(--gold),var(--orange))"></div></div>
+          </div>
+          <div style="margin-top:12px;background:rgba(232,207,160,.05);border:1px solid var(--line);border-radius:16px;padding:14px;color:var(--muted);font-size:13px">🔒 A Jornada do Colaborador</div>
+          <div style="margin-top:auto;display:flex;justify-content:space-around;padding-top:14px;border-top:1px solid var(--line);color:var(--faint);font-size:11px"><span>🏠 Início</span><span>📈 Progresso</span><span>👤 Perfil</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Colaborador">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Módulos & bloqueios</div>
+      <h2 class="title" data-anim>Um passo de cada vez</h2>
+      <div class="grid g3" data-anim>
+        <div class="card"><div class="ic">🔓</div><h3>Desbloqueio em sequência</h3><p>O próximo módulo só abre quando o anterior é concluído. Aprendizado em ordem, sem pular etapas.</p></div>
+        <div class="card"><div class="ic">📈</div><h3>Progresso salvo</h3><p>Cada conclusão fica registrada. O colaborador pode parar e voltar de onde estava.</p></div>
+        <div class="card"><div class="ic">🎯</div><h3>Por cargo</h3><p>Além dos módulos gerais, cada um recebe os treinamentos do seu cargo (Preparo, Atendimento, Caixa…).</p></div>
+      </div>
+      <p class="lead" data-anim>A regra de desbloqueio (<span class="code">prevDone</span>) é uma lógica aprovada e <strong>congelada</strong> — a base do aprendizado em trilha.</p>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Colaborador">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Dentro do módulo</div>
+      <h2 class="title" data-anim>Conteúdo que <span class="accent">conversa</span></h2>
+      <div class="grid g4" data-anim>
+        <div class="card"><div class="ic">💬</div><h3>Fala da Lis</h3><p>A guia explica o tema com voz própria e jeito humano.</p></div>
+        <div class="card"><div class="ic">🎬</div><h3>Vídeos</h3><p>Trechos curtos antes das perguntas, no formato story.</p></div>
+        <div class="card"><div class="ic">✅</div><h3>Quizzes</h3><p>Perguntas que confirmam o que ficou claro — com feedback.</p></div>
+        <div class="card"><div class="ic">📊</div><h3>Enquetes</h3><p>Opinião da equipe (poll), única ou múltipla escolha.</p></div>
+      </div>
+      <p class="lead" data-anim>Tudo dentro do <strong>StoryPlayer</strong> — uma experiência tipo "stories", natural para qualquer pessoa que usa celular.</p>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Colaborador">
+    <div class="inner split">
+      <div data-anim>
+        <div class="eyebrow">Assinatura & conclusão</div>
+        <h2 class="title">Aprendeu, <span class="gold">assinou</span>, valeu</h2>
+        <p class="lead">Ao final, o colaborador assina o termo do Código de Conduta. A assinatura guarda data, versão do documento e identificação — uma <strong>prova real</strong> de que ele leu e concordou.</p>
+        <ul class="checks mt24">
+          <li><b>Validação de conclusão</b> antes de liberar a assinatura</li>
+          <li><b>Termo versionado</b> — fica registrado o que foi assinado</li>
+          <li><b>Dados probatórios</b> — data, versão, identificação</li>
+        </ul>
+      </div>
+      <div class="phone-mock" data-anim>
+        <div class="scr" style="justify-content:center;text-align:center;align-items:center">
+          <div style="font-size:40px">✍️</div>
+          <div style="font-family:var(--serif);color:#fff;font-size:22px;margin-top:14px">Termo de Conduta</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:8px;line-height:1.5">Li e concordo com o Código<br/>de Conduta da Pralís.</div>
+          <div style="margin-top:22px;border:1px dashed var(--line-strong);border-radius:12px;padding:18px 26px;font-family:var(--serif);font-style:italic;color:var(--cream);font-size:20px">Lis Oliveira</div>
+          <div style="margin-top:18px;background:linear-gradient(90deg,var(--gold),var(--orange));color:#1a0f08;font-weight:700;border-radius:99px;padding:11px 26px;font-size:14px">Assinar e concluir</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Colaborador">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Jornada completa</div>
+      <h2 class="title" data-anim>Do primeiro "oi" ao termo assinado</h2>
+      <div class="tl" data-anim>
+        <div class="tl-line"></div>
+        <div class="tl-row">
+          <div class="tl-item done"><div class="pt"></div><h4>Boas-vindas</h4><p>Lis recebe e apresenta a trilha</p></div>
+          <div class="tl-item done"><div class="pt"></div><h4>Módulos gerais</h4><p>Conduta, deveres, proibições</p></div>
+          <div class="tl-item done"><div class="pt"></div><h4>Módulos por cargo</h4><p>Preparo, atendimento, caixa…</p></div>
+          <div class="tl-item now"><div class="pt"></div><h4>Quizzes & enquetes</h4><p>Confirma o aprendizado</p></div>
+          <div class="tl-item"><div class="pt"></div><h4>Assinatura</h4><p>Prova de conclusão</p></div>
+          <div class="tl-item"><div class="pt"></div><h4>Acompanhamento</h4><p>Gestão vê o resultado</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 4 ===================== -->
+  <section class="slide divider" data-blk="Admin / CMS">
+    <div class="inner">
+      <div class="big" data-n="04" data-anim>04</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 4</div>
+        <h2 class="title" data-anim>Admin / CMS</h2>
+        <p data-anim>O painel da gestão: pessoas, relatórios e o editor de conteúdo.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Admin / CMS">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Painel administrativo</div>
+      <h2 class="title" data-anim>Claro, rápido, <span class="gold">profissional</span></h2>
+      <p class="lead" data-anim>O admin é um SaaS limpo (estilo Linear/Notion), tema claro, focado em organização e produtividade. A identidade Pralís aparece na cor, na tipografia e nos detalhes — nunca em decoração.</p>
+      <div class="grid g4" data-anim>
+        <div class="card"><div class="ic">🏠</div><h3>Dashboard</h3><p>Visão geral com indicadores e atividade.</p></div>
+        <div class="card"><div class="ic">👥</div><h3>Colaboradores</h3><p>Cadastro completo e visão 360º.</p></div>
+        <div class="card"><div class="ic">🧑‍🍳</div><h3>Gerentes</h3><p>Equipes e responsáveis.</p></div>
+        <div class="card"><div class="ic">📦</div><h3>Módulos</h3><p>Editor de conteúdo e publicação.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Admin / CMS">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Pessoas & hierarquia</div>
+      <h2 class="title" data-anim>Gerente → equipe → colaborador</h2>
+      <div class="flow" data-anim style="max-width:840px">
+        <div class="node brand"><span class="e">🧑‍🍳</span><b>Gerente</b><span>Responsável pela loja/turno</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><span class="e">👥</span><b>Equipe</b><span>Colaboradores sob o gerente</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><span class="e">🧑‍🌾</span><b>Colaborador</b><span>Visão 360º individual</span></div>
+      </div>
+      <div class="grid g3" data-anim style="margin-top:26px">
+        <div class="card"><div class="ic">🔎</div><h3>Drill-down 360º</h3><p>Do gerente até o colaborador: status, progresso e pendências de cada um.</p></div>
+        <div class="card"><div class="ic">⚡</div><h3>Ações rápidas</h3><p>Cadastrar, editar, acompanhar — em poucos cliques, com estados vazios bem resolvidos.</p></div>
+        <div class="card"><div class="ic">📱</div><h3>Responsivo</h3><p>Funciona no desktop e no celular do gestor.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Admin / CMS">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Relatórios Pro</div>
+      <h2 class="title" data-anim>Decidir com <span class="accent">dados</span>, não com achismo</h2>
+      <div class="grid g3" data-anim>
+        <div class="card"><div class="ic">🧭</div><h3>Filtros & busca</h3><p>Por gerente, cargo, status, período. Encontre quem precisa de atenção.</p></div>
+        <div class="card"><div class="ic">📤</div><h3>Exportações</h3><p>Leve os dados para fora quando precisar prestar contas.</p></div>
+        <div class="card"><div class="ic">📈</div><h3>Progresso & conclusão</h3><p>Quem começou, quem terminou, quem assinou — em uma tela.</p></div>
+      </div>
+      <p class="lead" data-anim>Pensado para o dia a dia da gestão: <strong>encontrar pendências e agir rápido</strong>.</p>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Admin / CMS">
+    <div class="inner split">
+      <div data-anim>
+        <div class="eyebrow">Editor de conteúdo</div>
+        <h2 class="title">Uma <span class="gold">timeline única</span> de blocos</h2>
+        <p class="lead">O editor abandona abas confusas: tudo vira uma linha do tempo de blocos (texto, vídeo, quiz, enquete). Arrasta para reordenar, edita inline e vê o resultado real.</p>
+        <ul class="checks mt24">
+          <li><b>Preview real no celular</b> — o módulo roda de verdade ao lado</li>
+          <li><b>Arrastar & soltar</b> blocos, perguntas e opções</li>
+          <li><b>Rascunho → publicar</b> — controla o que o colaborador vê</li>
+        </ul>
+      </div>
+      <div class="phone-mock" data-anim>
+        <div class="scr">
+          <div style="font-size:11px;color:var(--orange-lt);font-weight:700;letter-spacing:.1em">PREVIEW REAL</div>
+          <div style="font-family:var(--serif);color:#fff;font-size:19px;margin-top:8px">O que é Dever?</div>
+          <div style="margin-top:16px;display:grid;gap:10px">
+            <div style="background:rgba(232,207,160,.06);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;color:var(--muted)">💬 Fala da Lis</div>
+            <div style="background:rgba(243,116,53,.1);border:1px solid rgba(243,116,53,.3);border-radius:12px;padding:12px;font-size:13px;color:var(--cream)">🎬 Vídeo: cuidado com utensílios</div>
+            <div style="background:rgba(232,207,160,.06);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;color:var(--muted)">✅ Quiz: 3 perguntas</div>
+            <div style="background:rgba(232,207,160,.06);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;color:var(--muted)">📊 Enquete da equipe</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 5 ===================== -->
+  <section class="slide divider" data-blk="Criar treinamentos">
+    <div class="inner">
+      <div class="big" data-n="05" data-anim>05</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 5</div>
+        <h2 class="title" data-anim>Criação de treinamentos</h2>
+        <p data-anim>Como montar um treinamento do zero — passo a passo.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Criar treinamentos">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Do zero ao publicado</div>
+      <h2 class="title" data-anim>Criar um treinamento em 6 passos</h2>
+      <div class="steps cols2" data-anim>
+        <div class="step"><div class="n">1</div><div class="tx"><b>Novo módulo</b><span>Dê nome, escolha a seção (geral ou por cargo) e quem vê.</span></div></div>
+        <div class="step"><div class="n">2</div><div class="tx"><b>Monte a timeline</b><span>Adicione blocos: fala da Lis, texto, vídeo, quiz, enquete.</span></div></div>
+        <div class="step"><div class="n">3</div><div class="tx"><b>Ordene</b><span>Arraste os blocos e as perguntas para a ordem ideal.</span></div></div>
+        <div class="step"><div class="n">4</div><div class="tx"><b>Revise no preview</b><span>Veja o módulo rodando de verdade no celular ao lado.</span></div></div>
+        <div class="step"><div class="n">5</div><div class="tx"><b>Publique</b><span>Tire do rascunho. Só então o colaborador passa a ver.</span></div></div>
+        <div class="step"><div class="n">6</div><div class="tx"><b>Reordene a trilha</b><span>Defina a posição do módulo na jornada geral.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Criar treinamentos">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Blocos disponíveis</div>
+      <h2 class="title" data-anim>As peças de um módulo</h2>
+      <div class="grid g3" data-anim>
+        <div class="card"><div class="ic">💬</div><h3>Fala da Lis</h3><p>Texto narrado pela guia. <span class="cream">Áudio sincronizado vem na próxima fase.</span></p></div>
+        <div class="card"><div class="ic">📝</div><h3>Texto</h3><p>Explicações, listas, destaques de conduta.</p></div>
+        <div class="card"><div class="ic">🎬</div><h3>Vídeo</h3><p>Inserido antes das perguntas. <span class="cream">Upload real vem na próxima fase.</span></p></div>
+        <div class="card"><div class="ic">✅</div><h3>Quiz</h3><p>Perguntas de múltipla escolha com correção.</p></div>
+        <div class="card"><div class="ic">📊</div><h3>Enquete (poll)</h3><p>Opinião da equipe — única ou múltipla, anônima opcional.</p></div>
+        <div class="card"><div class="ic ico-gold">🔀</div><h3>Ordem livre</h3><p>Tudo arrastável. A trilha vira o que você desenhar.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 6 ===================== -->
+  <section class="slide divider" data-blk="Mídia & conteúdo">
+    <div class="inner">
+      <div class="big" data-n="06" data-anim>06</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 6</div>
+        <h2 class="title" data-anim>Mídia e conteúdo</h2>
+        <p data-anim>Vídeo, áudio da Lis, texto sincronizado e o futuro Storage.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Mídia & conteúdo">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Estratégia de mídia</div>
+      <h2 class="title" data-anim>Leve no celular, <span class="gold">bonito</span> na tela</h2>
+      <div class="grid g4" data-anim>
+        <div class="card"><div class="ic">🎬</div><h3>Vídeo</h3><p>MP4 (H.264) como padrão; WebM e HLS para escala e streaming.</p></div>
+        <div class="card"><div class="ic">🔊</div><h3>Áudio da Lis</h3><p>Narração própria por fala — preparada para reutilização.</p></div>
+        <div class="card"><div class="ic">⏱️</div><h3>Texto sincronizado</h3><p>Cues que acompanham o áudio, palavra por trecho.</p></div>
+        <div class="card"><div class="ic">💬</div><h3>Legendas</h3><p>VTT/cues para acessibilidade e ambientes sem som.</p></div>
+      </div>
+      <div class="lis-note" data-anim>
+        <img src="assets/lis-bust.png" alt="Lis" />
+        <div><span class="sp">"Na próxima fase eu ganho voz: áudio + texto andando juntos, com legenda para todo mundo entender."</span><span class="who">Lis · áudio sincronizado (planejado)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Mídia & conteúdo">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Upload & Storage (planejado)</div>
+      <h2 class="title" data-anim>Subir mídia direto pelo admin</h2>
+      <div class="split" style="align-items:start">
+        <div data-anim>
+          <ul class="checks todo">
+            <li><b>Upload no editor</b> — arrastar vídeo/áudio/imagem</li>
+            <li><b>Supabase Storage</b> — buckets: vídeo, áudio, imagem, pôster, Lis</li>
+            <li><b>URLs nos blocos</b> — a mídia entra direto na timeline</li>
+            <li><b>Leitura pública</b> para mídia; anexos privados</li>
+          </ul>
+        </div>
+        <div class="card warm" data-anim>
+          <div class="ic ico-gold">📹</div>
+          <h3>Boas práticas de vídeo (celular)</h3>
+          <p style="margin-top:8px">• Vertical 9:16 ou quadrado · curto (15–60s)<br/>• H.264, ~720p, bitrate enxuto<br/>• Pôster/thumb para carregar rápido<br/>• Sempre com legenda — muita gente assiste sem som</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 7 ===================== -->
+  <section class="slide divider" data-blk="Regras & permissões">
+    <div class="inner">
+      <div class="big" data-n="07" data-anim>07</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 7</div>
+        <h2 class="title" data-anim>Regras e permissões</h2>
+        <p data-anim>Quem é quem, o que cada um pode fazer e como as regras funcionam.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Regras & permissões">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Tipos de usuário</div>
+      <h2 class="title" data-anim>Cada papel, seu acesso</h2>
+      <table class="matrix" data-anim>
+        <thead><tr><th>Pode…</th><th>Dono</th><th>Gerente</th><th>RH / Admin</th><th>Colaborador</th></tr></thead>
+        <tbody>
+          <tr><td>Criar / editar módulos</td><td class="y">Sim</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+          <tr><td>Publicar conteúdo</td><td class="y">Sim</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+          <tr><td>Cadastrar pessoas</td><td class="y">Sim</td><td class="p">Equipe</td><td class="y">Sim</td><td class="n">—</td></tr>
+          <tr><td>Ver relatórios</td><td class="y">Tudo</td><td class="p">Só a equipe</td><td class="y">Sim</td><td class="n">—</td></tr>
+          <tr><td>Fazer a jornada</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="y">Sim</td></tr>
+          <tr><td>Assinar o termo</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="y">Sim</td></tr>
+        </tbody>
+      </table>
+      <p class="lead" data-anim>O <strong>gerente</strong> enxerga apenas a própria equipe; o <strong>dono</strong> enxerga tudo. <span class="muted">(Login de admin atual será migrado para Supabase Auth na fase de produção.)</span></p>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Regras & permissões">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Como as regras funcionam</div>
+      <h2 class="title" data-anim>Conteúdo certo, pessoa certa</h2>
+      <div class="grid g3" data-anim>
+        <div class="card"><div class="ic">🎯</div><h3>Por cargo</h3><p>Módulos "geral" vão para todos; módulos "por cargo" só aparecem para quem é daquele cargo (Preparo, Atendimento, Caixa…).</p></div>
+        <div class="card"><div class="ic">🔓</div><h3>De desbloqueio</h3><p>O próximo módulo só abre após concluir o anterior. Sem atalhos no aprendizado.</p></div>
+        <div class="card"><div class="ic">✍️</div><h3>De assinatura & validação</h3><p>Só assina quem concluiu. A assinatura guarda data, versão e identificação como prova.</p></div>
+      </div>
+      <p class="lead" data-anim>Essas regras são a <strong>espinha dorsal</strong> do produto — estáveis e preservadas em todas as fases.</p>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 8 ===================== -->
+  <section class="slide divider" data-blk="Backend / TI">
+    <div class="inner">
+      <div class="big" data-n="08" data-anim>08</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 8</div>
+        <h2 class="title" data-anim>Backend / TI</h2>
+        <p data-anim>O que a equipe técnica precisa para colocar no ar.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Backend / TI">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Estrutura atual</div>
+      <h2 class="title" data-anim>Stack & como roda hoje</h2>
+      <div class="grid g4" data-anim>
+        <div class="card"><div class="ic">⚛️</div><h3>Front-end</h3><p>React 18 + Vite + TypeScript + Tailwind + Framer Motion.</p></div>
+        <div class="card"><div class="ic">💾</div><h3>Dados (hoje)</h3><p>localStorage — roda 100% sem servidor. Modo demo/local.</p></div>
+        <div class="card"><div class="ic">📲</div><h3>PWA</h3><p>Service worker ativo — instala no celular, funciona offline.</p></div>
+        <div class="card"><div class="ic ico-gold">☁️</div><h3>Nuvem (planejado)</h3><p>Supabase + Storage, ligados por chave de ambiente.</p></div>
+      </div>
+      <p class="lead" data-anim>A virada para a nuvem é controlada por <span class="code">VITE_SUPABASE_URL</span> + <span class="code">VITE_SUPABASE_ANON_KEY</span>. Sem elas, tudo continua local.</p>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Backend / TI">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Supabase planejado</div>
+      <h2 class="title" data-anim>Tabelas & segurança</h2>
+      <div class="split" style="align-items:start">
+        <div data-anim>
+          <table class="matrix" style="margin-top:6px">
+            <thead><tr><th>Tabela</th><th>Guarda</th></tr></thead>
+            <tbody>
+              <tr><td>training_modules</td><td class="muted">Módulos (conteúdo JSONB)</td></tr>
+              <tr><td>employees</td><td class="muted">Colaboradores</td></tr>
+              <tr><td>signatures</td><td class="muted">Assinaturas (prova)</td></tr>
+              <tr><td>lis_lines</td><td class="muted">Falas/áudio da Lis</td></tr>
+              <tr><td>poll_answers</td><td class="muted">Respostas de enquete</td></tr>
+              <tr><td>push_subscriptions</td><td class="muted">Inscrições de push</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div data-anim>
+          <div class="card warm">
+            <div class="ic ico-gold">🔐</div>
+            <h3>Segurança (antes de dados reais)</h3>
+            <ul class="checks todo mt8">
+              <li><b>RLS</b> — Row Level Security em todas as tabelas</li>
+              <li><b>Policies de Storage</b> — quem sobe/lê mídia</li>
+              <li><b>Supabase Auth</b> — login real do admin</li>
+              <li><b>LGPD</b> — minimizar dado, GPS opcional e consentido</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <p class="lead" data-anim>As migrations <span class="code">0004–0006</span> já estão escritas (idempotentes). RLS e escrita ficam no hardening <span class="code">0007</span>.</p>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Backend / TI">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Colocar no ar</div>
+      <h2 class="title" data-anim>Checklist técnico de produção</h2>
+      <div class="steps cols2" data-anim>
+        <div class="step"><div class="n">1</div><div class="tx"><b>Criar projeto Supabase</b><span>Banco + Storage na nuvem</span></div></div>
+        <div class="step"><div class="n">2</div><div class="tx"><b>Aplicar migrations 0004→0006</b><span>SQL Editor ou supabase db push</span></div></div>
+        <div class="step"><div class="n">3</div><div class="tx"><b>Definir variáveis de ambiente</b><span>URL + ANON KEY no deploy</span></div></div>
+        <div class="step"><div class="n">4</div><div class="tx"><b>Semear o conteúdo</b><span>Subir os módulos atuais uma vez</span></div></div>
+        <div class="step"><div class="n">5</div><div class="tx"><b>Hardening 0007</b><span>RLS + policies + Auth</span></div></div>
+        <div class="step"><div class="n">6</div><div class="tx"><b>Deploy na Vercel/Netlify</b><span>Build estático + PWA</span></div></div>
+        <div class="step"><div class="n">7</div><div class="tx"><b>Validar no celular</b><span>Instalar PWA, testar offline</span></div></div>
+        <div class="step"><div class="n">8</div><div class="tx"><b>Caminho Android/iOS</b><span>Mesmo PWA cobre as plataformas</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 9 ===================== -->
+  <section class="slide divider" data-blk="Roadmap">
+    <div class="inner">
+      <div class="big" data-n="09" data-anim>09</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 9</div>
+        <h2 class="title" data-anim>Roadmap</h2>
+        <p data-anim>Onde estamos e para onde vamos — fase por fase.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Roadmap">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Caminho faseado</div>
+      <h2 class="title" data-anim>De onde estamos ao app na loja</h2>
+      <div class="tl" data-anim>
+        <div class="tl-line"></div>
+        <div class="tl-row">
+          <div class="tl-item done"><div class="pt"></div><div class="ph">Feito</div><h4>Produto local</h4><p>App, admin, relatórios, editor — 100% funcional offline</p></div>
+          <div class="tl-item now"><div class="pt"></div><div class="ph">Agora</div><h4>P1 · Supabase</h4><p>Conteúdo na nuvem + Storage + upload de mídia</p></div>
+          <div class="tl-item"><div class="pt"></div><div class="ph">P2</div><h4>Edição rica</h4><p>Lis com áudio/cues, enquete, versionamento</p></div>
+          <div class="tl-item"><div class="pt"></div><div class="ph">P3</div><h4>Avisos & push</h4><p>Comunicados + notificações no celular</p></div>
+          <div class="tl-item"><div class="pt"></div><div class="ph">P4</div><h4>Analytics</h4><p>Engajamento, conclusão, ritmo (com LGPD)</p></div>
+        </div>
+      </div>
+      <p class="lead" data-anim>Cada fase é <strong>retrocompatível</strong>: o localStorage continua de rede de segurança e a experiência do colaborador <strong>nunca muda</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ===================== BLOCO 10 ===================== -->
+  <section class="slide divider" data-blk="Manual rápido">
+    <div class="inner">
+      <div class="big" data-n="10" data-anim>10</div>
+      <div class="dtx">
+        <div class="eyebrow" data-anim>Bloco 10</div>
+        <h2 class="title" data-anim>Manual rápido</h2>
+        <p data-anim>As tarefas do dia a dia, em uma olhada.</p>
+        <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-blk="Manual rápido">
+    <div class="inner">
+      <div class="eyebrow" data-anim>Mão na massa</div>
+      <h2 class="title" data-anim>Como fazer as coisas</h2>
+      <div class="grid g2" data-anim style="gap:14px 30px">
+        <div class="step"><div class="n">A</div><div class="tx"><b>Cadastrar colaborador</b><span>Admin → Colaboradores → Novo. Preencha e salve.</span></div></div>
+        <div class="step"><div class="n">B</div><div class="tx"><b>Cadastrar gerente</b><span>Admin → Gerentes → Novo. Vincule a equipe.</span></div></div>
+        <div class="step"><div class="n">C</div><div class="tx"><b>Criar módulo</b><span>Admin → Módulos → Novo. Monte a timeline de blocos.</span></div></div>
+        <div class="step"><div class="n">D</div><div class="tx"><b>Publicar conteúdo</b><span>No editor, tire do rascunho → Publicar.</span></div></div>
+        <div class="step"><div class="n">E</div><div class="tx"><b>Acompanhar progresso</b><span>Admin → Relatórios. Filtre por gerente ou cargo.</span></div></div>
+        <div class="step"><div class="n">F</div><div class="tx"><b>Validar assinatura</b><span>Veja no perfil 360º do colaborador quem assinou.</span></div></div>
+        <div class="step"><div class="n">G</div><div class="tx"><b>Testar antes de publicar</b><span>Use o preview real do módulo no celular.</span></div></div>
+        <div class="step"><div class="n">H</div><div class="tx"><b>Gerar relatório</b><span>Filtre e exporte os dados quando precisar.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENCERRAMENTO -->
+  <section class="slide cover" data-blk="Encerramento">
+    <div class="inner">
+      <img class="espiga" src="assets/simbolo-espiga.svg" alt="" data-anim />
+      <div class="eyebrow" data-anim style="justify-content:center">Sistema Pralís</div>
+      <h1 class="title" data-anim>É provar e <span class="accent">ser feliz</span></h1>
+      <p class="sub" data-anim>Conteúdo vivo, equipe treinada, cultura registrada.</p>
+      <p class="meta" data-anim>Obrigado · Equipe Pralís · TI · Gestão</p>
+    </div>
+    <img class="lis" src="assets/lis-full.png" alt="Lis" data-anim />
+  </section>
+
+</main>
+
+<!-- navegação -->
+<nav class="nav" aria-label="Navegação de slides">
+  <button id="prev" aria-label="Slide anterior">‹</button>
+  <div class="dots" id="dots"></div>
+  <button id="next" aria-label="Próximo slide">›</button>
+</nav>
+<div class="hint"><kbd>←</kbd> <kbd>→</kbd> navegar · <kbd>F</kbd> tela cheia</div>
+
+<script>
+/* ============================================================
+   Navegação da apresentação — teclado, dots, progresso, hash,
+   fullscreen, swipe e reveal escalonado. Sem dependências.
+   ============================================================ */
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var deck = document.getElementById('deck');
+  var progress = document.getElementById('progress');
+  var dotsWrap = document.getElementById('dots');
+  var curEl = document.getElementById('cur');
+  var totEl = document.getElementById('tot');
+  var blkEl = document.getElementById('blk');
+  var i = 0;
+
+  totEl.textContent = String(slides.length).padStart(2,'0');
+
+  // dots
+  slides.forEach(function(s, idx){
+    var d = document.createElement('i');
+    d.addEventListener('click', function(){ go(idx); });
+    dotsWrap.appendChild(d);
+  });
+  var dots = Array.prototype.slice.call(dotsWrap.children);
+
+  function reveal(slide){
+    var els = slide.querySelectorAll('[data-anim]');
+    els.forEach(function(el, k){ el.style.transitionDelay = (k*70)+'ms'; });
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(slides.length-1, n));
+    if(n===i && slides[i].classList.contains('active')) return;
+    slides.forEach(function(s, idx){
+      s.classList.toggle('active', idx===n);
+      s.classList.toggle('prev', idx<n);
+    });
+    i = n;
+    progress.style.width = ((n)/(slides.length-1)*100)+'%';
+    curEl.textContent = String(n+1).padStart(2,'0');
+    blkEl.textContent = slides[n].getAttribute('data-blk') || '';
+    dots.forEach(function(d, idx){ d.classList.toggle('on', idx===n); });
+    reveal(slides[n]);
+    if(history.replaceState) history.replaceState(null,'','#'+(n+1));
+  }
+  function next(){ go(i+1); }
+  function prev(){ go(i-1); }
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+
+  document.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ e.preventDefault(); next(); }
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if(e.key==='Home'){ go(0); }
+    else if(e.key==='End'){ go(slides.length-1); }
+    else if(e.key==='f'||e.key==='F'){
+      if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen && document.exitFullscreen(); }
+    }
+  });
+
+  // swipe (mobile / touch)
+  var x0=null;
+  deck.addEventListener('touchstart', function(e){ x0=e.touches[0].clientX; }, {passive:true});
+  deck.addEventListener('touchend', function(e){
+    if(x0===null) return;
+    var dx = e.changedTouches[0].clientX - x0;
+    if(Math.abs(dx)>50){ dx<0 ? next() : prev(); }
+    x0=null;
+  }, {passive:true});
+
+  // clique nas laterais avança/volta (não sobre botões/links)
+  deck.addEventListener('click', function(e){
+    if(e.target.closest('a,button,.nav,.dots')) return;
+    var third = window.innerWidth/3;
+    if(e.clientX > window.innerWidth - third) next();
+    else if(e.clientX < third) prev();
+  });
+
+  // abre no slide do hash, se houver
+  var start = parseInt((location.hash||'').replace('#',''),10);
+  go(isNaN(start) ? 0 : start-1);
+})();
+</script>
+</body>
+</html>
