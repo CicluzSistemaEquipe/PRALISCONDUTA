@@ -18,7 +18,7 @@
 
   --ink: #1a1714;           /* texto primário / títulos */
   --text-secondary: #57514b;
-  --text-muted: #8a837c;
+  --text-muted: #6f6862;    /* contraste AA em textos pequenos (~5:1 no branco) */
   --text-disabled: #b8b2ab;
 
   --accent: #f26b2a;        /* AÇÃO: primário, nav ativo, foco */
@@ -182,6 +182,9 @@ select.adm-input option { background: #fff; color: var(--ink); }
 .adm-table td { padding: 14px 16px; border-bottom: 1px solid var(--bg-inset); color: var(--ink); }
 .adm-table tbody tr:last-child td { border-bottom: 0; }
 .adm-table tbody tr:hover td { background: var(--bg-subtle); }
+.adm-table tbody tr:focus-visible { outline: none; }
+.adm-table tbody tr:focus-visible td { background: var(--accent-tint); }
+.adm-table tbody tr:focus-visible td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 
 /* ---------- KPI ---------- */
 .adm-kpi-val {
@@ -222,7 +225,23 @@ select.adm-input option { background: #fff; color: var(--ink); }
 .adm-terms-preview p { font-size: 0.875rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 8px; }
 .adm-terms-preview strong { color: var(--ink); }
 
+/* skeleton premium (shimmer) */
+.adm-skel { position: relative; overflow: hidden; border-radius: var(--radius); background: var(--bg-inset); }
+.adm-skel::after {
+  content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: adm-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes adm-shimmer { 100% { transform: translateX(100%); } }
+
+/* indicador "online" com pulso suave (vida — sem virar jogo) */
+@keyframes adm-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(30, 126, 78, 0.45); }
+  50% { box-shadow: 0 0 0 3px rgba(30, 126, 78, 0); }
+}
+.adm-dot-live { animation: adm-dot 2.6s ease-in-out infinite; }
+
 /* respeitar preferência de redução de movimento */
 @media (prefers-reduced-motion: reduce) {
-  .adm-root *, .adm-shake { animation: none !important; transition: none !important; }
+  .adm-root *, .adm-shake, .adm-skel::after { animation: none !important; transition: none !important; }
 }

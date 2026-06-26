@@ -120,7 +120,7 @@ export function AdminSidebar() {
               <p className="truncate text-[0.8rem] font-semibold text-[var(--ink)]">{session.nome}</p>
               <p className="flex items-center gap-1.5 text-[0.7rem] font-medium text-[var(--text-muted)]">
                 {roleLabel}
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)]" /> Online
+                <span className="adm-dot-live inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)]" /> Online
               </p>
             </div>
           </div>

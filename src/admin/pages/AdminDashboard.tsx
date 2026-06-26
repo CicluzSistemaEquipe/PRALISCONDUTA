@@ -8,7 +8,7 @@ import { useAdminStore } from '@/lib/adminStore'
 import { getAdminSession, isDono } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
-import { StatCard, SectionCard, EmptyState } from '../components/ui'
+import { StatCard, SectionCard, EmptyState, AnimatedNumber } from '../components/ui'
 
 // ── paleta clara dos gráficos ───────────────────────────────────────────────
 const LC = {
@@ -53,8 +53,9 @@ function Donut({ segs, total }: { segs: Seg[]; total: number }) {
   const SZ = 150, cx = 75, cy = 75, R = 56, sw = 18
   let cur = 0
   const GAP = total > 1 ? 4 : 0
+  const ariaLabel = `Etapas da jornada, total ${total}: ${segs.map((s) => `${s.label} ${s.value}`).join(', ')}`
   return (
-    <svg width={SZ} height={SZ} viewBox={`0 0 ${SZ} ${SZ}`} style={{ overflow: 'visible' }}>
+    <svg width={SZ} height={SZ} viewBox={`0 0 ${SZ} ${SZ}`} style={{ overflow: 'visible' }} role="img" aria-label={ariaLabel}>
       <circle cx={cx} cy={cy} r={R} fill="none" stroke={LC.inset} strokeWidth={sw} />
       {segs.map((s) => {
         if (s.value === 0) return null
@@ -86,9 +87,10 @@ function BarChart({ data, maxVal }: { data: { label: string; value: number }[]; 
   const gap = n > 1 ? (iW - bW * n) / (n - 1) : 0
   const gridLines = [0, 25, 50, 75, 100]
   const scaleY = (v: number) => iH - (v / (maxVal || 1)) * iH
+  const ariaLabel = `Progresso por colaborador: ${data.map((d) => `${d.label} ${d.value}%`).join(', ')}`
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H }}>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H }} role="img" aria-label={ariaLabel}>
       <defs>
         <linearGradient id="adm-barGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={LC.orange} stopOpacity={1} />
@@ -143,9 +145,10 @@ function LineChart({ data, maxVal = 100 }: { data: { label: string; value: numbe
   const linePath = smoothLine(pts)
   const areaPath = pts.length > 0
     ? `${linePath} L ${pts[pts.length - 1].x} ${PAD.t + iH} L ${pts[0].x} ${PAD.t + iH} Z` : ''
+  const ariaLabel = `Curva de retenção: ${data.map((d) => `${d.label} ${d.value}%`).join(', ')}`
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H }}>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H }} role="img" aria-label={ariaLabel}>
       <defs>
         <linearGradient id="adm-areaGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={LC.orange} stopOpacity={0.14} />
@@ -320,7 +323,7 @@ function DonoDashboard() {
                 const filled = quizStats.total > 0 ? (quizStats.correct / quizStats.total) * circ : 0
                 const col = quizStats.pct >= 70 ? LC.green : quizStats.pct >= 40 ? LC.gold : LC.orange
                 return (
-                  <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`}>
+                  <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`} role="img" aria-label={`${loading ? 0 : quizStats.pct}% de acertos nos quizzes`}>
                     <circle cx={cx} cy={cy} r={r} fill="none" stroke={LC.inset} strokeWidth={sw} />
                     <motion.circle cx={cx} cy={cy} r={r} fill="none" stroke={col} strokeWidth={sw} strokeLinecap="round"
                       strokeDasharray={circ} initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ - filled }}
@@ -349,7 +352,7 @@ function DonoDashboard() {
 
           <SectionCard title="Média geral">
             <div className="text-center">
-              <span className="adm-kpi-val" style={{ fontSize: '2.4rem' }}>{loading ? '—' : `${avgProgress}%`}</span>
+              <span className="adm-kpi-val" style={{ fontSize: '2.4rem' }}><AnimatedNumber value={loading ? '—' : `${avgProgress}%`} /></span>
               <p className="mt-1 text-[0.8125rem] text-[var(--text-muted)]">progresso médio dos colaboradores</p>
             </div>
             <div className="adm-pbar mt-3">

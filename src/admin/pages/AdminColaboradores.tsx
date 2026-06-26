@@ -372,7 +372,9 @@ function ColabRow({ row, dono, gerenteName, onEdit, onCopy, copied }: {
   const pct = Math.round(row.progress * 100)
   const quizPct = quizPctOf(row)
   return (
-    <tr className="group cursor-pointer" onClick={() => onEdit(row)}>
+    <tr className="group cursor-pointer" tabIndex={0} aria-label={`Editar ${row.employee.name}`}
+      onClick={() => onEdit(row)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onEdit(row) } }}>
       <td>
         <div className="flex items-center gap-3">
           <Avatar name={row.employee.name} />
