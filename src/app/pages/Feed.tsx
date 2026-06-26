@@ -85,6 +85,15 @@ const SECTION_ACCENT: Record<NonNullable<Module['section']>, string> = {
   final: '#e8cfa0',
 }
 
+// Introdução de cada grupo — combinada com os subtítulos dos módulos para
+// formar um texto que passa (marquee), dando uma ideia do que vem sem revelar
+// o módulo bloqueado em si.
+const SECTION_INTRO: Record<NonNullable<Module['section']>, string> = {
+  geral: 'Treinamentos essenciais da Pralís',
+  cargo: 'Treinamentos do seu cargo',
+  final: 'Para concluir sua jornada',
+}
+
 export default function Feed() {
   const navigate = useNavigate()
   const { theme } = useTheme()
@@ -368,9 +377,10 @@ export default function Feed() {
             {groups.map(([section, mods], gi) => {
               const doneInSection = mods.filter(isModuleDone).length
               const lockedLabel = section === 'cargo' ? 'Treinamento bloqueado' : 'Módulo bloqueado'
+              const teaser = [SECTION_INTRO[section], ...mods.map((m) => m.subtitle)].join('     ·     ')
               return (
                 <section key={section} style={{ marginTop: gi === 0 ? 0 : 22 }} className="mb-2">
-                  <SectionHeader label={SECTION_LABEL[section]} accent={SECTION_ACCENT[section]} done={doneInSection} total={mods.length} reduce={reduce} />
+                  <SectionHeader label={SECTION_LABEL[section]} accent={SECTION_ACCENT[section]} done={doneInSection} total={mods.length} teaser={teaser} reduce={reduce} />
                   <div className="flex flex-col gap-2.5">
                     {mods.map((m, i) => (
                       <motion.div
@@ -406,7 +416,7 @@ export default function Feed() {
   )
 }
 
-function SectionHeader({ label, accent, done, total, reduce }: { label: string; accent: string; done: number; total: number; reduce: boolean }) {
+function SectionHeader({ label, accent, done, total, teaser, reduce }: { label: string; accent: string; done: number; total: number; teaser: string; reduce: boolean }) {
   const complete = total > 0 && done === total
   const donePercent = total > 0 ? Math.round((done / total) * 100) : 0
   const color = complete ? '#5dd87a' : accent
@@ -434,6 +444,9 @@ function SectionHeader({ label, accent, done, total, reduce }: { label: string; 
           {done}/{total}
         </span>
       </div>
+
+      <Marquee text={teaser} color={color} reduce={reduce} />
+
       <div className="relative mt-2 overflow-hidden rounded-full" style={{ height: 3, background: 'rgba(255,255,255,0.10)' }}>
         <motion.div
           initial={{ width: reduce ? `${donePercent}%` : 0 }}
@@ -443,6 +456,32 @@ function SectionHeader({ label, accent, done, total, reduce }: { label: string; 
           style={{ height: '100%', borderRadius: 999, background: complete ? 'linear-gradient(90deg, #5dd87a, #a7f3b7)' : `linear-gradient(90deg, ${accent}, rgba(232,207,160,0.7))` }}
         />
       </div>
+    </div>
+  )
+}
+
+/** Texto que passa (marquee) com bordas esmaecidas; estático se reduced-motion. */
+function Marquee({ text, color, reduce }: { text: string; color: string; reduce: boolean }) {
+  const fade = { WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent)', maskImage: 'linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent)' }
+  if (reduce) {
+    return (
+      <p className="mt-1.5 truncate font-body" style={{ fontSize: 10, color, opacity: 0.8 }}>
+        {text}
+      </p>
+    )
+  }
+  const duration = Math.max(12, text.length * 0.22)
+  return (
+    <div className="relative mt-1.5 overflow-hidden" style={fade}>
+      <motion.div
+        className="flex whitespace-nowrap font-body"
+        style={{ fontSize: 10, color, opacity: 0.85, willChange: 'transform' }}
+        animate={{ x: ['0%', '-50%'] }}
+        transition={{ duration, repeat: Infinity, ease: 'linear' }}
+      >
+        <span style={{ paddingRight: 40 }}>{text}</span>
+        <span style={{ paddingRight: 40 }} aria-hidden="true">{text}</span>
+      </motion.div>
     </div>
   )
 }
