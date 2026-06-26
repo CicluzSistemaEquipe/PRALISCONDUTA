@@ -207,3 +207,48 @@ callbacks no-op no admin), regras de negócio, experiência do colaborador.
    conteúdo/saída, só a autoria)?
 
 **Só implemento após sua aprovação.**
+
+---
+
+## Implementação — Fase C1 (parcial entregue)
+
+> Conceito **B** aprovado. Primeiro incremento de C1, **local e sem tocar o app**.
+> `tsc -b` ✅ + `vite build` ✅. Validado visualmente.
+
+### Entregue agora
+1. **Preview = StoryPlayer REAL ao vivo.** O `ModulePreview` deixou de ser ilustrativo e
+   passou a renderizar o **próprio `StoryPlayer`** do app dentro de uma moldura de celular
+   escalada — o `transform: scale` faz o `fixed inset-0` do player se conter na moldura.
+   Reflete o módulo-rascunho **instantaneamente** (texto, ordem, quiz, enquete, vídeo),
+   com fidelidade 100% (é o mesmo componente do colaborador). Trocar de bloco pula para o
+   slide (via `key`); editar o bloco reflete sem remontar.
+   - `StoryPlayer` ganhou a prop **aditiva** `preview` (desliga auto-advance, conclusão
+     automática e atalhos de teclado globais; mantém a navegação manual). **Default
+     `false` → o colaborador não muda em nada.**
+2. **Enquete criável pelo Dashboard.** Botão **"+ Enquete"** na timeline de slides +
+   `PollSlideEditor` inline (pergunta, opções add/remover, múltipla escolha). A enquete
+   aparece no preview real (renderiza o `PollCard`). Fecha o gap "criar tudo sem código"
+   para o tipo `poll`.
+
+Arquivos: `src/app/components/StoryPlayer.tsx` (prop `preview`),
+`src/admin/components/ModulePreview.tsx` (player real), `PollSlideEditor.tsx` (novo),
+`src/admin/lib/modules.ts` (`isEditableSlide`+`newPollStory`), `AdminModuloEditor.tsx`.
+
+### Restante da C1 (próximo incremento — local)
+- **Timeline única de blocos:** hoje Vídeo e Quiz ainda são **abas separadas** + cards
+  read-only na timeline. Próximo passo: editá-los **inline como blocos** na própria
+  sequência (vídeo: anexar/posição; quiz: `QuizEditor` dentro do bloco), aposentando as
+  abas — sem mudar a saída/`prepareStories`.
+- **Drag & drop estendido:** perguntas de quiz e opções de enquete arrastáveis.
+- **Rascunho → publicar** básico (status/versão), espelhando os Termos.
+
+### C2 / C3 (depois)
+- **C2 (local):** Lis/áudio com cues/sincronização visual (timeline de marcadores) +
+  versionamento/publicação completos.
+- **C3 (Fase 1 — Storage):** upload real de áudio/vídeo + biblioteca de mídia
+  (ver `MEDIA_ARCHITECTURE.md`).
+
+### Nota do Editor de Conteúdo: **6,5 → 7,5 / 10**
+O **preview real ao vivo** (o pedido marcante) e a **enquete criável** elevam muito a
+confiança e a completude. Para 9+ falta a **timeline única de blocos** (C1 restante) e a
+**autoria de Lis/áudio + mídia** (C2/C3).
