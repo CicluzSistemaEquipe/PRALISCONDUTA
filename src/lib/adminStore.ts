@@ -15,6 +15,7 @@
 
 import { useCallback, useSyncExternalStore } from 'react'
 import { MODULES, TERMS } from './content'
+import { syncModules } from './contentRepo'
 import type { Module } from './types'
 
 export const ADMIN_DATA_KEY = 'pralis_admin_data'
@@ -98,6 +99,8 @@ function persist(next: AdminData) {
   } catch {
     /* quota / modo privado — silencia */
   }
+  // Fase 2: espelha o conteúdo no Supabase (no-op sem env vars). Best-effort.
+  void syncModules(next.modules)
   listeners.forEach((l) => l())
 }
 

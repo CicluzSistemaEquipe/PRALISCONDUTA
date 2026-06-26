@@ -40,3 +40,49 @@ Nenhum código de runtime alterado.
 Rollback: ver `PHASE2_SNAPSHOT_AND_ROLLBACK.md` §3 (Nível C).
 
 ---
+
+## P2.1 — Loader de conteúdo (Supabase ↔ cache ↔ fallback) ✅
+
+**Escopo:** ligar a leitura/escrita de **módulos** ao Supabase, mantendo o runtime
+**síncrono** e o modo local intacto. Tudo gated por `hasSupabase`.
+
+### Entregue
+- **`src/lib/contentRepo.ts` (novo):** `fetchPublishedModules()`, `hydrateContentCache()`
+  (Supabase → cache `pralis:content-cache`), `syncModules()`/`seedModulesToSupabase()`
+  (upsert em `training_modules` + atualiza o cache), `readContentCache()` (leitura síncrona).
+  No-op sem env vars.
+- **`content.ts`:** `activeModules()` prioriza o **cache hidratado** quando `hasSupabase`;
+  senão, comportamento atual (lê `pralis_admin_data` → `MODULES`). Mesmo `prepareStories`,
+  mesmo filtro `active!==false && status!=='draft'`, mesmo `Module[]` de saída.
+- **`adminStore.ts`:** `persist()` espelha os módulos no Supabase (`void syncModules`) —
+  edição do admin sobe para a nuvem e atualiza o cache. Best-effort, no-op sem Supabase.
+- **`App.tsx`:** `hydrateContentCache()` no boot (no-op sem Supabase).
+- **`0004` ajustado:** `"order"` → `sort_order` (evita a palavra reservada no PostgREST).
+
+### Validação
+- `tsc -b` ✅ · `vite build` ✅.
+- **Modo local (sem env vars):** Feed renderiza os módulos normalmente, **zero erros** de
+  console/runtime — `contentRepo` é no-op e `content.ts` segue lendo local/`MODULES`.
+- **Contrato `Module`/`Story`:** inalterado — `activeModules()` devolve o mesmo `Module[]`;
+  StoryPlayer/Feed/`prepareStories`/desbloqueio **não foram tocados**.
+
+### Comportamento quando o Supabase for ligado (gated, code-complete)
+- App lê de `pralis:content-cache`, hidratado de `training_modules` (published + active,
+  ordenado por `sort_order`); offline-first com fallback para local/`MODULES`.
+- Edição no admin → upsert no Supabase + cache atualizado. **Seed inicial:**
+  `seedModulesToSupabase(getAdminData().modules)` (idempotente por `id`).
+
+### Pendências assumidas (documentadas)
+- **Teste end-to-end com Supabase real:** depende de criar o projeto, aplicar `0004–0006`,
+  definir `VITE_SUPABASE_*` e rodar o seed — passo do usuário/infra. O código está
+  **completo e gated**; aqui validamos que **não quebra** e o local segue idêntico.
+- **R3 (reatividade):** o conteúdo recém-sincronizado aparece no próximo `read`/reload
+  (offline-first). Forçar re-render imediato após o hydrate é refino de uma sub-fase futura.
+- **R6 (multi-admin):** merge concorrente fica para a frente; hoje, fonte = último upsert.
+
+### Como validar com um projeto Supabase (checklist)
+- [ ] Aplicar `0004_content`, `0005_schema_drift`, `0006_storage`.
+- [ ] Definir `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`; rebuild.
+- [ ] Rodar `seedModulesToSupabase(...)` uma vez (ou salvar um módulo no admin).
+- [ ] App lê os módulos da nuvem; sem env vars, volta ao local sem erro.
+- [ ] `tsc -b` + `vite build` verdes nos 2 modos; Home/treinamento sem regressão.

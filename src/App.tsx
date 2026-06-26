@@ -1,6 +1,7 @@
-import { Suspense, type ReactNode } from 'react'
+import { Suspense, useEffect, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { lazyWithRetry } from './lib/lazyWithRetry'
+import { hydrateContentCache } from './lib/contentRepo'
 import { ErrorBoundary } from './app/components/ErrorBoundary'
 import { motion } from 'framer-motion'
 import { SessionProvider, useSession } from './app/context/SessionContext'
@@ -130,6 +131,10 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
+  // Fase 2: hidrata o cache de conteúdo a partir do Supabase no boot.
+  // No-op sem VITE_SUPABASE_* (modo local/demo intacto).
+  useEffect(() => { void hydrateContentCache() }, [])
+
   return (
     <SessionProvider>
       <BrowserRouter>

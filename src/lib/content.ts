@@ -1,5 +1,7 @@
 import type { Module, ModuleIconType, Story } from './types'
 import { isDevMode } from './devMode'
+import { hasSupabase } from './supabase'
+import { readContentCache } from './contentRepo'
 
 // ============================================================
 // CONTEÚDO DOS MÓDULOS
@@ -1241,6 +1243,19 @@ function withTestModule(mods: Module[]): Module[] {
 
 function activeModules(): Module[] {
   try {
+    // Fase 2: com Supabase ligado, a fonte é a nuvem — lê o cache hidratado
+    // (pralis:content-cache). Sem Supabase, mantém o comportamento local atual.
+    if (hasSupabase) {
+      const cached = readContentCache()
+      if (cached && cached.length) {
+        return withTestModule(
+          cached
+            .filter((m) => m.active !== false && m.status !== 'draft')
+            .map((m) => ({ ...m, stories: prepareStories(m) }))
+            .map(applyRuntimeContentOverrides),
+        )
+      }
+    }
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(ADMIN_DATA_KEY) : null
     if (raw) {
       const parsed = JSON.parse(raw) as { modules?: Module[] }

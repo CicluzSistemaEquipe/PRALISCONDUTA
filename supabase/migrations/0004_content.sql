@@ -16,7 +16,7 @@ create table if not exists training_modules (
   roles        jsonb        default '"all"',   -- 'all' | string[]
   active       boolean      default true,
   status       text         default 'draft',   -- 'draft' | 'published'
-  "order"      int          default 0,
+  sort_order   int          default 0,
   version      int          default 1,
   content      jsonb        not null,          -- = Module (src/lib/types.ts), stories[] incluso
   updated_at   timestamptz  default now(),
@@ -24,7 +24,7 @@ create table if not exists training_modules (
 );
 
 -- listagem por seção/ordem e por status de publicação
-create index if not exists idx_modules_section on training_modules (section, "order");
+create index if not exists idx_modules_section on training_modules (section, sort_order);
 create index if not exists idx_modules_status  on training_modules (status, active);
 
 -- Falas reutilizáveis da Lis (P2.3 — preparado agora, opcional).
