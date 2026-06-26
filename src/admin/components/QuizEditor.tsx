@@ -34,17 +34,19 @@ export function QuizEditor({
 
       {/* ── configuração ── */}
       <div className="adm-card p-5">
-        <h3 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--gold-light)]">
-          Configuração do Quiz
-        </h3>
+        <div className="mb-4 flex items-center gap-2.5">
+          <span className="h-4 w-[3px] rounded-full bg-[var(--accent)]" />
+          <h3 className="text-[0.95rem] font-semibold text-[var(--ink)]">Configuração do quiz</h3>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
 
           {/* quantidade */}
           <div>
-            <label className="adm-label flex items-center gap-1.5">
+            <label className="adm-label flex items-center gap-1.5" htmlFor="qz-sample">
               <Hash className="h-3.5 w-3.5" /> Perguntas por sessão
             </label>
             <input
+              id="qz-sample"
               className="adm-input"
               type="number"
               min={1}
@@ -52,7 +54,7 @@ export function QuizEditor({
               value={currentSample}
               onChange={(e) => onConfigChange?.({ sampleSize: Number(e.target.value) || 1 })}
             />
-            <p className="mt-1.5 text-xs text-[var(--cream-muted)]">
+            <p className="mt-1.5 text-xs text-[var(--text-muted)]">
               Banco com {questions.length} pergunta{questions.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -64,26 +66,23 @@ export function QuizEditor({
             </label>
             <button
               type="button"
+              role="switch"
+              aria-checked={isRandomized}
               onClick={() => onConfigChange?.({ randomize: !isRandomized })}
-              className="flex h-[46px] w-full items-center gap-3 rounded-xl px-4 text-sm font-semibold transition-colors"
-              style={{
-                background: isRandomized ? 'rgba(184,134,11,0.18)' : 'rgba(255,245,220,0.05)',
-                border:     `1px solid ${isRandomized ? 'rgba(184,134,11,0.45)' : 'rgba(184,134,11,0.15)'}`,
-                color:      isRandomized ? 'var(--gold-light)' : 'var(--cream-muted)',
-              }}
+              className={`flex h-9 w-full items-center gap-3 rounded-lg border px-3.5 text-sm font-semibold transition-colors ${
+                isRandomized
+                  ? 'border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent-text)]'
+                  : 'border-[var(--border-strong)] bg-white text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
+              }`}
             >
               {/* mini toggle visual */}
               <span
-                className="relative h-5 w-9 rounded-full transition-colors"
-                style={{
-                  background: isRandomized
-                    ? 'linear-gradient(135deg,#b8860b,#f37435)'
-                    : 'rgba(255,255,255,0.12)',
-                }}
+                className="relative h-5 w-9 shrink-0 rounded-full transition-colors"
+                style={{ background: isRandomized ? 'var(--accent)' : 'var(--border-strong)' }}
               >
                 <span
                   className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all"
-                  style={{ left: isRandomized ? 16 : 2 }}
+                  style={{ left: isRandomized ? 18 : 2 }}
                 />
               </span>
               {isRandomized ? 'Ativado' : 'Desativado'}
@@ -95,14 +94,12 @@ export function QuizEditor({
       {/* ── banco de perguntas ── */}
       {questions.length === 0 ? (
         <div className="adm-card flex flex-col items-center gap-4 py-12 text-center">
-          <div
-            className="flex h-12 w-12 items-center justify-center rounded-xl"
-            style={{ background: 'rgba(243,116,53,0.14)', border: '1px solid rgba(243,116,53,0.3)' }}
-          >
-            <Plus className="h-6 w-6 text-[#f37435]" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-tint)]">
+            <Plus className="h-6 w-6 text-[var(--accent-text)]" />
           </div>
-          <p className="text-sm text-[var(--cream-muted)]">Nenhuma pergunta no banco ainda.</p>
+          <p className="text-sm text-[var(--text-muted)]">Nenhuma pergunta no banco ainda.</p>
           <button
+            type="button"
             className="adm-btn adm-btn--primary"
             onClick={() => onChange([...questions, newQuizQuestion()])}
           >
@@ -115,31 +112,26 @@ export function QuizEditor({
             <div key={q.id} className="adm-card overflow-hidden">
 
               {/* header da pergunta */}
-              <div
-                className="flex items-center justify-between px-4 py-2.5"
-                style={{
-                  borderBottom: '1px solid rgba(184,134,11,0.14)',
-                  background:   'rgba(255,245,220,0.03)',
-                }}
-              >
-                <span className="text-xs font-bold text-[var(--cream-muted)]">
+              <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--bg-subtle)] px-4 py-2.5">
+                <span className="adm-eyebrow">
                   Pergunta {qi + 1} de {questions.length}
                 </span>
                 <button
-                  className="adm-btn adm-btn--danger"
-                  style={{ padding: '5px 8px' }}
+                  type="button"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--danger)] transition-colors hover:bg-[var(--danger-bg)]"
                   onClick={() => onChange(questions.filter((_, i) => i !== qi))}
                   aria-label="Excluir pergunta"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="p-4">
                 {/* enunciado */}
                 <div className="mb-4">
-                  <label className="adm-label">Enunciado</label>
+                  <label className="adm-label" htmlFor={`qz-prompt-${qi}`}>Enunciado</label>
                   <textarea
+                    id={`qz-prompt-${qi}`}
                     className="adm-input"
                     rows={2}
                     value={q.prompt}
@@ -157,32 +149,33 @@ export function QuizEditor({
                     return (
                       <div
                         key={oi}
-                        className="rounded-2xl p-3 transition-colors"
-                        style={{
-                          background: isCorrect ? 'rgba(93,216,122,0.08)' : 'rgba(255,245,220,0.04)',
-                          border:     `1px solid ${isCorrect ? 'rgba(93,216,122,0.4)' : 'rgba(184,134,11,0.14)'}`,
-                        }}
+                        className={`rounded-xl border p-3 transition-colors ${
+                          isCorrect
+                            ? 'border-[#cdebd9] bg-[var(--success-bg)]'
+                            : 'border-[var(--border)] bg-[var(--bg-subtle)]'
+                        }`}
                       >
                         {/* linha superior: check + letra + input */}
                         <div className="mb-2 flex items-center gap-2.5">
                           <button
+                            type="button"
                             onClick={() => updateQ(qi, { correctIndex: oi })}
                             className="shrink-0 transition-transform hover:scale-110"
                             aria-label={`Marcar alternativa ${String.fromCharCode(65 + oi)} como correta`}
                           >
                             {isCorrect ? (
-                              <CheckCircle2 className="h-5 w-5 text-[#5dd87a]" />
+                              <CheckCircle2 className="h-5 w-5 text-[var(--success)]" />
                             ) : (
-                              <Circle className="h-5 w-5 text-[var(--cream-muted)]" />
+                              <Circle className="h-5 w-5 text-[var(--text-muted)]" />
                             )}
                           </button>
 
                           <span
-                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-xs font-bold"
-                            style={{
-                              background: isCorrect ? 'rgba(93,216,122,0.2)' : 'rgba(255,245,220,0.08)',
-                              color:      isCorrect ? '#5dd87a' : 'var(--cream-muted)',
-                            }}
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-xs font-bold ${
+                              isCorrect
+                                ? 'bg-[#cdebd9] text-[var(--success)]'
+                                : 'bg-[var(--bg-muted)] text-[var(--text-secondary)]'
+                            }`}
                           >
                             {String.fromCharCode(65 + oi)}
                           </span>
@@ -190,23 +183,25 @@ export function QuizEditor({
                           <input
                             className="adm-input flex-1"
                             style={{
-                              padding:     '8px 12px',
-                              borderColor: isCorrect ? 'rgba(93,216,122,0.4)' : undefined,
+                              padding: '8px 12px',
+                              borderColor: isCorrect ? '#cdebd9' : undefined,
                             }}
                             value={opt}
                             onChange={(e) => updateOption(qi, oi, e.target.value)}
                             placeholder={`Alternativa ${String.fromCharCode(65 + oi)}`}
+                            aria-label={`Texto da alternativa ${String.fromCharCode(65 + oi)}`}
                           />
                         </div>
 
                         {/* explicação específica da alternativa */}
                         <textarea
-                          className="adm-input text-xs"
+                          className="adm-input"
                           rows={1}
                           style={{ fontSize: '0.78rem', padding: '7px 10px', resize: 'none' }}
                           placeholder="Explicação específica desta alternativa (opcional)"
                           value={q.optionExplanations?.[oi] ?? ''}
                           onChange={(e) => updateOptionExplanation(qi, oi, e.target.value)}
+                          aria-label={`Explicação da alternativa ${String.fromCharCode(65 + oi)}`}
                         />
                       </div>
                     )
@@ -215,8 +210,9 @@ export function QuizEditor({
 
                 {/* explicação geral */}
                 <div className="mt-4">
-                  <label className="adm-label">Explicação geral (exibida após a resposta)</label>
+                  <label className="adm-label" htmlFor={`qz-explain-${qi}`}>Explicação geral (exibida após a resposta)</label>
                   <textarea
+                    id={`qz-explain-${qi}`}
                     className="adm-input"
                     rows={2}
                     value={q.explain}
@@ -228,6 +224,7 @@ export function QuizEditor({
           ))}
 
           <button
+            type="button"
             className="adm-btn adm-btn--primary self-start"
             onClick={() => onChange([...questions, newQuizQuestion()])}
           >
