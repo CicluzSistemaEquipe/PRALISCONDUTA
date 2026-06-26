@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Users, CheckCircle2, PenLine, BookOpen, TrendingUp, UserPlus,
+  Users, CheckCircle2, PenLine, BookOpen, TrendingUp, UserPlus, ChevronRight,
 } from 'lucide-react'
 import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
 import { useAdminStore } from '@/lib/adminStore'
@@ -45,6 +46,10 @@ function smoothLine(pts: { x: number; y: number }[]) {
   return d
 }
 function pct(n: number, d: number) { return d ? Math.round((n / d) * 100) : 0 }
+function initials(name: string) {
+  const p = name.trim().split(/\s+/)
+  return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
+}
 
 // ── Rosca ───────────────────────────────────────────────────────────────────
 interface Seg { label: string; value: number; color: string }
@@ -74,60 +79,6 @@ function Donut({ segs, total }: { segs: Seg[]; total: number }) {
         fontFamily="Montserrat, sans-serif" fill={LC.ink} style={{ fontVariantNumeric: 'tabular-nums' }}>{total}</text>
       <text x={cx} y={cy + 14} textAnchor="middle" fontSize={10}
         fontFamily="Montserrat, sans-serif" fill={LC.text}>total</text>
-    </svg>
-  )
-}
-
-// ── Barras ──────────────────────────────────────────────────────────────────
-function BarChart({ data, maxVal }: { data: { label: string; value: number }[]; maxVal: number }) {
-  const W = 420, H = 200, PAD = { l: 34, r: 12, t: 16, b: 34 }
-  const iW = W - PAD.l - PAD.r, iH = H - PAD.t - PAD.b
-  const n = data.length
-  const bW = n > 0 ? Math.min(40, (iW / n) * 0.55) : 30
-  const gap = n > 1 ? (iW - bW * n) / (n - 1) : 0
-  const gridLines = [0, 25, 50, 75, 100]
-  const scaleY = (v: number) => iH - (v / (maxVal || 1)) * iH
-  const ariaLabel = `Progresso por colaborador: ${data.map((d) => `${d.label} ${d.value}%`).join(', ')}`
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H }} role="img" aria-label={ariaLabel}>
-      <defs>
-        <linearGradient id="adm-barGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={LC.orange} stopOpacity={1} />
-          <stop offset="100%" stopColor={LC.orange} stopOpacity={0.62} />
-        </linearGradient>
-      </defs>
-      {gridLines.map((g) => {
-        const y = PAD.t + scaleY((g / 100) * (maxVal || 1))
-        return (
-          <g key={g}>
-            <line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke={LC.grid} strokeWidth={1} />
-            <text x={PAD.l - 8} y={y + 3.5} textAnchor="end" fontSize={9} fontFamily="Montserrat, sans-serif" fill={LC.text}>{g}%</text>
-          </g>
-        )
-      })}
-      {data.map((d, i) => {
-        const x = PAD.l + i * (bW + gap)
-        const barH = Math.max(2, (d.value / (maxVal || 1)) * iH)
-        const y = PAD.t + iH - barH
-        return (
-          <g key={`${d.label}-${i}`}>
-            <motion.rect x={x} y={y} width={bW} height={barH} fill="url(#adm-barGrad)" rx={5}
-              initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
-              transition={{ duration: 0.6, ease: 'easeOut', delay: 0.05 + i * 0.05 }}
-              style={{ transformOrigin: `${x}px ${PAD.t + iH}px` }}
-            />
-            <text x={x + bW / 2} y={PAD.t + iH + 16} textAnchor="middle" fontSize={9.5} fontFamily="Montserrat, sans-serif" fill={LC.text}>
-              {d.label.length > 9 ? d.label.slice(0, 8) + '…' : d.label}
-            </text>
-            {d.value > 0 && (
-              <text x={x + bW / 2} y={y - 5} textAnchor="middle" fontSize={10} fontWeight={700}
-                fontFamily="Montserrat, sans-serif" fill={LC.ink} style={{ fontVariantNumeric: 'tabular-nums' }}>{d.value}%</text>
-            )}
-          </g>
-        )
-      })}
-      <line x1={PAD.l} y1={PAD.t + iH} x2={W - PAD.r} y2={PAD.t + iH} stroke={LC.axis} strokeWidth={1} />
     </svg>
   )
 }
@@ -187,6 +138,7 @@ function LineChart({ data, maxVal = 100 }: { data: { label: string; value: numbe
 
 // ── Dashboard do Dono ───────────────────────────────────────────────────────
 function DonoDashboard() {
+  const navigate = useNavigate()
   const { data } = useAdminStore()
   const [rows, setRows] = useState<EmployeeRow[] | null>(null)
 
@@ -217,8 +169,15 @@ function DonoDashboard() {
     ]
   }, [rows])
 
-  const progressBars = useMemo(() =>
-    (rows ?? []).map((r) => ({ label: r.employee.name.split(' ')[0], value: Math.round(r.progress * 100) })), [rows])
+  const attention = useMemo(() => {
+    const r = rows ?? []
+    const out: { e: EmployeeRow; reason: string; gold: boolean }[] = []
+    for (const e of r) {
+      if (!e.signed && e.progress === 0) out.push({ e, reason: 'Não começou', gold: false })
+      else if (!e.signed && e.totalModules > 0 && e.completedModules >= e.totalModules) out.push({ e, reason: 'Falta assinar', gold: true })
+    }
+    return out
+  }, [rows])
 
   const funnelLine = useMemo(() => {
     const r = rows ?? []
@@ -247,10 +206,10 @@ function DonoDashboard() {
   }, [rows])
 
   const kpiCards = [
-    { label: 'Colaboradores', value: kpis.total, sub: 'cadastrados', icon: Users, tone: 'orange' as const },
-    { label: 'Concluíram tudo', value: `${pct(kpis.concluded, total)}%`, sub: `${kpis.concluded}/${total} pessoas`, icon: CheckCircle2, tone: 'green' as const },
-    { label: 'Assinaram', value: `${pct(kpis.signed, total)}%`, sub: `${kpis.signed}/${total} pessoas`, icon: PenLine, tone: 'gold' as const },
-    { label: 'Módulos ativos', value: kpis.active, sub: `de ${data.modules.length} criados`, icon: BookOpen, tone: 'brown' as const },
+    { label: 'Colaboradores', value: kpis.total, sub: 'cadastrados', icon: Users, tone: 'orange' as const, to: '/admin/colaboradores' },
+    { label: 'Concluíram tudo', value: `${pct(kpis.concluded, total)}%`, sub: `${kpis.concluded}/${total} pessoas`, icon: CheckCircle2, tone: 'green' as const, to: '/admin/colaboradores' },
+    { label: 'Assinaram', value: `${pct(kpis.signed, total)}%`, sub: `${kpis.signed}/${total} pessoas`, icon: PenLine, tone: 'gold' as const, to: '/admin/colaboradores' },
+    { label: 'Módulos ativos', value: kpis.active, sub: `de ${data.modules.length} criados`, icon: BookOpen, tone: 'brown' as const, to: '/admin/modulos' },
   ]
 
   const hasPeople = !loading && total > 0
@@ -267,7 +226,7 @@ function DonoDashboard() {
       >
         {kpiCards.map((k) => (
           <motion.div key={k.label} variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-            <StatCard icon={k.icon} tone={k.tone} value={k.value} label={k.label} sub={k.sub} loading={loading} />
+            <StatCard icon={k.icon} tone={k.tone} value={k.value} label={k.label} sub={k.sub} loading={loading} onClick={() => navigate(k.to)} />
           </motion.div>
         ))}
       </motion.div>
@@ -290,15 +249,41 @@ function DonoDashboard() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Progresso por colaborador">
+        <SectionCard
+          title="Precisam de atenção"
+          action={attention.length > 0 ? <span className="adm-badge adm-badge--gold">{attention.length}</span> : undefined}
+        >
           {!hasPeople ? (
-            <EmptyState
-              icon={UserPlus}
-              title="Nenhum colaborador ainda"
-              hint="Cadastre o primeiro colaborador para acompanhar o progresso por aqui."
-            />
+            <EmptyState icon={UserPlus} title="Nenhum colaborador ainda" hint="Cadastre o primeiro colaborador para acompanhar por aqui." />
+          ) : attention.length === 0 ? (
+            <EmptyState icon={CheckCircle2} title="Tudo em dia" hint="Ninguém parado ou pendente de assinatura." compact />
           ) : (
-            <BarChart data={progressBars} maxVal={100} />
+            <ul className="-mx-1 flex flex-col">
+              {attention.slice(0, 6).map(({ e, reason, gold }) => (
+                <li key={e.employee.id}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/admin/colaboradores')}
+                    className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[var(--bg-subtle)] focus-visible:bg-[var(--bg-subtle)] focus-visible:outline-none"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] text-[0.7rem] font-bold text-white">{initials(e.employee.name)}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[0.875rem] font-medium text-[var(--ink)]">{e.employee.name}</span>
+                      <span className="block truncate text-[0.75rem] text-[var(--text-muted)]">{e.employee.role}</span>
+                    </span>
+                    <span className={`adm-badge ${gold ? 'adm-badge--gold' : 'adm-badge--muted'}`}>{reason}</span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100" />
+                  </button>
+                </li>
+              ))}
+              {attention.length > 6 && (
+                <li>
+                  <button type="button" onClick={() => navigate('/admin/colaboradores')} className="mt-1 w-full rounded-lg px-2 py-2 text-left text-[0.8125rem] font-semibold text-[var(--accent-text)] transition-colors hover:bg-[var(--bg-subtle)]">
+                    Ver todos os {attention.length} →
+                  </button>
+                </li>
+              )}
+            </ul>
           )}
         </SectionCard>
       </div>
@@ -367,6 +352,7 @@ function DonoDashboard() {
 
 // ── Dashboard do Gerente ────────────────────────────────────────────────────
 function GerenteDashboard() {
+  const navigate = useNavigate()
   const session = getAdminSession()
   const [rows, setRows] = useState<EmployeeRow[] | null>(null)
 
@@ -385,10 +371,10 @@ function GerenteDashboard() {
   const avg = team.length ? Math.round((team.reduce((a, e) => a + e.progress, 0) / team.length) * 100) : 0
 
   const kpiCards = [
-    { label: 'Minha equipe', value: team.length, sub: 'colaboradores', icon: Users, tone: 'orange' as const },
-    { label: 'Concluíram', value: `${pct(concluded, team.length)}%`, sub: `${concluded}/${team.length} pessoas`, icon: CheckCircle2, tone: 'green' as const },
-    { label: 'Assinaram', value: `${pct(signed, team.length)}%`, sub: `${signed}/${team.length} pessoas`, icon: PenLine, tone: 'gold' as const },
-    { label: 'Progresso médio', value: `${avg}%`, sub: 'da equipe', icon: TrendingUp, tone: 'brown' as const },
+    { label: 'Minha equipe', value: team.length, sub: 'colaboradores', icon: Users, tone: 'orange' as const, to: '/admin/colaboradores' },
+    { label: 'Concluíram', value: `${pct(concluded, team.length)}%`, sub: `${concluded}/${team.length} pessoas`, icon: CheckCircle2, tone: 'green' as const, to: '/admin/colaboradores' },
+    { label: 'Assinaram', value: `${pct(signed, team.length)}%`, sub: `${signed}/${team.length} pessoas`, icon: PenLine, tone: 'gold' as const, to: '/admin/colaboradores' },
+    { label: 'Progresso médio', value: `${avg}%`, sub: 'da equipe', icon: TrendingUp, tone: 'brown' as const, to: '/admin/colaboradores' },
   ]
 
   return (
@@ -406,7 +392,7 @@ function GerenteDashboard() {
       >
         {kpiCards.map((k) => (
           <motion.div key={k.label} variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-            <StatCard icon={k.icon} tone={k.tone} value={k.value} label={k.label} sub={k.sub} loading={loading} />
+            <StatCard icon={k.icon} tone={k.tone} value={k.value} label={k.label} sub={k.sub} loading={loading} onClick={() => navigate(k.to)} />
           </motion.div>
         ))}
       </motion.div>

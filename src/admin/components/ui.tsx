@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useReducedMotion } from 'framer-motion'
-import type { LucideIcon } from 'lucide-react'
+import { ArrowUpRight, type LucideIcon } from 'lucide-react'
 
 /* ============================================================
    Primitivos do Admin (Design System v1) — claros, reutilizáveis.
@@ -47,7 +47,7 @@ export function AnimatedNumber({ value }: { value: string | number }) {
   return <>{m[1]}{animated}{m[3]}</>
 }
 
-/** KPI / métrica. */
+/** KPI / métrica. Quando recebe `onClick`, vira um atalho clicável (drill-down). */
 export function StatCard({
   icon: Icon,
   tone = 'orange',
@@ -55,6 +55,7 @@ export function StatCard({
   label,
   sub,
   loading,
+  onClick,
 }: {
   icon: LucideIcon
   tone?: Tone
@@ -62,11 +63,17 @@ export function StatCard({
   label: string
   sub?: string
   loading?: boolean
+  onClick?: () => void
 }) {
   const t = TONES[tone]
   const animatable = typeof value === 'string' || typeof value === 'number'
-  return (
-    <div className="group rounded-xl border border-[var(--border)] bg-white p-5 transition-all duration-200 hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-sm)]">
+  const base =
+    'group relative w-full rounded-xl border border-[var(--border)] bg-white p-5 text-left transition-all duration-200 hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-sm)]'
+  const inner = (
+    <>
+      {onClick && (
+        <ArrowUpRight className="absolute right-4 top-4 h-4 w-4 text-[var(--text-muted)] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+      )}
       <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-[10px] transition-transform duration-200 group-hover:scale-[1.06]" style={{ background: t.bg }}>
         <Icon className="h-5 w-5" style={{ color: t.fg }} strokeWidth={1.9} />
       </div>
@@ -75,8 +82,21 @@ export function StatCard({
       </div>
       <div className="mt-1.5 text-[0.875rem] font-semibold text-[var(--ink)]">{label}</div>
       {sub && <div className="mt-0.5 text-[0.8125rem] text-[var(--text-muted)]">{sub}</div>}
-    </div>
+    </>
   )
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={`${label}: ${typeof value === 'string' || typeof value === 'number' ? value : ''} — ver detalhes`}
+        className={`${base} cursor-pointer hover:-translate-y-0.5 focus-visible:border-[var(--accent)] focus-visible:shadow-[0_0_0_3px_rgba(242,107,42,0.25)] focus-visible:outline-none`}
+      >
+        {inner}
+      </button>
+    )
+  }
+  return <div className={base}>{inner}</div>
 }
 
 /** Card de seção, com título marcado pelo acento laranja + ação opcional. */
