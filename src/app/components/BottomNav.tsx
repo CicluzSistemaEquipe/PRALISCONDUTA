@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion'
 import { House, UserRound } from 'lucide-react'
-import { brand } from '@/lib/brand'
 import { useTheme } from '../context/ThemeContext'
 
 // 'progress' e 'lis' permanecem no tipo por compatibilidade com rotas existentes
@@ -14,85 +13,63 @@ export const TAB_PATH: Record<Tab, string> = {
 }
 
 const NAV_ITEMS: { id: Tab; icon: typeof House; label: string }[] = [
-  { id: 'feed',    icon: House,      label: 'Inicio' },
+  { id: 'feed',    icon: House,      label: 'Início' },
   { id: 'profile', icon: UserRound,  label: 'Perfil' },
 ]
 
+/**
+ * Rodapé moderno e leve, coeso com o topo escuro da Home.
+ * Sem padrão de fundo nem loop infinito; o indicador ativo usa layout
+ * animation (spring) — motion com propósito.
+ */
 export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const { theme } = useTheme()
   const isLight = theme === 'light'
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-[480px] items-center justify-around"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-[480px] items-stretch justify-around"
       style={{
-        minHeight: 70,
-        backgroundImage: `linear-gradient(135deg, ${isLight ? 'rgba(243,116,53,0.68)' : 'rgba(139,63,35,0.68)'} 0%, rgba(94,55,49,0.70) 52%, rgba(243,116,53,0.58) 100%), url(${brand.padraoFundo})`,
-        backgroundSize: 'cover, 64px 86px',
-        backgroundRepeat: 'no-repeat, repeat',
-        backgroundBlendMode: 'normal, soft-light',
-        borderTop: '1px solid rgba(255,255,255,0.22)',
-        boxShadow: isLight ? '0 -14px 34px rgba(94,55,49,0.16)' : '0 -16px 36px rgba(43,22,15,0.34)',
-        padding: '8px 18px calc(var(--safe-bottom) + 8px)',
-        backdropFilter: 'blur(24px) saturate(1.42)',
-        WebkitBackdropFilter: 'blur(24px) saturate(1.42)',
+        background: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(21,9,0,0.82)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        borderTop: `1px solid ${isLight ? 'rgba(94,55,49,0.12)' : 'rgba(243,116,53,0.18)'}`,
+        boxShadow: isLight ? '0 -10px 30px rgba(94,55,49,0.10)' : '0 -12px 30px rgba(0,0,0,0.35)',
+        padding: '8px 22px calc(var(--safe-bottom) + 8px)',
       }}
     >
       {NAV_ITEMS.map((item) => {
         const isActive = active === item.id
         const I = item.icon
+        const idle = isLight ? '#9a8b7d' : 'rgba(255,255,255,0.55)'
 
         return (
           <motion.button
             key={item.id}
             onClick={() => onChange(item.id)}
-            whileTap={{ scale: 0.86 }}
-            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.9 }}
             aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
-            className="relative flex min-w-[72px] flex-col items-center gap-1"
-            style={{
-              color: isActive ? '#f37435' : '#ffe6b8',
-              transition: 'color 0.2s ease',
-            }}
+            className="relative flex min-w-[78px] flex-col items-center justify-center gap-1 pt-1"
+            style={{ color: isActive ? '#f37435' : idle, transition: 'color 0.2s ease' }}
           >
-            <span
-              className="relative flex items-center justify-center"
-              style={{
-                width: 42,
-                height: 34,
-                borderRadius: 14,
-                background: isActive ? '#ffffff' : 'rgba(255,255,255,0.12)',
-                border: `1px solid ${isActive ? '#ffffff' : 'rgba(255,255,255,0.24)'}`,
-                boxShadow: isActive ? '0 10px 24px rgba(255,255,255,0.20)' : 'inset 0 1px 0 rgba(255,255,255,0.08)',
-              }}
-            >
+            <span className="relative flex h-9 w-12 items-center justify-center rounded-[13px]">
               {isActive && (
                 <motion.span
-                  layoutId="nav-glow"
-                  className="absolute inset-0 rounded-[14px]"
-                  style={{ boxShadow: '0 8px 22px rgba(243,116,53,0.28)' }}
-                  transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                  layoutId="nav-pill"
+                  className="absolute inset-0 rounded-[13px]"
+                  style={{ background: 'rgba(243,116,53,0.16)', border: '1px solid rgba(243,116,53,0.42)' }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 30 }}
                 />
               )}
-              <motion.span
-                animate={isActive ? { y: [0, -2, 0], rotate: [0, -2, 2, 0] } : { y: 0, rotate: 0 }}
-                transition={{ duration: 1.8, repeat: isActive ? Infinity : 0, ease: 'easeInOut' }}
-              >
-                <I size={20} strokeWidth={2.4} />
-              </motion.span>
+              <I size={21} strokeWidth={isActive ? 2.5 : 2} className="relative" />
             </span>
-            <span className="relative font-body text-[10px] font-bold tracking-wide" style={{ color: isActive ? '#ffffff' : '#ffe6b8' }}>
+            <span
+              className="font-body font-bold"
+              style={{ fontSize: 10, letterSpacing: '0.02em', color: isActive ? '#f37435' : idle }}
+            >
               {item.label}
             </span>
-            {isActive && (
-              <motion.span
-                layoutId="nav-dot"
-                className="rounded-full"
-                style={{ height: 3, width: 18, background: '#ffffff' }}
-                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              />
-            )}
           </motion.button>
         )
       })}

@@ -2,10 +2,10 @@ import { brand, FILTER_WHITE } from '@/lib/brand'
 import { useTheme, type Theme } from '../context/ThemeContext'
 
 /**
- * Fundo da marca — leve e estático (sem loops infinitos).
- * As espigas ficam fixas como textura; só o gradiente sutil dá profundidade.
- * Decisão de performance: telas do colaborador precisam rodar fluido em
- * qualquer celular, então o fundo não anima (era a maior fonte de repaint).
+ * Fundo da marca — leve e estático (roda fluido em qualquer dispositivo).
+ * Sem animação e sem mix-blend-mode (era uma camada de composição extra cara
+ * em celular fraco): só duas espigas de baixa opacidade + um gradiente suave
+ * nas cores da marca.
  */
 export function AnimatedBackground({ theme }: { accent?: string; theme?: Theme }) {
   const ctx = useTheme()
@@ -13,41 +13,27 @@ export function AnimatedBackground({ theme }: { accent?: string; theme?: Theme }
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0" style={{ background: 'var(--bg-base)' }}>
+      <div
+        className="absolute inset-0"
+        style={{
+          background: isLight
+            ? 'radial-gradient(120% 80% at 20% 0%, rgba(243,116,53,0.06), transparent 46%), radial-gradient(110% 70% at 90% 18%, rgba(184,134,11,0.05), transparent 50%)'
+            : 'radial-gradient(120% 80% at 20% 0%, rgba(243,116,53,0.12), transparent 46%), radial-gradient(110% 70% at 90% 18%, rgba(184,134,11,0.10), transparent 50%)',
+        }}
+      />
       <img
         src={brand.simboloEspiga}
         alt=""
         aria-hidden="true"
         className="absolute"
-        style={{
-          width: 260,
-          right: -92,
-          top: 92,
-          opacity: isLight ? 0.04 : 0.05,
-          filter: isLight ? 'none' : FILTER_WHITE,
-          mixBlendMode: isLight ? 'multiply' : 'screen',
-        }}
+        style={{ width: 240, right: -88, top: 96, opacity: isLight ? 0.035 : 0.045, filter: isLight ? 'none' : FILTER_WHITE }}
       />
       <img
         src={brand.simboloPar}
         alt=""
         aria-hidden="true"
         className="absolute"
-        style={{
-          width: 190,
-          left: -72,
-          bottom: 118,
-          opacity: isLight ? 0.035 : 0.048,
-          filter: isLight ? 'none' : FILTER_WHITE,
-          mixBlendMode: isLight ? 'multiply' : 'screen',
-        }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          background: isLight
-            ? 'radial-gradient(circle at 18% 10%, rgba(243,116,53,0.08), transparent 30%), radial-gradient(circle at 88% 26%, rgba(184,134,11,0.08), transparent 34%)'
-            : 'radial-gradient(circle at 18% 10%, rgba(243,116,53,0.18), transparent 30%), radial-gradient(circle at 88% 26%, rgba(184,134,11,0.16), transparent 34%)',
-        }}
+        style={{ width: 170, left: -64, bottom: 130, opacity: isLight ? 0.03 : 0.04, filter: isLight ? 'none' : FILTER_WHITE }}
       />
     </div>
   )

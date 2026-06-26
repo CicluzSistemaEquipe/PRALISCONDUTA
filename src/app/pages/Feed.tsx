@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowRight, Check, PenLine } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { ArrowRight, Check, Leaf, PenLine, Sparkles } from 'lucide-react'
 import { modulesForRole } from '@/lib/content'
 import type { Module } from '@/lib/types'
 import { useSession } from '../context/SessionContext'
@@ -22,9 +22,27 @@ function firstName(name: string): string {
   return first.charAt(0).toUpperCase() + first.slice(1)
 }
 
+// Saudação por gênero (heurística PT-BR + exceções). Editável depois no admin.
+const FEM_NAMES = new Set(['isabel', 'raquel', 'rachel', 'beatriz', 'ester', 'esther', 'ruth', 'carmem', 'carmen', 'ines', 'agnes', 'lais', 'iris', 'mercedes', 'lourdes', 'solange', 'eliane', 'cristiane', 'rosane', 'adriane', 'jaqueline', 'jacqueline', 'eveline', 'evelyn', 'karen', 'miriam', 'mirian', 'heloise', 'noemi', 'rute'])
+const MASC_NAMES = new Set(['luca', 'juca', 'noa', 'josua', 'jeova', 'elias', 'tobias', 'matias', 'dinis', 'nicola', 'aleixa'])
+function welcomeFor(name: string): string {
+  const f = firstName(name).toLowerCase()
+  const female = MASC_NAMES.has(f) ? false : FEM_NAMES.has(f) ? true : f.endsWith('a')
+  return female ? 'Seja bem-vinda' : 'Seja bem-vindo'
+}
+
+// Mensagens boas que passam acima do rodapé (futuramente editáveis no admin geral).
+const TAGLINES = [
+  'é provar e ser feliz',
+  'cada módulo te deixa mais preparado',
+  'seu cuidado faz a Pralís melhor',
+  'conhecimento que vira confiança',
+  'um passo hoje, orgulho amanhã',
+]
+
 /** Anel de progresso global (gradiente ouro→laranja). Desenha uma vez na entrada. */
 function ProgressRing({ progress, size = 92, reduce }: { progress: number; size?: number; reduce?: boolean }) {
-  const strokeW = 8
+  const strokeW = 7
   const r = (size - strokeW * 2) / 2
   const circ = 2 * Math.PI * r
   const offset = circ - (progress / 100) * circ
@@ -42,7 +60,7 @@ function ProgressRing({ progress, size = 92, reduce }: { progress: number; size?
         strokeDasharray={circ}
         initial={{ strokeDashoffset: reduce ? offset : circ }}
         animate={{ strokeDashoffset: offset }}
-        transition={{ duration: reduce ? 0 : 1.4, ease: [0.16, 1, 0.3, 1], delay: reduce ? 0 : 0.35 }}
+        transition={{ duration: reduce ? 0 : 1.3, ease: [0.16, 1, 0.3, 1], delay: reduce ? 0 : 0.3 }}
       />
       <defs>
         <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -66,8 +84,6 @@ const SECTION_ACCENT: Record<NonNullable<Module['section']>, string> = {
   cargo: '#f37435',
   final: '#e8cfa0',
 }
-
-type SectionState = 'complete' | 'current' | 'pending'
 
 export default function Feed() {
   const navigate = useNavigate()
@@ -163,7 +179,6 @@ export default function Feed() {
 
   const dateLabel = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).format(now)
   const timeLabel = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(now)
-  const currentSection = groups.find(([, mods]) => mods.some((m) => !isModuleDone(m)))?.[0]
 
   // ── Lis como guia da jornada (mensagem derivada do estado — sem nova regra) ──
   const lisMessage = allDone
@@ -205,51 +220,51 @@ export default function Feed() {
         : 'Continuar'
   const onHero = () => (allDone || !nextModule ? navigate('/progresso') : open(nextModule))
 
-  // helpers de motion (com propósito; respeitam prefers-reduced-motion)
   const rise = (delay = 0) =>
     reduce
       ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.2 } }
-      : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1], delay } }
+      : { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1], delay } }
 
   return (
     <div className="app-shell">
       <AnimatedBackground accent="#b8860b" />
 
-      {/* ── HEADER (leve, sem loops) ───────────────────────────────────────── */}
+      {/* ── TOPO compacto e moderno ─────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-20 flex flex-col gap-2 px-5 pb-3"
+        className="sticky top-0 z-20 px-5 pb-3"
         style={{
-          paddingTop: 'calc(var(--safe-top) + 0.75rem)',
-          background: isLight ? '#ffffff' : '#150900',
-          borderBottom: `1px solid ${isLight ? '#e5d5c5' : 'rgba(184,134,11,0.18)'}`,
-          boxShadow: isLight ? '0 2px 10px rgba(26,14,0,0.05)' : 'none',
+          paddingTop: 'calc(var(--safe-top) + 0.6rem)',
+          background: isLight ? '#ffffff' : '#160a02',
+          borderBottom: `1px solid ${isLight ? '#ece0d2' : 'rgba(184,134,11,0.16)'}`,
+          boxShadow: isLight ? '0 1px 0 rgba(26,14,0,0.04)' : 'none',
         }}
       >
         <div className="flex items-start justify-between gap-3">
-          <motion.img
-            src={isLight ? brand.logoSVGPreta : brand.logoSVGBranca}
-            alt="padaria pralis"
-            style={{ width: 104, height: 'auto', filter: isLight ? 'none' : FILTER_WHITE, transformOrigin: 'left center' }}
-            whileTap={{ scale: 0.96 }}
-            {...rise(0)}
-          />
-          <motion.div className="flex flex-col items-center gap-1" {...rise(0.06)}>
-            <LisHeaderAvatar globalProgress={globalProgress} size={64} onClick={() => navigate('/progresso')} />
-            <div className="text-center font-body" style={{ color: isLight ? '#1a0e00' : 'rgba(255,255,255,0.90)' }}>
-              <p style={{ fontSize: 12, fontWeight: 900, lineHeight: 1 }}>{timeLabel}</p>
-              <p style={{ fontSize: 8.5, lineHeight: 1.2, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{dateLabel}</p>
+          <motion.div className="min-w-0 flex-1" {...rise(0)}>
+            <img
+              src={isLight ? brand.logoSVGPreta : brand.logoSVGBranca}
+              alt="padaria pralis"
+              style={{ width: 84, height: 'auto', filter: isLight ? 'none' : FILTER_WHITE }}
+            />
+            <p className="mt-2 font-body" style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.01em' }}>
+              {welcomeFor(employee.name)},
+            </p>
+            <p className="mt-0.5 font-body uppercase" style={{ fontSize: 8.5, fontWeight: 800, color: '#f37435', letterSpacing: '0.20em' }}>
+              {employee.role}
+            </p>
+            <h1 className="mt-0.5 font-display leading-none" style={{ fontSize: 'clamp(20px, 5.6vw, 26px)', color: 'var(--text-primary)' }}>
+              Ol&aacute;, {firstName(employee.name)}!
+            </h1>
+          </motion.div>
+
+          <motion.div className="flex shrink-0 flex-col items-center gap-1" {...rise(0.06)}>
+            <LisHeaderAvatar globalProgress={globalProgress} size={80} onClick={() => navigate('/progresso')} />
+            <div className="text-center font-body" style={{ color: isLight ? '#1a0e00' : 'rgba(255,255,255,0.92)' }}>
+              <p style={{ fontSize: 13, fontWeight: 900, lineHeight: 1 }}>{timeLabel}</p>
+              <p style={{ fontSize: 8.5, lineHeight: 1.25, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{dateLabel}</p>
             </div>
           </motion.div>
         </div>
-
-        <motion.div className="flex flex-col gap-0.5" {...rise(0.1)}>
-          <p className="font-body uppercase" style={{ fontSize: 9, fontWeight: 800, color: '#f37435', letterSpacing: '0.20em' }}>
-            {employee.role}
-          </p>
-          <h1 className="font-display leading-none" style={{ fontSize: 'clamp(19px, 5.2vw, 25px)', color: 'var(--text-primary)' }}>
-            Ol&aacute;, {firstName(employee.name)}!
-          </h1>
-        </motion.div>
       </header>
 
       {/* ── FEED ───────────────────────────────────────────────────────────── */}
@@ -263,61 +278,53 @@ export default function Feed() {
         ) : (
           <>
             {/* Lis guia — fala contextual, aponta para o próximo passo */}
-            <motion.div className="mb-3 flex items-center gap-2.5" {...rise(0.12)}>
+            <motion.div className="mb-3 flex items-center gap-2.5" {...rise(0.1)}>
               <span
-                className="flex shrink-0 items-center justify-center overflow-hidden"
-                style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(243,116,53,0.14)', border: '1px solid rgba(243,116,53,0.30)' }}
+                className="flex shrink-0 items-center justify-center"
+                style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(243,116,53,0.14)', border: '1px solid rgba(243,116,53,0.30)' }}
               >
-                <img src={brand.simboloPar} alt="Lis" style={{ width: 18, height: 18 }} />
+                <Sparkles size={14} color="#f37435" strokeWidth={2.2} />
               </span>
               <p className="font-body" style={{ fontSize: 'clamp(11.5px, 3.3vw, 13px)', color: 'var(--text-secondary)', lineHeight: 1.35 }}>
                 {lisMessage}
               </p>
             </motion.div>
 
-            {/* HERÓI "Continuar" — responde onde parei / o que faço / quanto falta */}
+            {/* HERÓI "Continuar" — fino e minimalista; responde onde/o que/quanto */}
             <motion.button
               onClick={onHero}
               whileTap={{ scale: 0.985 }}
-              {...rise(0.16)}
-              className="relative mb-6 block w-full overflow-hidden text-left"
+              {...rise(0.14)}
+              className="relative mb-7 block w-full overflow-hidden text-left"
               style={{
-                padding: 18,
+                padding: 15,
                 background: isLight ? '#ffffff' : 'var(--bg-card)',
                 border: `1.5px solid ${allDone ? 'rgba(93,216,122,0.45)' : heroAccent}`,
-                borderRadius: 22,
-                boxShadow: allDone ? 'none' : `0 16px 40px -22px ${heroAccent}`,
+                borderRadius: 20,
+                boxShadow: allDone ? 'none' : `0 14px 34px -22px ${heroAccent}`,
               }}
             >
-              <img
-                src={brand.simboloPar}
-                aria-hidden="true"
-                alt=""
-                style={{ position: 'absolute', right: -14, bottom: -14, width: 96, opacity: isLight ? 0.05 : 0.09, filter: isLight ? 'brightness(0) saturate(100%) opacity(0.5)' : 'brightness(0) invert(1)', pointerEvents: 'none' }}
-              />
               <span aria-hidden="true" className="absolute left-0 top-4 bottom-4" style={{ width: 4, borderRadius: 999, background: allDone ? '#5dd87a' : heroAccent }} />
 
-              <div className="relative flex items-center gap-4">
+              <div className="relative flex items-center gap-3.5">
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <ProgressRing progress={globalProgress} size={78} reduce={reduce} />
-                  <span
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Montserrat, sans-serif', fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}
-                  >
+                  <ProgressRing progress={globalProgress} size={62} reduce={reduce} />
+                  <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Montserrat, sans-serif', fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)' }}>
                     {Math.round(globalProgress)}%
                   </span>
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <p className="font-body uppercase" style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.16em', color: allDone ? '#5dd87a' : heroAccent }}>
+                  <p className="font-body uppercase" style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', color: allDone ? '#5dd87a' : heroAccent }}>
                     {heroEyebrow}
                     {!allDone && ordered.length > 0 && (
-                      <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.04em' }}> · faltam {remaining} de {ordered.length}</span>
+                      <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.03em' }}> · faltam {remaining} de {ordered.length}</span>
                     )}
                   </p>
-                  <p className="font-display" style={{ fontSize: 'clamp(17px, 4.8vw, 21px)', color: 'var(--text-primary)', lineHeight: 1.15, marginTop: 3, overflowWrap: 'anywhere' }}>
+                  <p className="font-display" style={{ fontSize: 'clamp(16px, 4.6vw, 20px)', color: 'var(--text-primary)', lineHeight: 1.14, marginTop: 2, overflowWrap: 'anywhere' }}>
                     {heroTitle}
                   </p>
                   {heroState && (
-                    <p className="font-body" style={{ fontSize: 'clamp(11.5px, 3.3vw, 13px)', color: 'var(--text-secondary)', marginTop: 3 }}>
+                    <p className="font-body" style={{ fontSize: 'clamp(11px, 3.2vw, 12.5px)', color: 'var(--text-secondary)', marginTop: 2 }}>
                       {heroState}
                     </p>
                   )}
@@ -325,7 +332,7 @@ export default function Feed() {
               </div>
 
               {nextInProgress && nextModule && (
-                <div className="relative mt-3 overflow-hidden rounded-full" style={{ height: 5, background: 'var(--stroke-soft)' }}>
+                <div className="relative mt-3 overflow-hidden rounded-full" style={{ height: 4, background: 'var(--stroke-soft)' }}>
                   <motion.div
                     initial={{ width: reduce ? `${Math.round(fractionOf(nextModule.id) * 100)}%` : 0 }}
                     animate={{ width: `${Math.round(fractionOf(nextModule.id) * 100)}%` }}
@@ -336,56 +343,35 @@ export default function Feed() {
               )}
 
               <span
-                className="relative mt-4 flex w-full items-center justify-center gap-2 font-display"
-                style={{
-                  height: 46,
-                  borderRadius: 13,
-                  background: allDone ? '#5dd87a' : heroAccent,
-                  color: '#fff',
-                  fontSize: 'clamp(14px, 4vw, 16px)',
-                  boxShadow: `0 10px 24px -12px ${allDone ? '#5dd87a' : heroAccent}`,
-                }}
+                className="relative mt-3.5 flex w-full items-center justify-center gap-2 font-display"
+                style={{ height: 42, borderRadius: 12, background: allDone ? '#5dd87a' : heroAccent, color: '#fff', fontSize: 'clamp(13.5px, 3.8vw, 15px)', boxShadow: `0 8px 20px -12px ${allDone ? '#5dd87a' : heroAccent}` }}
               >
-                {allDone ? <Check size={18} strokeWidth={2.6} /> : nextModule?.kind === 'signature' ? <PenLine size={17} strokeWidth={2.4} /> : null}
+                {allDone ? <Check size={17} strokeWidth={2.6} /> : nextModule?.kind === 'signature' ? <PenLine size={16} strokeWidth={2.4} /> : null}
                 {heroCTA}
-                {!allDone && nextModule?.kind !== 'signature' && <ArrowRight size={18} strokeWidth={2.4} />}
+                {!allDone && nextModule?.kind !== 'signature' && <ArrowRight size={17} strokeWidth={2.4} />}
               </span>
             </motion.button>
 
-            {/* TRILHA — seções com estado claro; recomendado em destaque */}
-            {groups.map(([section, mods]) => {
+            {/* TRILHA — 3 grupos separados visualmente; recomendado em destaque */}
+            {groups.map(([section, mods], gi) => {
               const doneInSection = mods.filter(isModuleDone).length
-              const missing = mods.length - doneInSection
-              const sectionState: SectionState = missing === 0 ? 'complete' : section === currentSection ? 'current' : 'pending'
-
               return (
-                <section key={section} className="mb-6">
-                  <SectionDivider
-                    label={SECTION_LABEL[section]}
-                    accent={SECTION_ACCENT[section]}
-                    state={sectionState}
-                    done={doneInSection}
-                    missing={missing}
-                    total={mods.length}
-                    isLight={isLight}
-                    reduce={reduce}
-                  />
-                  <div className="flex flex-col gap-2">
+                <section
+                  key={section}
+                  style={gi === 0 ? undefined : { marginTop: 8, paddingTop: 22, borderTop: `1px solid ${isLight ? 'rgba(94,55,49,0.10)' : 'rgba(255,255,255,0.07)'}` }}
+                  className="mb-2"
+                >
+                  <SectionHeader label={SECTION_LABEL[section]} accent={SECTION_ACCENT[section]} done={doneInSection} total={mods.length} reduce={reduce} />
+                  <div className="flex flex-col gap-2.5">
                     {mods.map((m, i) => (
                       <motion.div
                         key={m.id}
-                        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 22 }}
+                        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: '-40px' }}
                         transition={{ delay: reduce ? 0 : Math.min(i * 0.05, 0.2), duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                       >
-                        <ModuleCard
-                          module={m}
-                          status={statusOf(m.id)}
-                          progress={fractionOf(m.id)}
-                          onOpen={() => open(m)}
-                          highlight={m.id === nextModule?.id}
-                        />
+                        <ModuleCard module={m} status={statusOf(m.id)} progress={fractionOf(m.id)} onOpen={() => open(m)} highlight={m.id === nextModule?.id} />
                       </motion.div>
                     ))}
                   </div>
@@ -395,12 +381,8 @@ export default function Feed() {
           </>
         )}
 
-        <div className="flex flex-col items-center gap-2 pb-2 pt-2">
-          <img src={brand.simboloPar} alt="" aria-hidden="true" style={{ width: 28, opacity: isLight ? 0.28 : 0.2, filter: isLight ? 'brightness(0) saturate(100%) opacity(0.5)' : FILTER_WHITE }} />
-          <p className="text-center font-body" style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--text-secondary)' }}>
-            é provar e ser feliz
-          </p>
-        </div>
+        {/* frase rotativa com motion, acima do rodapé */}
+        <RotatingTagline isLight={isLight} reduce={reduce} />
       </main>
 
       <BottomNav active="feed" onChange={(t) => navigate(TAB_PATH[t])} />
@@ -408,100 +390,58 @@ export default function Feed() {
   )
 }
 
-function SectionDivider({
-  label,
-  accent,
-  state,
-  done,
-  missing,
-  total,
-  isLight,
-  reduce,
-}: {
-  label: string
-  accent: string
-  state: SectionState
-  done: number
-  missing: number
-  total: number
-  isLight: boolean
-  reduce: boolean
-}) {
-  const complete = state === 'complete'
-  const current = state === 'current'
-  const bg = complete
-    ? isLight
-      ? '#effff3'
-      : 'rgba(93,216,122,0.16)'
-    : current
-      ? isLight
-        ? '#fff0e8'
-        : 'rgba(243,116,53,0.16)'
-      : isLight
-        ? '#f7f2ec'
-        : 'var(--bg-card)'
-  const color = complete ? '#5dd87a' : current ? '#f37435' : accent
-  const missingPercent = total > 0 ? Math.round((missing / total) * 100) : 0
+function SectionHeader({ label, accent, done, total, reduce }: { label: string; accent: string; done: number; total: number; reduce: boolean }) {
+  const complete = total > 0 && done === total
   const donePercent = total > 0 ? Math.round((done / total) * 100) : 0
-  const labelText = complete ? 'Concluído' : `${missingPercent}% falta`
-
+  const color = complete ? '#5dd87a' : accent
   return (
-    <div
-      className="mb-3 overflow-hidden"
-      style={{
-        padding: '9px 10px 10px',
-        borderRadius: 15,
-        background: bg,
-        border: `1px solid ${complete ? 'rgba(93,216,122,0.45)' : current ? 'rgba(243,116,53,0.48)' : 'rgba(232,207,160,0.22)'}`,
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-        <h2 className="font-body font-bold uppercase" style={{ fontSize: 10.5, color, letterSpacing: '0.20em', whiteSpace: 'nowrap' }}>
+    <div className="mb-3">
+      <div className="flex items-center gap-2.5">
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
+        <h2 className="font-body font-bold uppercase" style={{ fontSize: 11, color, letterSpacing: '0.18em', whiteSpace: 'nowrap' }}>
           {label}
         </h2>
-        <span style={{ flex: 1 }} />
-        <span
-          className="font-body uppercase"
-          style={{
-            flexShrink: 0,
-            borderRadius: 999,
-            padding: '4px 8px',
-            background: complete ? 'rgba(93,216,122,0.18)' : current ? '#ffffff' : 'rgba(255,255,255,0.08)',
-            color: complete ? '#5dd87a' : current ? '#5e3731' : 'var(--text-secondary)',
-            fontSize: 9,
-            fontWeight: 800,
-            letterSpacing: '0.08em',
-          }}
-        >
-          {labelText}
+        <span className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${complete ? 'rgba(93,216,122,0.35)' : 'rgba(232,207,160,0.28)'}, transparent)` }} />
+        <span className="font-body font-bold" style={{ fontSize: 10.5, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+          {done}/{total}
         </span>
       </div>
-      <div
-        style={{
-          position: 'relative',
-          height: 5,
-          marginTop: 8,
-          borderRadius: 999,
-          overflow: 'hidden',
-          background: isLight ? 'rgba(94,55,49,0.10)' : 'rgba(255,255,255,0.12)',
-        }}
-      >
+      <div className="relative mt-2 overflow-hidden rounded-full" style={{ height: 3, background: 'var(--stroke-soft)' }}>
         <motion.div
           initial={{ width: reduce ? `${donePercent}%` : 0 }}
           whileInView={{ width: `${donePercent}%` }}
           viewport={{ once: true }}
-          transition={{ duration: reduce ? 0 : 0.8, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            height: '100%',
-            borderRadius: 999,
-            background: complete
-              ? 'linear-gradient(90deg, #5dd87a, #a7f3b7)'
-              : current
-                ? 'linear-gradient(90deg, #f37435, #ffb07f)'
-                : `linear-gradient(90deg, ${accent}, rgba(232,207,160,0.72))`,
-          }}
+          transition={{ duration: reduce ? 0 : 0.7, ease: [0.16, 1, 0.3, 1] }}
+          style={{ height: '100%', borderRadius: 999, background: complete ? 'linear-gradient(90deg, #5dd87a, #a7f3b7)' : `linear-gradient(90deg, ${accent}, rgba(232,207,160,0.7))` }}
         />
+      </div>
+    </div>
+  )
+}
+
+function RotatingTagline({ isLight, reduce }: { isLight: boolean; reduce: boolean }) {
+  const [i, setI] = useState(0)
+  useEffect(() => {
+    const id = window.setInterval(() => setI((v) => (v + 1) % TAGLINES.length), 4800)
+    return () => window.clearInterval(id)
+  }, [])
+  return (
+    <div className="flex flex-col items-center gap-2.5 pb-2 pt-6">
+      <Leaf size={18} color="#f37435" strokeWidth={2} style={{ opacity: isLight ? 0.7 : 0.85 }} aria-hidden="true" />
+      <div className="relative flex h-5 w-full items-center justify-center">
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={i}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 7 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -7 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute text-center font-body"
+            style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--text-secondary)' }}
+          >
+            {TAGLINES[i]}
+          </motion.p>
+        </AnimatePresence>
       </div>
     </div>
   )
