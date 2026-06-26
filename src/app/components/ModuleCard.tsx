@@ -29,47 +29,64 @@ export function ModuleCard({ module, status, progress, onOpen, highlight = false
   const pct = Math.round(progress * 100)
   const recommended = highlight && !locked && !done
 
-  // ── BLOQUEADO: mistério — conteúdo embaçado (efeito glass) + cadeado grande
-  //    e o rótulo por cima. Não revela o módulo; só abre ao desbloquear.
+  // ── BLOQUEADO: glass no botão inteiro — o conteúdo real fica nítido por baixo
+  //    e a camada de vidro (backdrop-blur) frosta tudo; cadeado + rótulo em
+  //    destaque por cima. Não revela o módulo; só abre ao desbloquear.
   if (locked) {
     const label = lockedLabel ?? 'Módulo bloqueado'
+    const labelColor = isLight ? '#5e3731' : '#fff6ea'
+    const hintColor = isLight ? 'rgba(94,55,49,0.8)' : 'rgba(255,246,234,0.82)'
     return (
       <div
         className="relative flex w-full items-center overflow-hidden"
         style={{
-          minHeight: CARD_MIN_H,
+          minHeight: 84,
           borderRadius: CARD_RADIUS,
-          padding: 16,
-          background: isLight ? 'rgba(94,55,49,0.05)' : 'rgba(255,255,255,0.04)',
-          border: `1.5px dashed ${isLight ? 'rgba(94,55,49,0.20)' : 'rgba(255,255,255,0.14)'}`,
+          background: 'var(--bg-card)',
+          border: `1.5px solid ${isLight ? 'rgba(94,55,49,0.16)' : 'rgba(255,255,255,0.12)'}`,
         }}
       >
-        {/* conteúdo real, mas borrado e esmaecido (não dá pra ler) */}
-        <div className="flex items-center gap-3.5" style={{ filter: 'blur(7px)', opacity: 0.42, pointerEvents: 'none', userSelect: 'none' }}>
-          <span style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-surface-2)', border: '1px solid var(--stroke)', flexShrink: 0 }} />
+        {/* conteúdo real (mostra mais por baixo do vidro) */}
+        <div className="flex items-center gap-3.5 px-4" style={{ opacity: 0.7, pointerEvents: 'none', userSelect: 'none' }}>
+          <span style={{ width: 42, height: 42, borderRadius: 12, background: `color-mix(in srgb, ${module.accent} 18%, transparent)`, border: `1px solid ${module.accent}`, flexShrink: 0 }} />
           <span>
             <span className="block font-display" style={{ fontSize: 16, color: 'var(--text-primary)' }}>{module.title}</span>
-            <span className="mt-1 block font-body" style={{ fontSize: 12 }}>{module.subtitle}</span>
+            <span className="mt-1 block font-body" style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{module.subtitle}</span>
           </span>
         </div>
 
-        {/* camada glass + cadeado grande + rótulo */}
-        <div className="absolute inset-0 flex items-center gap-3 px-4" style={{ background: isLight ? 'rgba(247,242,236,0.30)' : 'rgba(21,9,0,0.32)' }}>
+        {/* camada de VIDRO sobre o botão todo (frost) */}
+        <div
+          className="absolute inset-0"
+          aria-hidden="true"
+          style={{
+            backdropFilter: 'blur(7px) saturate(1.1)',
+            WebkitBackdropFilter: 'blur(7px) saturate(1.1)',
+            background: isLight
+              ? 'linear-gradient(135deg, rgba(255,255,255,0.55), rgba(255,255,255,0.32))'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.20)',
+            borderRadius: CARD_RADIUS,
+          }}
+        />
+
+        {/* frente nítida: cadeado + rótulo em destaque */}
+        <div className="absolute inset-0 flex items-center gap-3 px-4">
           <span
             className="flex shrink-0 items-center justify-center"
             style={{
-              width: 46,
-              height: 46,
+              width: 44,
+              height: 44,
               borderRadius: '50%',
-              background: isLight ? 'rgba(94,55,49,0.10)' : 'rgba(255,255,255,0.08)',
-              border: `1.5px solid ${isLight ? 'rgba(94,55,49,0.22)' : 'rgba(255,255,255,0.18)'}`,
+              background: isLight ? 'rgba(94,55,49,0.12)' : 'rgba(255,255,255,0.16)',
+              border: `1.5px solid ${isLight ? 'rgba(94,55,49,0.26)' : 'rgba(255,255,255,0.32)'}`,
             }}
           >
-            <Lock size={22} color="var(--text-secondary)" strokeWidth={2.2} />
+            <Lock size={21} color={labelColor} strokeWidth={2.4} />
           </span>
           <span className="min-w-0">
-            <span className="block font-display" style={{ fontSize: 15, color: 'var(--text-secondary)' }}>{label}</span>
-            <span className="mt-0.5 block font-body" style={{ fontSize: 12, color: 'var(--text-secondary)', opacity: 0.85 }}>
+            <span className="block font-display" style={{ fontSize: 15.5, fontWeight: 700, color: labelColor, letterSpacing: '0.01em' }}>{label}</span>
+            <span className="mt-0.5 block font-body" style={{ fontSize: 11, color: hintColor }}>
               Conclua o módulo anterior para abrir
             </span>
           </span>
