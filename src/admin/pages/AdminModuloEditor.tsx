@@ -6,7 +6,7 @@ import {
   Trash2, ChevronDown, Users, Film,
   ClipboardList, Flag, MessageSquare, FileText, Sparkles, Eye,
   Tag, Palette, UploadCloud, FileVideo, X as XIcon,
-  GripVertical, Save, BarChart3,
+  GripVertical, Save, BarChart3, ArrowUp, ArrowDown, Send,
 } from 'lucide-react'
 import { useAdminStore } from '@/lib/adminStore'
 import { ROLES, type Module, type Role, type Story } from '@/lib/types'
@@ -22,8 +22,8 @@ import {
   firstQuizIndex, firstVideoIndex, moveItem,
 } from '../lib/modules'
 
-type Tab     = 'info' | 'conteudo' | 'video' | 'quiz'
-type AddKind = 'texto' | 'destaque' | 'lis' | 'enquete'
+type Tab     = 'info' | 'conteudo'
+type AddKind = 'texto' | 'destaque' | 'lis' | 'enquete' | 'video' | 'quiz'
 type VideoStory = Extract<Story, { type: 'video' }>
 type QuizStory  = Extract<Story, { type: 'quiz' }>
 
@@ -37,10 +37,8 @@ const ICON_LABEL: Record<Module['iconType'], string> = {
 }
 
 const TABS: { id: Tab; label: string; Icon: typeof Info }[] = [
-  { id: 'info',     label: 'Informações', Icon: Info       },
-  { id: 'conteudo', label: 'Slides',      Icon: Layers     },
-  { id: 'video',    label: 'Vídeo',       Icon: VideoIcon  },
-  { id: 'quiz',     label: 'Quiz',        Icon: HelpCircle },
+  { id: 'info',     label: 'Informações', Icon: Info   },
+  { id: 'conteudo', label: 'Conteúdo',    Icon: Layers },
 ]
 
 const ADD_KINDS: { id: AddKind; label: string; Icon: typeof FileText; hint: string }[] = [
@@ -61,6 +59,8 @@ const READONLY_SLIDE: Record<string, { Icon: typeof Film; label: string; hint: s
 function slideTypeInfo(s: Story) {
   if (s.type === 'lis') return { label: 'Fala da Lis', Icon: MessageSquare }
   if (s.type === 'poll') return { label: 'Enquete', Icon: BarChart3 }
+  if (s.type === 'video') return { label: 'Vídeo', Icon: Film }
+  if (s.type === 'quiz') return { label: 'Quiz', Icon: HelpCircle }
   if (s.type === 'text' && s.highlight !== undefined)
     return { label: 'Destaque', Icon: Sparkles }
   return { label: 'Texto', Icon: FileText }
@@ -70,7 +70,14 @@ function slidePreview(s: Story): string {
   if (s.type === 'text') return s.title || '(sem título)'
   if (s.type === 'lis')  return s.text ? s.text.slice(0, 80) + (s.text.length > 80 ? '…' : '') : '(sem texto)'
   if (s.type === 'poll') return s.question || '(sem pergunta)'
+  if (s.type === 'video') return s.title || 'Vídeo'
+  if (s.type === 'quiz') return `${s.questions.length} pergunta${s.questions.length === 1 ? '' : 's'}`
   return ''
+}
+
+/** Tipos com editor inline na timeline (vídeo e quiz agora são blocos). */
+function inlineEditable(s: Story): boolean {
+  return s.type === 'text' || s.type === 'lis' || s.type === 'poll' || s.type === 'video' || s.type === 'quiz'
 }
 
 // ── componente principal ──────────────────────────────────────────────────────
@@ -146,58 +153,16 @@ export default function AdminModuloEditor() {
     if (kind === 'lis')      newStory = { type: 'lis', state: 'talking', text: 'Escreva aqui o que a Lis vai falar…' }
     else if (kind === 'destaque') newStory = { type: 'text', tag: 'Seção', title: 'Novo slide', paragraphs: ['Texto do slide.'], highlight: 'Frase em destaque.' }
     else if (kind === 'enquete') newStory = newPollStory()
+    else if (kind === 'video') newStory = { type: 'video', videoId: `${mod.id}-video`, title: `Vídeo: ${mod.title}`, src: '', duration: '1:30' }
+    else if (kind === 'quiz')  newStory = { type: 'quiz', questions: [newQuizQuestion()] }
     else                     newStory = newTextStory()
     setStories((s) => { const n = s.slice(); n.splice(insertAt, 0, newStory); return n })
     setSel(insertAt)
   }
 
-  // ── vídeo ─────────────────────────────────────────────────────────────────
+  // vídeo e quiz agora são blocos editáveis na própria timeline (sem abas)
   const video = videoIdx >= 0 ? (mod.stories[videoIdx] as VideoStory) : null
-
-  const addVideo = () =>
-    setStories((arr) => {
-      const next = arr.slice()
-      const at = next[0]?.type === 'lis' ? 1 : 0
-      next.splice(at, 0, { type: 'video', videoId: `${mod.id}-video`, title: `Vídeo: ${mod.title}`, src: '', duration: '1:30' })
-      return next
-    })
-
-  // "depois" quando o vídeo aparece após o último slide de texto/lis
-  const videoPosition: 'antes' | 'depois' = useMemo(() => {
-    if (videoIdx < 0 || !mod) return 'antes'
-    const lastSlideIdx = mod.stories.reduce<number>((acc, s, i) => {
-      if (i !== videoIdx && (s.type === 'text' || s.type === 'lis')) return i
-      return acc
-    }, -1)
-    if (lastSlideIdx < 0) return 'antes'
-    return videoIdx > lastSlideIdx ? 'depois' : 'antes'
-  }, [videoIdx, mod])
-
-  const setVideoPosition = (pos: 'antes' | 'depois') =>
-    setStories((arr) => {
-      if (videoIdx < 0) return arr
-      const vid = arr[videoIdx]
-      const rest = arr.filter((_, i) => i !== videoIdx)
-      if (pos === 'antes') {
-        rest.splice(rest[0]?.type === 'lis' ? 1 : 0, 0, vid)
-      } else {
-        const q = rest.findIndex((s) => s.type === 'quiz')
-        const c = rest.findIndex((s) => s.type === 'completion')
-        rest.splice(q >= 0 ? q : c >= 0 ? c : rest.length, 0, vid)
-      }
-      return rest
-    })
-
-  // ── quiz ──────────────────────────────────────────────────────────────────
   const quiz = quizIdx >= 0 ? (mod.stories[quizIdx] as QuizStory) : null
-
-  const addQuiz = () =>
-    setStories((arr) => {
-      const at = arr.findIndex((s) => s.type === 'completion')
-      const next = arr.slice()
-      next.splice(at >= 0 ? at : next.length, 0, { type: 'quiz', questions: [newQuizQuestion()] })
-      return next
-    })
 
   // ── cargos ────────────────────────────────────────────────────────────────
   const isAll = mod.roles === 'all'
@@ -213,19 +178,22 @@ export default function AdminModuloEditor() {
 
   // ── preview ───────────────────────────────────────────────────────────────
   const previewStory: Story | null =
-    tab === 'video' ? video :
-    tab === 'quiz'  ? quiz  :
     mod.stories[sel] ?? mod.stories.find(isEditableSlide) ?? null
   const previewIndex = previewStory ? mod.stories.indexOf(previewStory) : sel
 
-  // ── salvar ────────────────────────────────────────────────────────────────
-  const save = () => {
-    saveModule(mod)
+  // ── salvar / publicar ──────────────────────────────────────────────────────
+  const isDraft = (mod.status ?? 'published') === 'draft'
+  const saveDraft = () => {
+    saveModule({ ...mod, status: 'draft' })
+    navigate('/admin/modulos', { state: { savedId: mod.id } })
+  }
+  const publish = () => {
+    saveModule({ ...mod, status: 'published', active: true })
     navigate('/admin/modulos', { state: { savedId: mod.id } })
   }
 
   const inactive = mod.active === false
-  const slidesCount = mod.stories.filter((s) => s.type === 'text' || s.type === 'lis').length
+  const slidesCount = mod.stories.length
 
   return (
     <div className="pb-24">
@@ -242,17 +210,17 @@ export default function AdminModuloEditor() {
         title={mod.title}
         description={mod.subtitle || `Módulo #${mod.number} · ${mod.estimatedMinutes} min`}
         action={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {/* chips de status */}
             <div className="hidden items-center gap-2 sm:flex">
-              <span className="adm-badge adm-badge--muted">{slidesCount} {slidesCount === 1 ? 'slide' : 'slides'}</span>
-              {video && <span className="adm-badge adm-badge--muted"><VideoIcon size={11} /> Vídeo</span>}
-              {quiz && <span className="adm-badge adm-badge--muted"><HelpCircle size={11} /> Quiz</span>}
+              <span className="adm-badge adm-badge--muted">{slidesCount} {slidesCount === 1 ? 'bloco' : 'blocos'}</span>
+              {isDraft
+                ? <span className="adm-badge adm-badge--gold">Rascunho</span>
+                : <span className="adm-badge adm-badge--green">Publicado</span>}
               {inactive && <span className="adm-badge adm-badge--red">Inativo</span>}
             </div>
-            <button onClick={save} className="adm-btn adm-btn--primary">
-              <Save size={16} strokeWidth={2} /> Salvar módulo
-            </button>
+            <button onClick={saveDraft} className="adm-btn"><Save size={16} /> Salvar rascunho</button>
+            <button onClick={publish} className="adm-btn adm-btn--primary"><Send size={16} strokeWidth={2} /> Publicar</button>
           </div>
         }
       />
@@ -555,7 +523,7 @@ export default function AdminModuloEditor() {
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <p className="text-xs text-[var(--text-muted)]">
-                      {mod.stories.length} slide{mod.stories.length !== 1 ? 's' : ''} · clique para editar
+                      {mod.stories.length} bloco{mod.stories.length !== 1 ? 's' : ''} · clique para editar · arraste para reordenar
                     </p>
                     {/* toolbar de adição */}
                     <div className="flex flex-wrap gap-2">
@@ -570,6 +538,18 @@ export default function AdminModuloEditor() {
                           <Icon size={14} /> <Plus size={12} /> {label}
                         </button>
                       ))}
+                      {!video && (
+                        <button type="button" title="Vídeo da Lis" onClick={() => addSlide('video')}
+                          className="flex items-center gap-1.5 rounded-lg border border-[var(--border-strong)] bg-white px-3 py-1.5 text-[0.8125rem] font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)]">
+                          <VideoIcon size={14} /> <Plus size={12} /> Vídeo
+                        </button>
+                      )}
+                      {!quiz && (
+                        <button type="button" title="Quiz do módulo" onClick={() => addSlide('quiz')}
+                          className="flex items-center gap-1.5 rounded-lg border border-[var(--border-strong)] bg-white px-3 py-1.5 text-[0.8125rem] font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)]">
+                          <HelpCircle size={14} /> <Plus size={12} /> Quiz
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -585,7 +565,7 @@ export default function AdminModuloEditor() {
                     className="m-0 flex list-none flex-col gap-2 p-0"
                   >
                     {mod.stories.map((s, i) => {
-                      if (isEditableSlide(s)) {
+                      if (inlineEditable(s)) {
                         const isExpanded = i === sel
                         const info = slideTypeInfo(s)
                         const TypeIcon = info.Icon
@@ -597,14 +577,16 @@ export default function AdminModuloEditor() {
                               <div className="overflow-hidden rounded-xl border-2 border-[var(--accent)] bg-white">
                                 {s.type === 'poll' ? (
                                   <PollSlideEditor story={s} index={i} total={mod.stories.length}
-                                    onChange={(ns) => updateStory(i, ns)}
-                                    onDelete={() => deleteStory(i)}
-                                    onMove={(dir) => moveStory(i, dir)} />
+                                    onChange={(ns) => updateStory(i, ns)} onDelete={() => deleteStory(i)} onMove={(dir) => moveStory(i, dir)} />
+                                ) : s.type === 'video' ? (
+                                  <VideoBlockEditor story={s} index={i} total={mod.stories.length}
+                                    onChange={(ns) => updateStory(i, ns)} onDelete={() => deleteStory(i)} onMove={(dir) => moveStory(i, dir)} />
+                                ) : s.type === 'quiz' ? (
+                                  <QuizBlockEditor story={s} index={i} total={mod.stories.length}
+                                    onChange={(ns) => updateStory(i, ns)} onDelete={() => deleteStory(i)} onMove={(dir) => moveStory(i, dir)} />
                                 ) : (
                                   <SlideEditor story={s} index={i} total={mod.stories.length}
-                                    onChange={(ns) => updateStory(i, ns)}
-                                    onDelete={() => deleteStory(i)}
-                                    onMove={(dir) => moveStory(i, dir)} />
+                                    onChange={(ns) => updateStory(i, ns)} onDelete={() => deleteStory(i)} onMove={(dir) => moveStory(i, dir)} />
                                 )}
                               </div>
                             </div>
@@ -693,117 +675,13 @@ export default function AdminModuloEditor() {
                     <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-white">
                       <EmptyState
                         icon={Layers}
-                        title="Nenhum slide ainda"
-                        hint='Use os botões "Texto", "Destaque" ou "Fala da Lis" acima para começar.'
+                        title="Nenhum bloco ainda"
+                        hint="Use os botões acima (Texto, Lis, Vídeo, Quiz, Enquete…) para montar o módulo."
                         compact
                       />
                     </div>
                   )}
                 </div>
-              )}
-
-              {/* ══ VÍDEO ════════════════════════════════════════════════════ */}
-              {tab === 'video' && (
-                <div className="flex flex-col gap-4">
-                  {video ? (
-                    <>
-                      <div className="adm-card p-5">
-                        <SectionHead icon={<Film size={14} />} label="Arquivo do vídeo" />
-                        <VideoUpload
-                          currentSrc={video.src ?? ''}
-                          onFile={(filename) =>
-                            updateStory(videoIdx, { ...video, src: `/videos/${filename}` })
-                          }
-                          onClear={() =>
-                            updateStory(videoIdx, { ...video, src: '' })
-                          }
-                        />
-                      </div>
-
-                      <div className="adm-card grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
-                        <div>
-                          <label className="adm-label" htmlFor="vid-title">Título do vídeo</label>
-                          <input id="vid-title" className="adm-input" value={video.title}
-                            onChange={(e) => updateStory(videoIdx, { ...video, title: e.target.value })} />
-                        </div>
-                        <div>
-                          <label className="adm-label" htmlFor="vid-dur">Duração</label>
-                          <input id="vid-dur" className="adm-input" placeholder="2:10" value={video.duration ?? ''}
-                            onChange={(e) => updateStory(videoIdx, { ...video, duration: e.target.value })} />
-                        </div>
-                      </div>
-
-                      <div className="adm-card p-5">
-                        <label className="adm-label">Posição no módulo</label>
-                        <div className="flex gap-2.5">
-                          {(['antes', 'depois'] as const).map((pos) => {
-                            const on = videoPosition === pos
-                            return (
-                              <button
-                                key={pos}
-                                type="button"
-                                onClick={() => setVideoPosition(pos)}
-                                aria-pressed={on}
-                                className={`flex-1 rounded-lg border px-3 py-2.5 text-[0.8125rem] font-semibold transition-colors ${
-                                  on
-                                    ? 'border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent-text)]'
-                                    : 'border-[var(--border-strong)] bg-white text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
-                                }`}
-                              >
-                                {pos === 'antes' ? '↑ Antes dos slides' : '↓ Depois dos slides'}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end">
-                        <button onClick={() => deleteStory(videoIdx)} className="adm-btn adm-btn--danger">
-                          <Trash2 size={15} /> Remover vídeo
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-white">
-                      <EmptyState
-                        icon={VideoIcon}
-                        title="Nenhum vídeo configurado"
-                        hint="Adicione um vídeo da Lis para apresentar o módulo."
-                        action={
-                          <button onClick={addVideo} className="adm-btn adm-btn--primary">
-                            <Plus size={16} /> Adicionar vídeo
-                          </button>
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ══ QUIZ ═════════════════════════════════════════════════════ */}
-              {tab === 'quiz' && (
-                quiz ? (
-                  <QuizEditor
-                    questions={quiz.questions}
-                    sampleSize={quiz.sampleSize}
-                    randomize={quiz.randomize}
-                    onChange={(qs) => updateStory(quizIdx, { ...quiz, questions: qs })}
-                    onConfigChange={(patch) => updateStory(quizIdx, { ...quiz, ...patch })}
-                  />
-                ) : (
-                  <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-white">
-                    <EmptyState
-                      icon={HelpCircle}
-                      title="Nenhum quiz configurado"
-                      hint="Adicione um quiz para testar o aprendizado ao final do módulo."
-                      action={
-                        <button onClick={addQuiz} className="adm-btn adm-btn--primary">
-                          <Plus size={16} /> Adicionar quiz
-                        </button>
-                      }
-                    />
-                  </div>
-                )
               )}
 
             </motion.div>
@@ -815,6 +693,63 @@ export default function AdminModuloEditor() {
           <ModulePreview module={mod} startIndex={previewIndex} />
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── cabeçalho de bloco (vídeo/quiz inline) ───────────────────────────────────
+function BlockHeader({ icon, label, index, total, onDelete, onMove }: {
+  icon: React.ReactNode; label: string; index: number; total: number; onDelete: () => void; onMove: (dir: -1 | 1) => void
+}) {
+  return (
+    <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-tint)] text-[#f26b2a]">{icon}</span>
+        <div>
+          <p className="adm-eyebrow">Bloco {index + 1}</p>
+          <p className="text-[0.875rem] font-semibold text-[var(--ink)]">{label}</p>
+        </div>
+      </div>
+      <div className="flex gap-1">
+        <button type="button" onClick={() => onMove(-1)} disabled={index === 0} aria-label="Mover para cima"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-muted)] disabled:opacity-30"><ArrowUp size={15} /></button>
+        <button type="button" onClick={() => onMove(1)} disabled={index >= total - 1} aria-label="Mover para baixo"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-muted)] disabled:opacity-30"><ArrowDown size={15} /></button>
+        <button type="button" onClick={onDelete} aria-label="Excluir bloco"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--danger)] transition-colors hover:bg-[var(--danger-bg)]"><Trash2 size={15} /></button>
+      </div>
+    </div>
+  )
+}
+
+function VideoBlockEditor({ story, index, total, onChange, onDelete, onMove }: {
+  story: VideoStory; index: number; total: number; onChange: (s: Story) => void; onDelete: () => void; onMove: (dir: -1 | 1) => void
+}) {
+  const set = (patch: Partial<VideoStory>) => onChange({ ...story, ...patch })
+  return (
+    <div className="p-4">
+      <BlockHeader icon={<Film size={15} />} label="Vídeo" index={index} total={total} onDelete={onDelete} onMove={onMove} />
+      <VideoUpload currentSrc={story.src ?? ''} onFile={(f) => set({ src: `/videos/${f}` })} onClear={() => set({ src: '' })} />
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="block"><span className="adm-label">Título do vídeo</span>
+          <input className="adm-input" value={story.title} onChange={(e) => set({ title: e.target.value })} /></label>
+        <label className="block"><span className="adm-label">Duração</span>
+          <input className="adm-input" placeholder="2:10" value={story.duration ?? ''} onChange={(e) => set({ duration: e.target.value })} /></label>
+      </div>
+      <p className="mt-2 text-xs text-[var(--text-muted)]">A posição no módulo é a posição do bloco na timeline (arraste para mover).</p>
+    </div>
+  )
+}
+
+function QuizBlockEditor({ story, index, total, onChange, onDelete, onMove }: {
+  story: QuizStory; index: number; total: number; onChange: (s: Story) => void; onDelete: () => void; onMove: (dir: -1 | 1) => void
+}) {
+  return (
+    <div className="p-4">
+      <BlockHeader icon={<HelpCircle size={15} />} label="Quiz" index={index} total={total} onDelete={onDelete} onMove={onMove} />
+      <QuizEditor questions={story.questions} sampleSize={story.sampleSize} randomize={story.randomize}
+        onChange={(qs) => onChange({ ...story, questions: qs })}
+        onConfigChange={(patch) => onChange({ ...story, ...patch })} />
     </div>
   )
 }

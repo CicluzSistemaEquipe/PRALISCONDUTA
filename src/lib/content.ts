@@ -1247,7 +1247,9 @@ function activeModules(): Module[] {
       if (Array.isArray(parsed.modules) && parsed.modules.length) {
         return withTestModule(
           parsed.modules
-            .filter((m) => m.active !== false)
+            // rascunhos (status === 'draft') não aparecem para o colaborador;
+            // módulos sem status seguem visíveis (retrocompatível).
+            .filter((m) => m.active !== false && m.status !== 'draft')
             .map((m) => ({
               ...m,
               stories: prepareStories(m),

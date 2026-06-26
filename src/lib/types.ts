@@ -225,4 +225,6 @@ export interface Module {
   kind?: 'stories' | 'signature'
   /** módulo visível no app (editável no admin). undefined === ativo */
   active?: boolean
+  /** rascunho vs publicado. undefined === publicado (retrocompatível). */
+  status?: 'draft' | 'published'
 }

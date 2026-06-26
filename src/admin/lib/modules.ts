@@ -26,6 +26,7 @@ export function makeBlankModule(order: number): Module {
     subtitle: 'Subtítulo do módulo',
     kind: 'stories',
     active: true,
+    status: 'draft', // módulo novo nasce como rascunho até ser publicado
   }
 }
 

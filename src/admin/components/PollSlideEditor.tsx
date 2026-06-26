@@ -1,7 +1,28 @@
-import { ArrowUp, ArrowDown, Trash2, Plus, X, BarChart3 } from 'lucide-react'
+import { Reorder, useDragControls } from 'framer-motion'
+import { ArrowUp, ArrowDown, Trash2, Plus, X, BarChart3, GripVertical } from 'lucide-react'
 import type { Story } from '@/lib/types'
 
 type PollStory = Extract<Story, { type: 'poll' }>
+
+const MAX_OPTIONS = 5
+const MIN_OPTIONS = 2
+
+function OptionRow({ opt, index, canRemove, onChange, onRemove }: {
+  opt: string; index: number; canRemove: boolean; onChange: (v: string) => void; onRemove: () => void
+}) {
+  const controls = useDragControls()
+  return (
+    <Reorder.Item value={opt} dragListener={false} dragControls={controls} className="flex list-none items-center gap-2">
+      <span className="cursor-grab text-[var(--text-disabled)]" onPointerDown={(e) => controls.start(e)} aria-hidden><GripVertical size={15} /></span>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--bg-muted)] text-[0.7rem] font-bold text-[var(--text-muted)]">{index + 1}</span>
+      <input className="adm-input" value={opt} onChange={(e) => onChange(e.target.value)} placeholder={`Opção ${index + 1}`} />
+      <button type="button" onClick={onRemove} disabled={!canRemove} aria-label={`Remover opção ${index + 1}`}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--danger-bg)] hover:text-[var(--danger)] disabled:opacity-30">
+        <X size={15} />
+      </button>
+    </Reorder.Item>
+  )
+}
 
 interface Props {
   story: PollStory
@@ -11,9 +32,6 @@ interface Props {
   onDelete: () => void
   onMove: (dir: -1 | 1) => void
 }
-
-const MAX_OPTIONS = 5
-const MIN_OPTIONS = 2
 
 export function PollSlideEditor({ story, index, total, onChange, onDelete, onMove }: Props) {
   const set = (patch: Partial<PollStory>) => onChange({ ...story, ...patch })
@@ -28,7 +46,7 @@ export function PollSlideEditor({ story, index, total, onChange, onDelete, onMov
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-tint)] text-[#f26b2a]"><BarChart3 size={15} /></span>
           <div>
-            <p className="adm-eyebrow">Slide {index + 1}</p>
+            <p className="adm-eyebrow">Bloco {index + 1}</p>
             <p className="text-[0.875rem] font-semibold text-[var(--ink)]">Enquete</p>
           </div>
         </div>
@@ -42,29 +60,19 @@ export function PollSlideEditor({ story, index, total, onChange, onDelete, onMov
         </div>
       </div>
 
-      {/* pergunta */}
       <label className="block">
         <span className="adm-label">Pergunta</span>
-        <textarea className="adm-input" rows={2} value={story.question}
-          onChange={(e) => set({ question: e.target.value })} placeholder="O que você quer perguntar?" />
+        <textarea className="adm-input" rows={2} value={story.question} onChange={(e) => set({ question: e.target.value })} placeholder="O que você quer perguntar?" />
       </label>
 
-      {/* opções */}
       <div className="mt-3">
-        <span className="adm-label">Opções de resposta</span>
-        <div className="flex flex-col gap-2">
+        <span className="adm-label">Opções de resposta <span className="font-normal text-[var(--text-muted)]">— arraste pela alça para reordenar</span></span>
+        <Reorder.Group axis="y" values={story.options} onReorder={(opts) => set({ options: opts })} className="m-0 flex list-none flex-col gap-2 p-0">
           {story.options.map((opt, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--bg-muted)] text-[0.7rem] font-bold text-[var(--text-muted)]">{i + 1}</span>
-              <input className="adm-input" value={opt} onChange={(e) => setOption(i, e.target.value)} placeholder={`Opção ${i + 1}`} />
-              <button type="button" onClick={() => removeOption(i)} disabled={story.options.length <= MIN_OPTIONS}
-                aria-label={`Remover opção ${i + 1}`}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--danger-bg)] hover:text-[var(--danger)] disabled:opacity-30">
-                <X size={15} />
-              </button>
-            </div>
+            <OptionRow key={i} opt={opt} index={i} canRemove={story.options.length > MIN_OPTIONS}
+              onChange={(v) => setOption(i, v)} onRemove={() => removeOption(i)} />
           ))}
-        </div>
+        </Reorder.Group>
         {story.options.length < MAX_OPTIONS && (
           <button type="button" onClick={addOption}
             className="mt-2 flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--border-strong)] px-3 py-1.5 text-[0.8125rem] font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)]">
@@ -73,10 +81,8 @@ export function PollSlideEditor({ story, index, total, onChange, onDelete, onMov
         )}
       </div>
 
-      {/* múltipla escolha */}
       <label className="mt-3 flex items-center gap-2.5 rounded-lg bg-[var(--bg-subtle)] px-3 py-2.5">
-        <input type="checkbox" checked={Boolean(story.allowMultiple)} onChange={(e) => set({ allowMultiple: e.target.checked })}
-          className="h-4 w-4 accent-[var(--accent)]" />
+        <input type="checkbox" checked={Boolean(story.allowMultiple)} onChange={(e) => set({ allowMultiple: e.target.checked })} className="h-4 w-4 accent-[var(--accent)]" />
         <span className="text-[0.8125rem] text-[var(--text-secondary)]">Permitir selecionar mais de uma opção</span>
       </label>
     </div>
