@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowUpRight, type LucideIcon } from 'lucide-react'
 
 /* ============================================================
@@ -28,7 +28,7 @@ function useCountUp(target: number, duration = 650) {
     const tick = (t: number) => {
       if (start === null) start = t
       const p = Math.min(1, (t - start) / duration)
-      const eased = 1 - Math.pow(1 - p, 3) // easeOutCubic
+      const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p) // easeOutExpo (mais refinado)
       setVal(Math.round(target * eased))
       if (p < 1) raf.current = requestAnimationFrame(tick)
     }
@@ -56,6 +56,7 @@ export function StatCard({
   sub,
   loading,
   onClick,
+  progress,
 }: {
   icon: LucideIcon
   tone?: Tone
@@ -64,6 +65,7 @@ export function StatCard({
   sub?: string
   loading?: boolean
   onClick?: () => void
+  progress?: number
 }) {
   const t = TONES[tone]
   const animatable = typeof value === 'string' || typeof value === 'number'
@@ -74,9 +76,27 @@ export function StatCard({
       {onClick && (
         <ArrowUpRight className="absolute right-4 top-4 h-4 w-4 text-[var(--text-muted)] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
       )}
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-[10px] transition-transform duration-200 group-hover:scale-[1.06]" style={{ background: t.bg }}>
-        <Icon className="h-5 w-5" style={{ color: t.fg }} strokeWidth={1.9} />
-      </div>
+      {progress != null ? (
+        <div className="relative mb-4 h-11 w-11 transition-transform duration-200 group-hover:scale-[1.06]">
+          <svg className="h-11 w-11 -rotate-90" viewBox="0 0 44 44" aria-hidden="true">
+            <circle cx="22" cy="22" r="19" fill="none" stroke="var(--bg-inset)" strokeWidth="3.5" />
+            <motion.circle
+              cx="22" cy="22" r="19" fill="none" stroke={t.fg} strokeWidth="3.5" strokeLinecap="round"
+              strokeDasharray={2 * Math.PI * 19}
+              initial={{ strokeDashoffset: 2 * Math.PI * 19 }}
+              animate={{ strokeDashoffset: (2 * Math.PI * 19) * (1 - Math.min(Math.max(progress, 0), 100) / 100) }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Icon className="h-[18px] w-[18px]" style={{ color: t.fg }} strokeWidth={1.9} />
+          </div>
+        </div>
+      ) : (
+        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-[10px] transition-transform duration-200 group-hover:scale-[1.06]" style={{ background: t.bg }}>
+          <Icon className="h-5 w-5" style={{ color: t.fg }} strokeWidth={1.9} />
+        </div>
+      )}
       <div className="adm-kpi-val">
         {loading ? <span className="text-[var(--text-disabled)]">—</span> : animatable ? <AnimatedNumber value={value as string | number} /> : value}
       </div>
