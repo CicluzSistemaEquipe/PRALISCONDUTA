@@ -1,14 +1,19 @@
-import { motion } from 'framer-motion'
 import { brand, FILTER_WHITE } from '@/lib/brand'
 import { useTheme, type Theme } from '../context/ThemeContext'
 
+/**
+ * Fundo da marca — leve e estático (sem loops infinitos).
+ * As espigas ficam fixas como textura; só o gradiente sutil dá profundidade.
+ * Decisão de performance: telas do colaborador precisam rodar fluido em
+ * qualquer celular, então o fundo não anima (era a maior fonte de repaint).
+ */
 export function AnimatedBackground({ theme }: { accent?: string; theme?: Theme }) {
   const ctx = useTheme()
   const isLight = (theme ?? ctx.theme) === 'light'
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0" style={{ background: 'var(--bg-base)' }}>
-      <motion.img
+      <img
         src={brand.simboloEspiga}
         alt=""
         aria-hidden="true"
@@ -17,14 +22,12 @@ export function AnimatedBackground({ theme }: { accent?: string; theme?: Theme }
           width: 260,
           right: -92,
           top: 92,
-          opacity: isLight ? 0.045 : 0.055,
+          opacity: isLight ? 0.04 : 0.05,
           filter: isLight ? 'none' : FILTER_WHITE,
           mixBlendMode: isLight ? 'multiply' : 'screen',
         }}
-        animate={{ y: [0, 14, 0], rotate: [-4, -1, -4], opacity: isLight ? [0.035, 0.05, 0.035] : [0.04, 0.06, 0.04] }}
-        transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <motion.img
+      <img
         src={brand.simboloPar}
         alt=""
         aria-hidden="true"
@@ -33,12 +36,10 @@ export function AnimatedBackground({ theme }: { accent?: string; theme?: Theme }
           width: 190,
           left: -72,
           bottom: 118,
-          opacity: isLight ? 0.04 : 0.052,
+          opacity: isLight ? 0.035 : 0.048,
           filter: isLight ? 'none' : FILTER_WHITE,
           mixBlendMode: isLight ? 'multiply' : 'screen',
         }}
-        animate={{ y: [0, -12, 0], rotate: [6, 2, 6], opacity: isLight ? [0.03, 0.05, 0.03] : [0.035, 0.058, 0.035] }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
       />
       <div
         className="absolute inset-0"

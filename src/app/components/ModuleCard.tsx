@@ -11,19 +11,35 @@ interface ModuleCardProps {
   status: ModuleStatus
   progress: number
   onOpen: () => void
+  /** marca este módulo como o "próximo passo" recomendado (glow + seta preenchida). */
+  highlight?: boolean
 }
 
-export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps) {
+export function ModuleCard({ module, status, progress, onOpen, highlight = false }: ModuleCardProps) {
   const { theme } = useTheme()
   const isLight = theme === 'light'
   const locked = status === 'locked'
   const done = status === 'done'
   const inProgress = status === 'in-progress'
   const pct = Math.round(progress * 100)
+  const recommended = highlight && !locked && !done
 
   const doneText = isLight ? '#12341e' : '#5dd87a'
   const doneSubtle = isLight ? '#225238' : 'rgba(93,216,122,0.75)'
   const doneSurface = isLight ? '#eaffe9' : 'rgba(93,216,122,0.12)'
+
+  // linha de estado (lida sem precisar interpretar texto longo)
+  const stateLine = locked
+    ? 'Conclua o anterior primeiro'
+    : done
+      ? `Concluído · ${module.estimatedMinutes} min`
+      : recommended
+        ? inProgress
+          ? `${pct}% · continuar agora`
+          : `Recomendado agora · ${module.estimatedMinutes} min`
+        : inProgress
+          ? `${pct}% · continuar`
+          : `${module.subtitle} · ${module.estimatedMinutes} min`
 
   return (
     <motion.button
@@ -38,32 +54,18 @@ export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps
         padding: '16px',
         opacity: locked ? 0.58 : 1,
         background: done ? doneSurface : 'var(--bg-card)',
-        border: `1.5px solid ${done ? '#1f7a39' : inProgress ? module.accent : 'var(--stroke)'}`,
-        boxShadow: 'none',
-        transition: 'background 0.18s, border-color 0.18s, transform 0.18s',
+        border: `1.5px solid ${done ? '#1f7a39' : recommended || inProgress ? module.accent : 'var(--stroke)'}`,
+        boxShadow: recommended ? `0 0 0 1px ${module.accent}, 0 12px 30px -14px ${module.accent}` : 'none',
+        transition: 'background 0.18s, border-color 0.18s, transform 0.18s, box-shadow 0.18s',
       }}
     >
-      {!locked && !done && (
-        <motion.span
-          aria-hidden="true"
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(110deg, transparent 0%, transparent 38%, rgba(243,116,53,0.16) 48%, rgba(184,134,11,0.18) 58%, transparent 70%)',
-            backgroundSize: '220% 100%',
-          }}
-          animate={{ backgroundPosition: ['140% 0%', '-80% 0%'] }}
-          transition={{ duration: 4.2, repeat: Infinity, ease: 'linear' }}
-        />
-      )}
-
       <span
         aria-hidden="true"
         className="absolute left-0"
         style={{
           top: 12,
           bottom: 12,
-          width: 4,
+          width: recommended ? 5 : 4,
           borderRadius: 999,
           background: locked ? 'var(--stroke)' : done ? '#1f7a39' : module.accent,
         }}
@@ -75,7 +77,11 @@ export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps
           width: 44,
           height: 44,
           borderRadius: 12,
-          background: done ? doneSurface : 'var(--bg-surface-2)',
+          background: done
+            ? doneSurface
+            : recommended
+              ? `color-mix(in srgb, ${module.accent} 16%, transparent)`
+              : 'var(--bg-surface-2)',
           border: `1px solid ${done ? (isLight ? '#1f7a39' : '#5dd87a') : locked ? 'var(--stroke)' : module.accent}`,
         }}
       >
@@ -97,16 +103,11 @@ export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps
           className="mt-1 block font-body"
           style={{
             fontSize: 'clamp(11px, 3.2vw, 12.5px)',
-            color: locked ? 'var(--text-locked)' : done ? doneSubtle : 'var(--text-secondary)',
+            fontWeight: recommended ? 700 : 400,
+            color: locked ? 'var(--text-locked)' : done ? doneSubtle : recommended ? module.accent : 'var(--text-secondary)',
           }}
         >
-          {locked
-            ? 'Complete o anterior primeiro'
-            : done
-              ? `Concluído · ${module.estimatedMinutes} min`
-              : inProgress
-                ? `${pct}% · continuar`
-                : `${module.subtitle} · ${module.estimatedMinutes} min`}
+          {stateLine}
         </span>
         {inProgress && (
           <span className="mt-2 block overflow-hidden rounded-full" style={{ height: 4, background: 'var(--stroke-soft)' }}>
@@ -137,6 +138,10 @@ export function ModuleCard({ module, status, progress, onOpen }: ModuleCardProps
           </span>
         ) : locked ? (
           <Lock size={15} color="var(--text-locked)" />
+        ) : recommended ? (
+          <span className="flex items-center justify-center" style={{ width: 34, height: 34, borderRadius: '50%', background: module.accent }}>
+            <ChevronRight size={18} color="#fff" strokeWidth={2.6} />
+          </span>
         ) : (
           <ChevronRight size={18} color="var(--text-secondary)" />
         )}

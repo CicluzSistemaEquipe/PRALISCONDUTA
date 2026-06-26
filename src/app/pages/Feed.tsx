@@ -1,6 +1,7 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import { ArrowRight, Check, PenLine } from 'lucide-react'
 import { modulesForRole } from '@/lib/content'
 import type { Module } from '@/lib/types'
 import { useSession } from '../context/SessionContext'
@@ -21,7 +22,8 @@ function firstName(name: string): string {
   return first.charAt(0).toUpperCase() + first.slice(1)
 }
 
-function ProgressRing({ progress, size = 92 }: { progress: number; size?: number }) {
+/** Anel de progresso global (gradiente ouro→laranja). Desenha uma vez na entrada. */
+function ProgressRing({ progress, size = 92, reduce }: { progress: number; size?: number; reduce?: boolean }) {
   const strokeW = 8
   const r = (size - strokeW * 2) / 2
   const circ = 2 * Math.PI * r
@@ -38,9 +40,9 @@ function ProgressRing({ progress, size = 92 }: { progress: number; size?: number
         strokeWidth={strokeW}
         strokeLinecap="round"
         strokeDasharray={circ}
-        initial={{ strokeDashoffset: circ }}
+        initial={{ strokeDashoffset: reduce ? offset : circ }}
         animate={{ strokeDashoffset: offset }}
-        transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
+        transition={{ duration: reduce ? 0 : 1.4, ease: [0.16, 1, 0.3, 1], delay: reduce ? 0 : 0.35 }}
       />
       <defs>
         <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -59,7 +61,6 @@ const SECTION_LABEL: Record<NonNullable<Module['section']>, string> = {
   cargo: 'Para o seu cargo',
   final: 'Para concluir',
 }
-
 const SECTION_ACCENT: Record<NonNullable<Module['section']>, string> = {
   geral: '#b8860b',
   cargo: '#f37435',
@@ -72,6 +73,7 @@ export default function Feed() {
   const navigate = useNavigate()
   const { theme } = useTheme()
   const isLight = theme === 'light'
+  const reduce = useReducedMotion() ?? false
   const { employee, progress } = useSession()
   const [signed, setSigned] = useState(false)
   const [ready, setReady] = useState(false)
@@ -151,24 +153,71 @@ export default function Feed() {
 
   if (!employee) return null
 
-  const dateLabel = new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-  }).format(now)
-  const timeLabel = new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(now)
+  // ── Próximo passo: 1º módulo acionável (em andamento ou disponível) ──────────
+  const nextModule = ordered.find((m) => {
+    const s = statusOf(m.id)
+    return s === 'in-progress' || s === 'active'
+  })
+  const allDone = ordered.length > 0 && completedCount === ordered.length
+  const remaining = ordered.length - completedCount
+
+  const dateLabel = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).format(now)
+  const timeLabel = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(now)
   const currentSection = groups.find(([, mods]) => mods.some((m) => !isModuleDone(m)))?.[0]
+
+  // ── Lis como guia da jornada (mensagem derivada do estado — sem nova regra) ──
+  const lisMessage = allDone
+    ? 'Você concluiu tudo. Que orgulho! 🎉'
+    : ordered.length === 0
+      ? 'Seu treinamento aparece aqui assim que for liberado.'
+      : completedCount === 0
+        ? 'Bora começar? Eu te acompanho em cada passo. 🌾'
+        : nextModule && statusOf(nextModule.id) === 'in-progress'
+          ? 'Você parou no meio desse módulo. Vamos terminar?'
+          : `Faltam ${remaining} para concluir. Você consegue!`
+
+  // ── Conteúdo do herói (responde: onde parei / o que faço agora) ─────────────
+  const heroAccent = nextModule?.accent ?? '#f37435'
+  const nextInProgress = nextModule ? statusOf(nextModule.id) === 'in-progress' : false
+  const heroEyebrow = allDone
+    ? 'Jornada concluída'
+    : completedCount === 0
+      ? 'Comece sua jornada'
+      : nextInProgress
+        ? 'Continue de onde parou'
+        : 'Próximo passo'
+  const heroTitle = allDone ? 'Você concluiu tudo 🎉' : (nextModule?.title ?? 'Tudo certo por aqui')
+  const heroState = allDone
+    ? 'Toque para rever sua trilha'
+    : nextModule?.kind === 'signature'
+      ? 'Última etapa: sua assinatura'
+      : nextInProgress && nextModule
+        ? `${Math.round(fractionOf(nextModule.id) * 100)}% concluído`
+        : nextModule
+          ? `${nextModule.subtitle} · ${nextModule.estimatedMinutes} min`
+          : ''
+  const heroCTA = allDone
+    ? 'Ver meu progresso'
+    : nextModule?.kind === 'signature'
+      ? 'Assinar e concluir'
+      : completedCount === 0
+        ? 'Começar agora'
+        : 'Continuar'
+  const onHero = () => (allDone || !nextModule ? navigate('/progresso') : open(nextModule))
+
+  // helpers de motion (com propósito; respeitam prefers-reduced-motion)
+  const rise = (delay = 0) =>
+    reduce
+      ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.2 } }
+      : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1], delay } }
 
   return (
     <div className="app-shell">
       <AnimatedBackground accent="#b8860b" />
 
-      {/* header */}
+      {/* ── HEADER (leve, sem loops) ───────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-20 flex flex-col gap-2.5 overflow-hidden px-5 pb-3"
+        className="sticky top-0 z-20 flex flex-col gap-2 px-5 pb-3"
         style={{
           paddingTop: 'calc(var(--safe-top) + 0.75rem)',
           background: isLight ? '#ffffff' : '#150900',
@@ -176,68 +225,35 @@ export default function Feed() {
           boxShadow: isLight ? '0 2px 10px rgba(26,14,0,0.05)' : 'none',
         }}
       >
-        <motion.img
-          src={brand.simboloEspiga}
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute right-[-64px] top-2"
-          style={{
-            width: 180,
-            opacity: isLight ? 0.035 : 0.055,
-            filter: isLight ? 'none' : FILTER_WHITE,
-            mixBlendMode: isLight ? 'multiply' : 'screen',
-          }}
-          animate={{ y: [0, 8, 0], rotate: [-3, 0, -3] }}
-          transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          aria-hidden="true"
-          className="absolute inset-y-0 w-20"
-          style={{
-            left: -80,
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)',
-            transform: 'skewX(-16deg)',
-          }}
-          animate={{ x: [0, 620] }}
-          transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        <div className="relative min-h-[112px]">
+        <div className="flex items-start justify-between gap-3">
           <motion.img
             src={isLight ? brand.logoSVGPreta : brand.logoSVGBranca}
             alt="padaria pralis"
-            style={{ width: 112, height: 'auto', filter: isLight ? 'none' : FILTER_WHITE, transformOrigin: 'left center' }}
-            animate={{ y: [0, -1.5, 0], scale: [1, 1.015, 1] }}
-            transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
-            whileTap={{ scale: 0.96, rotate: -1 }}
+            style={{ width: 104, height: 'auto', filter: isLight ? 'none' : FILTER_WHITE, transformOrigin: 'left center' }}
+            whileTap={{ scale: 0.96 }}
+            {...rise(0)}
           />
-          <div className="absolute right-0 top-0 flex flex-col items-center gap-1">
-            <LisHeaderAvatar globalProgress={globalProgress} size={82} onClick={() => navigate('/progresso')} />
+          <motion.div className="flex flex-col items-center gap-1" {...rise(0.06)}>
+            <LisHeaderAvatar globalProgress={globalProgress} size={64} onClick={() => navigate('/progresso')} />
             <div className="text-center font-body" style={{ color: isLight ? '#1a0e00' : 'rgba(255,255,255,0.90)' }}>
-              <p style={{ fontSize: 13, fontWeight: 900, lineHeight: 1 }}>{timeLabel}</p>
-              <p style={{ fontSize: 9, lineHeight: 1.2, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{dateLabel}</p>
+              <p style={{ fontSize: 12, fontWeight: 900, lineHeight: 1 }}>{timeLabel}</p>
+              <p style={{ fontSize: 8.5, lineHeight: 1.2, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{dateLabel}</p>
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        <div className="relative -mt-14 flex flex-col gap-0.5 pr-28">
-          <p
-            className="font-body uppercase"
-            style={{ fontSize: 9, fontWeight: 800, color: '#f37435', letterSpacing: '0.20em' }}
-          >
+        <motion.div className="flex flex-col gap-0.5" {...rise(0.1)}>
+          <p className="font-body uppercase" style={{ fontSize: 9, fontWeight: 800, color: '#f37435', letterSpacing: '0.20em' }}>
             {employee.role}
           </p>
-          <h1
-            className="font-display leading-none"
-            style={{ fontSize: 'clamp(19px, 5.2vw, 25px)', color: 'var(--text-primary)' }}
-          >
+          <h1 className="font-display leading-none" style={{ fontSize: 'clamp(19px, 5.2vw, 25px)', color: 'var(--text-primary)' }}>
             Ol&aacute;, {firstName(employee.name)}!
           </h1>
-        </div>
+        </motion.div>
       </header>
 
-      {/* feed */}
-      <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-4 pb-28 pt-5">
+      {/* ── FEED ───────────────────────────────────────────────────────────── */}
+      <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-4 pb-28 pt-4">
         {!ready ? (
           <div className="flex flex-col gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -246,138 +262,140 @@ export default function Feed() {
           </div>
         ) : (
           <>
-            {/* hero: anel de progresso com % no centro + copy contextual */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 180, damping: 22, delay: 0.1 }}
-              className="relative mb-6 flex items-center gap-5 overflow-hidden"
+            {/* Lis guia — fala contextual, aponta para o próximo passo */}
+            <motion.div className="mb-3 flex items-center gap-2.5" {...rise(0.12)}>
+              <span
+                className="flex shrink-0 items-center justify-center overflow-hidden"
+                style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(243,116,53,0.14)', border: '1px solid rgba(243,116,53,0.30)' }}
+              >
+                <img src={brand.simboloPar} alt="Lis" style={{ width: 18, height: 18 }} />
+              </span>
+              <p className="font-body" style={{ fontSize: 'clamp(11.5px, 3.3vw, 13px)', color: 'var(--text-secondary)', lineHeight: 1.35 }}>
+                {lisMessage}
+              </p>
+            </motion.div>
+
+            {/* HERÓI "Continuar" — responde onde parei / o que faço / quanto falta */}
+            <motion.button
+              onClick={onHero}
+              whileTap={{ scale: 0.985 }}
+              {...rise(0.16)}
+              className="relative mb-6 block w-full overflow-hidden text-left"
               style={{
-                padding: '20px 20px',
+                padding: 18,
                 background: isLight ? '#ffffff' : 'var(--bg-card)',
-                border: `1px solid ${isLight ? '#e5d5c5' : 'rgba(184,134,11,0.18)'}`,
+                border: `1.5px solid ${allDone ? 'rgba(93,216,122,0.45)' : heroAccent}`,
                 borderRadius: 22,
-                boxShadow: 'none',
-                backdropFilter: 'none',
-                WebkitBackdropFilter: 'none',
+                boxShadow: allDone ? 'none' : `0 16px 40px -22px ${heroAccent}`,
               }}
             >
-              {/* textura da marca */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'transparent',
-                  opacity: 0,
-                  pointerEvents: 'none',
-                }}
-              />
-              {/* símbolo da marca como watermark */}
               <img
                 src={brand.simboloPar}
                 aria-hidden="true"
                 alt=""
-                style={{
-                  position: 'absolute',
-                  right: -12,
-                  bottom: -12,
-                  width: 90,
-                  height: 'auto',
-                  opacity: isLight ? 0.04 : 0.08,
-                  pointerEvents: 'none',
-                  filter: isLight ? 'brightness(0) saturate(100%) opacity(0.5)' : 'brightness(0) invert(1)',
-                }}
+                style={{ position: 'absolute', right: -14, bottom: -14, width: 96, opacity: isLight ? 0.05 : 0.09, filter: isLight ? 'brightness(0) saturate(100%) opacity(0.5)' : 'brightness(0) invert(1)', pointerEvents: 'none' }}
               />
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <ProgressRing progress={globalProgress} size={92} />
-                <span
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: 'Montserrat, sans-serif',
-                    fontSize: 'clamp(15px, 4.2vw, 18px)',
-                    fontWeight: 800,
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  {Math.round(globalProgress)}%
-                </span>
-              </div>
-              <div style={{ position: 'relative', minWidth: 0 }}>
-                <p
-                  style={{
-                    fontFamily: 'Montserrat, sans-serif',
-                    fontSize: 'clamp(18px, 5vw, 23px)',
-                    fontWeight: 800,
-                    color: 'var(--text-primary)',
-                    lineHeight: 1.18,
-                    overflowWrap: 'anywhere',
-                  }}
-                >
-                  {completedCount === 0
-                    ? 'Comece sua jornada'
-                    : completedCount === ordered.length
-                      ? 'Jornada concluída!'
-                      : `${completedCount} de ${ordered.length} concluídos`}
-                </p>
-                <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 'clamp(11.5px, 3.4vw, 13px)', color: 'var(--text-secondary)', marginTop: 5, lineHeight: 1.4 }}>
-                  {completedCount === 0
-                    ? 'Toque em um módulo para começar'
-                    : completedCount === ordered.length
-                      ? 'Você completou toda a trilha!'
-                      : 'Continue no seu ritmo'}
-                </p>
-                {/* mini barra linear */}
-                <div style={{ marginTop: 10, height: 3, borderRadius: 99, background: 'var(--stroke-soft)', overflow: 'hidden', maxWidth: 160 }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${globalProgress}%` }}
-                    transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
-                    style={{ height: '100%', borderRadius: 99, background: '#b8860b' }}
-                  />
+              <span aria-hidden="true" className="absolute left-0 top-4 bottom-4" style={{ width: 4, borderRadius: 999, background: allDone ? '#5dd87a' : heroAccent }} />
+
+              <div className="relative flex items-center gap-4">
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <ProgressRing progress={globalProgress} size={78} reduce={reduce} />
+                  <span
+                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Montserrat, sans-serif', fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}
+                  >
+                    {Math.round(globalProgress)}%
+                  </span>
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p className="font-body uppercase" style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.16em', color: allDone ? '#5dd87a' : heroAccent }}>
+                    {heroEyebrow}
+                    {!allDone && ordered.length > 0 && (
+                      <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.04em' }}> · faltam {remaining} de {ordered.length}</span>
+                    )}
+                  </p>
+                  <p className="font-display" style={{ fontSize: 'clamp(17px, 4.8vw, 21px)', color: 'var(--text-primary)', lineHeight: 1.15, marginTop: 3, overflowWrap: 'anywhere' }}>
+                    {heroTitle}
+                  </p>
+                  {heroState && (
+                    <p className="font-body" style={{ fontSize: 'clamp(11.5px, 3.3vw, 13px)', color: 'var(--text-secondary)', marginTop: 3 }}>
+                      {heroState}
+                    </p>
+                  )}
                 </div>
               </div>
-            </motion.div>
 
+              {nextInProgress && nextModule && (
+                <div className="relative mt-3 overflow-hidden rounded-full" style={{ height: 5, background: 'var(--stroke-soft)' }}>
+                  <motion.div
+                    initial={{ width: reduce ? `${Math.round(fractionOf(nextModule.id) * 100)}%` : 0 }}
+                    animate={{ width: `${Math.round(fractionOf(nextModule.id) * 100)}%` }}
+                    transition={{ duration: reduce ? 0 : 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+                    style={{ height: '100%', borderRadius: 999, background: heroAccent }}
+                  />
+                </div>
+              )}
+
+              <span
+                className="relative mt-4 flex w-full items-center justify-center gap-2 font-display"
+                style={{
+                  height: 46,
+                  borderRadius: 13,
+                  background: allDone ? '#5dd87a' : heroAccent,
+                  color: '#fff',
+                  fontSize: 'clamp(14px, 4vw, 16px)',
+                  boxShadow: `0 10px 24px -12px ${allDone ? '#5dd87a' : heroAccent}`,
+                }}
+              >
+                {allDone ? <Check size={18} strokeWidth={2.6} /> : nextModule?.kind === 'signature' ? <PenLine size={17} strokeWidth={2.4} /> : null}
+                {heroCTA}
+                {!allDone && nextModule?.kind !== 'signature' && <ArrowRight size={18} strokeWidth={2.4} />}
+              </span>
+            </motion.button>
+
+            {/* TRILHA — seções com estado claro; recomendado em destaque */}
             {groups.map(([section, mods]) => {
               const doneInSection = mods.filter(isModuleDone).length
               const missing = mods.length - doneInSection
               const sectionState: SectionState = missing === 0 ? 'complete' : section === currentSection ? 'current' : 'pending'
 
               return (
-            <section key={section} className="mb-6">
-              <SectionDivider
-                label={SECTION_LABEL[section]}
-                accent={SECTION_ACCENT[section]}
-                state={sectionState}
-                done={doneInSection}
-                missing={missing}
-                total={mods.length}
-                isLight={isLight}
-              />
-              <div className="flex flex-col gap-2">
-                {mods.map((m, i) => (
-                  <motion.div
-                    key={m.id}
-                    initial={{ opacity: 0, y: 32, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ delay: i * 0.07, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <ModuleCard module={m} status={statusOf(m.id)} progress={fractionOf(m.id)} onOpen={() => open(m)} />
-                  </motion.div>
-                ))}
-              </div>
-            </section>
+                <section key={section} className="mb-6">
+                  <SectionDivider
+                    label={SECTION_LABEL[section]}
+                    accent={SECTION_ACCENT[section]}
+                    state={sectionState}
+                    done={doneInSection}
+                    missing={missing}
+                    total={mods.length}
+                    isLight={isLight}
+                    reduce={reduce}
+                  />
+                  <div className="flex flex-col gap-2">
+                    {mods.map((m, i) => (
+                      <motion.div
+                        key={m.id}
+                        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 22 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: '-40px' }}
+                        transition={{ delay: reduce ? 0 : Math.min(i * 0.05, 0.2), duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        <ModuleCard
+                          module={m}
+                          status={statusOf(m.id)}
+                          progress={fractionOf(m.id)}
+                          onOpen={() => open(m)}
+                          highlight={m.id === nextModule?.id}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
               )
             })}
           </>
         )}
 
-        <div className="flex flex-col items-center gap-2 pb-2 pt-4">
+        <div className="flex flex-col items-center gap-2 pb-2 pt-2">
           <img src={brand.simboloPar} alt="" aria-hidden="true" style={{ width: 28, opacity: isLight ? 0.28 : 0.2, filter: isLight ? 'brightness(0) saturate(100%) opacity(0.5)' : FILTER_WHITE }} />
           <p className="text-center font-body" style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--text-secondary)' }}>
             é provar e ser feliz
@@ -398,6 +416,7 @@ function SectionDivider({
   missing,
   total,
   isLight,
+  reduce,
 }: {
   label: string
   accent: string
@@ -406,17 +425,18 @@ function SectionDivider({
   missing: number
   total: number
   isLight: boolean
+  reduce: boolean
 }) {
   const complete = state === 'complete'
   const current = state === 'current'
   const bg = complete
     ? isLight
       ? '#effff3'
-      : 'rgba(93,216,122,0.18)'
+      : 'rgba(93,216,122,0.16)'
     : current
       ? isLight
         ? '#fff0e8'
-        : 'rgba(243,116,53,0.18)'
+        : 'rgba(243,116,53,0.16)'
       : isLight
         ? '#f7f2ec'
         : 'var(--bg-card)'
@@ -426,40 +446,18 @@ function SectionDivider({
   const labelText = complete ? 'Concluído' : `${missingPercent}% falta`
 
   return (
-    <motion.div
+    <div
       className="mb-3 overflow-hidden"
-      initial={false}
-      animate={
-        current
-          ? {
-              boxShadow: [
-                '0 0 0 0 rgba(243,116,53,0)',
-                '0 0 0 4px rgba(243,116,53,0.14)',
-                '0 0 0 0 rgba(243,116,53,0)',
-              ],
-            }
-          : { boxShadow: 'none' }
-      }
-      transition={{ duration: 1.8, repeat: current ? Infinity : 0, ease: 'easeInOut' }}
       style={{
         padding: '9px 10px 10px',
         borderRadius: 15,
         background: bg,
         border: `1px solid ${complete ? 'rgba(93,216,122,0.45)' : current ? 'rgba(243,116,53,0.48)' : 'rgba(232,207,160,0.22)'}`,
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
       }}
     >
       <div className="flex items-center gap-3">
-        <motion.span
-          style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }}
-          animate={current ? { scale: [1, 1.55, 1], opacity: [1, 0.65, 1] } : { scale: 1, opacity: 1 }}
-          transition={{ duration: 1.2, repeat: current ? Infinity : 0, ease: 'easeInOut' }}
-        />
-        <h2
-          className="font-body font-bold uppercase"
-          style={{ fontSize: 10.5, color, letterSpacing: '0.20em', whiteSpace: 'nowrap' }}
-        >
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+        <h2 className="font-body font-bold uppercase" style={{ fontSize: 10.5, color, letterSpacing: '0.20em', whiteSpace: 'nowrap' }}>
           {label}
         </h2>
         <span style={{ flex: 1 }} />
@@ -490,9 +488,10 @@ function SectionDivider({
         }}
       >
         <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${donePercent}%` }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ width: reduce ? `${donePercent}%` : 0 }}
+          whileInView={{ width: `${donePercent}%` }}
+          viewport={{ once: true }}
+          transition={{ duration: reduce ? 0 : 0.8, ease: [0.16, 1, 0.3, 1] }}
           style={{
             height: '100%',
             borderRadius: 999,
@@ -503,16 +502,7 @@ function SectionDivider({
                 : `linear-gradient(90deg, ${accent}, rgba(232,207,160,0.72))`,
           }}
         />
-        {current && (
-          <motion.div
-            className="absolute inset-y-0"
-            style={{ width: 44, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.82), transparent)' }}
-            animate={{ x: ['-60px', '420px'] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-          />
-        )}
       </div>
-    </motion.div>
+    </div>
   )
 }
-
