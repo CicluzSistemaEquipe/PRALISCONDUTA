@@ -48,10 +48,13 @@ function AnimatedRoutes() {
   const location = useLocation()
   return (
     <Suspense fallback={<Loading />}>
+      {/* Transição de página: SEM opacity no wrapper — se a animação travar
+          (HMR/recompile no dev), o conteúdo nunca fica invisível (tela preta).
+          Só um leve slide; cada página tem sua própria entrada. */}
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ y: 8 }}
+        animate={{ y: 0 }}
         transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
       >
         <ErrorBoundary>
