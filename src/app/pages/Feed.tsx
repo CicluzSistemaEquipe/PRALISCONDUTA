@@ -367,7 +367,7 @@ export default function Feed() {
             {/* TRILHA — 3 grupos separados visualmente; recomendado em destaque */}
             {groups.map(([section, mods], gi) => {
               const doneInSection = mods.filter(isModuleDone).length
-              const lockedHint = section === 'cargo' ? employee.role : SECTION_LABEL[section]
+              const lockedLabel = section === 'cargo' ? 'Treinamento bloqueado' : 'Módulo bloqueado'
               return (
                 <section key={section} style={{ marginTop: gi === 0 ? 0 : 22 }} className="mb-2">
                   <SectionHeader label={SECTION_LABEL[section]} accent={SECTION_ACCENT[section]} done={doneInSection} total={mods.length} reduce={reduce} />
@@ -386,7 +386,7 @@ export default function Feed() {
                           progress={fractionOf(m.id)}
                           onOpen={() => open(m)}
                           highlight={m.id === nextModule?.id}
-                          lockedHint={lockedHint}
+                          lockedLabel={lockedLabel}
                         />
                       </motion.div>
                     ))}
