@@ -18,30 +18,30 @@ const NAV_ITEMS: { id: Tab; icon: typeof House; label: string }[] = [
 ]
 
 /**
- * Rodapé moderno e leve, coeso com o topo escuro da Home.
- * Sem padrão de fundo nem loop infinito; o indicador ativo usa layout
- * animation (spring) — motion com propósito.
+ * Rodapé com cor própria (marrom da marca) para se destacar do corpo quase-preto.
+ * Ícones com destaque forte: ativo = pílula laranja preenchida com ícone branco;
+ * inativo = bege da marca. Sem padrão de fundo nem loop infinito.
  */
 export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const { theme } = useTheme()
   const isLight = theme === 'light'
+  const idle = isLight ? '#8a7a6b' : '#e8cfa0'
 
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-[480px] items-stretch justify-around"
       style={{
-        background: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(21,9,0,0.82)',
-        backdropFilter: 'blur(14px)',
-        WebkitBackdropFilter: 'blur(14px)',
-        borderTop: `1px solid ${isLight ? 'rgba(94,55,49,0.12)' : 'rgba(243,116,53,0.18)'}`,
-        boxShadow: isLight ? '0 -10px 30px rgba(94,55,49,0.10)' : '0 -12px 30px rgba(0,0,0,0.35)',
-        padding: '8px 22px calc(var(--safe-bottom) + 8px)',
+        background: isLight
+          ? 'linear-gradient(180deg, #fff7ef 0%, #fdeede 100%)'
+          : 'linear-gradient(180deg, #45221b 0%, #331812 100%)',
+        borderTop: `1.5px solid ${isLight ? 'rgba(243,116,53,0.30)' : 'rgba(243,116,53,0.40)'}`,
+        boxShadow: isLight ? '0 -10px 30px rgba(94,55,49,0.12)' : '0 -14px 34px rgba(0,0,0,0.45)',
+        padding: '9px 22px calc(var(--safe-bottom) + 9px)',
       }}
     >
       {NAV_ITEMS.map((item) => {
         const isActive = active === item.id
         const I = item.icon
-        const idle = isLight ? '#9a8b7d' : 'rgba(255,255,255,0.55)'
 
         return (
           <motion.button
@@ -50,19 +50,19 @@ export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab
             whileTap={{ scale: 0.9 }}
             aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
-            className="relative flex min-w-[78px] flex-col items-center justify-center gap-1 pt-1"
-            style={{ color: isActive ? '#f37435' : idle, transition: 'color 0.2s ease' }}
+            className="relative flex min-w-[80px] flex-col items-center justify-center gap-1 pt-0.5"
+            style={{ transition: 'color 0.2s ease' }}
           >
-            <span className="relative flex h-9 w-12 items-center justify-center rounded-[13px]">
+            <span className="relative flex h-10 w-12 items-center justify-center rounded-[14px]">
               {isActive && (
                 <motion.span
                   layoutId="nav-pill"
-                  className="absolute inset-0 rounded-[13px]"
-                  style={{ background: 'rgba(243,116,53,0.16)', border: '1px solid rgba(243,116,53,0.42)' }}
+                  className="absolute inset-0 rounded-[14px]"
+                  style={{ background: '#f37435', boxShadow: '0 8px 20px -6px rgba(243,116,53,0.6)' }}
                   transition={{ type: 'spring', stiffness: 360, damping: 30 }}
                 />
               )}
-              <I size={21} strokeWidth={isActive ? 2.5 : 2} className="relative" />
+              <I size={21} strokeWidth={isActive ? 2.6 : 2.1} className="relative" color={isActive ? '#ffffff' : idle} />
             </span>
             <span
               className="font-body font-bold"

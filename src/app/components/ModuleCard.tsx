@@ -13,12 +13,14 @@ interface ModuleCardProps {
   onOpen: () => void
   /** marca este módulo como o "próximo passo" recomendado (glow + seta preenchida). */
   highlight?: boolean
+  /** setor/cargo mostrado no card bloqueado (ex.: nome do cargo do colaborador). */
+  lockedHint?: string
 }
 
 const CARD_RADIUS = 16
 const CARD_MIN_H = 92
 
-export function ModuleCard({ module, status, progress, onOpen, highlight = false }: ModuleCardProps) {
+export function ModuleCard({ module, status, progress, onOpen, highlight = false, lockedHint }: ModuleCardProps) {
   const { theme } = useTheme()
   const isLight = theme === 'light'
   const locked = status === 'locked'
@@ -27,50 +29,41 @@ export function ModuleCard({ module, status, progress, onOpen, highlight = false
   const pct = Math.round(progress * 100)
   const recommended = highlight && !locked && !done
 
-  // ── BLOQUEADO: mistério — cadeado grande + conteúdo embaçado (efeito glass).
-  //    Não revela o que é o módulo; só aparece quando desbloquear.
+  // ── BLOQUEADO: cadeado + texto claro (sem embaçar). Mostra que é um
+  //    "Treinamento bloqueado" e o setor/cargo, sem revelar o módulo.
   if (locked) {
     return (
       <div
-        className="relative flex w-full items-center overflow-hidden"
+        className="relative flex w-full items-center gap-3.5 overflow-hidden"
         style={{
-          minHeight: CARD_MIN_H,
+          minHeight: 74,
           borderRadius: CARD_RADIUS,
-          padding: 16,
-          background: isLight ? 'rgba(94,55,49,0.05)' : 'rgba(255,255,255,0.04)',
+          padding: 14,
+          background: isLight ? 'rgba(94,55,49,0.04)' : 'rgba(255,255,255,0.035)',
           border: `1.5px dashed ${isLight ? 'rgba(94,55,49,0.20)' : 'rgba(255,255,255,0.14)'}`,
         }}
       >
-        {/* conteúdo real, mas borrado e esmaecido (não dá pra ler) */}
-        <div className="flex items-center gap-3.5" style={{ filter: 'blur(7px)', opacity: 0.42, pointerEvents: 'none', userSelect: 'none' }}>
-          <span style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-surface-2)', border: '1px solid var(--stroke)', flexShrink: 0 }} />
-          <span>
-            <span className="block font-display" style={{ fontSize: 16, color: 'var(--text-primary)' }}>{module.title}</span>
-            <span className="mt-1 block font-body" style={{ fontSize: 12 }}>{module.subtitle}</span>
+        <span
+          className="flex shrink-0 items-center justify-center"
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: 12,
+            background: isLight ? 'rgba(94,55,49,0.08)' : 'rgba(255,255,255,0.06)',
+            border: `1.5px solid ${isLight ? 'rgba(94,55,49,0.20)' : 'rgba(255,255,255,0.16)'}`,
+          }}
+        >
+          <Lock size={20} color="var(--text-secondary)" strokeWidth={2.2} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display" style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.15 }}>
+            Treinamento bloqueado
           </span>
-        </div>
-
-        {/* camada glass + cadeado grande, centralizado */}
-        <div className="absolute inset-0 flex items-center gap-3 px-4" style={{ background: isLight ? 'rgba(247,242,236,0.30)' : 'rgba(21,9,0,0.30)' }}>
-          <span
-            className="flex shrink-0 items-center justify-center"
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: '50%',
-              background: isLight ? 'rgba(94,55,49,0.10)' : 'rgba(255,255,255,0.08)',
-              border: `1.5px solid ${isLight ? 'rgba(94,55,49,0.22)' : 'rgba(255,255,255,0.18)'}`,
-            }}
-          >
-            <Lock size={22} color="var(--text-secondary)" strokeWidth={2.2} />
+          <span className="mt-0.5 block font-body" style={{ fontSize: 12, color: 'var(--text-secondary)', opacity: 0.8 }}>
+            {lockedHint ?? 'Conclua o módulo anterior para abrir'}
           </span>
-          <span className="min-w-0">
-            <span className="block font-display" style={{ fontSize: 15, color: 'var(--text-secondary)' }}>Bloqueado</span>
-            <span className="mt-0.5 block font-body" style={{ fontSize: 12, color: 'var(--text-locked, var(--text-secondary))', opacity: 0.85 }}>
-              Conclua o módulo anterior para abrir
-            </span>
-          </span>
-        </div>
+        </span>
+        <Lock size={15} color="var(--text-secondary)" strokeWidth={2} className="shrink-0 opacity-60" />
       </div>
     )
   }

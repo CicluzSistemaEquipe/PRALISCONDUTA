@@ -231,12 +231,12 @@ export default function Feed() {
 
       {/* ── TOPO compacto e moderno ─────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-20 px-5 pb-3"
+        className="sticky top-0 z-20 px-5 pb-3.5"
         style={{
-          paddingTop: 'calc(var(--safe-top) + 0.6rem)',
-          background: isLight ? '#ffffff' : '#160a02',
-          borderBottom: `1px solid ${isLight ? '#ece0d2' : 'rgba(184,134,11,0.16)'}`,
-          boxShadow: isLight ? '0 1px 0 rgba(26,14,0,0.04)' : 'none',
+          paddingTop: 'calc(var(--safe-top) + 0.55rem)',
+          background: isLight ? 'linear-gradient(180deg, #fff7ef 0%, #ffffff 100%)' : 'linear-gradient(180deg, #45221b 0%, #2c1611 100%)',
+          borderBottom: `1.5px solid ${isLight ? 'rgba(243,116,53,0.22)' : 'rgba(243,116,53,0.34)'}`,
+          boxShadow: isLight ? '0 2px 14px rgba(94,55,49,0.06)' : '0 6px 20px rgba(0,0,0,0.28)',
         }}
       >
         <div className="flex items-start justify-between gap-3">
@@ -244,24 +244,36 @@ export default function Feed() {
             <img
               src={isLight ? brand.logoSVGPreta : brand.logoSVGBranca}
               alt="padaria pralis"
-              style={{ width: 84, height: 'auto', filter: isLight ? 'none' : FILTER_WHITE }}
+              style={{ width: 82, height: 'auto', filter: isLight ? 'none' : FILTER_WHITE }}
             />
-            <p className="mt-2 font-body" style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.01em' }}>
+            <p className="mt-2 font-body" style={{ fontSize: 10.5, fontWeight: 600, color: isLight ? 'var(--text-secondary)' : '#e8cfa0' }}>
               {welcomeFor(employee.name)},
             </p>
-            <p className="mt-0.5 font-body uppercase" style={{ fontSize: 8.5, fontWeight: 800, color: '#f37435', letterSpacing: '0.20em' }}>
+            <span
+              className="mt-1 inline-flex items-center font-body uppercase"
+              style={{
+                fontSize: 8.5,
+                fontWeight: 800,
+                letterSpacing: '0.18em',
+                color: '#ffb486',
+                background: 'rgba(243,116,53,0.18)',
+                border: '1px solid rgba(243,116,53,0.40)',
+                borderRadius: 999,
+                padding: '3px 9px',
+              }}
+            >
               {employee.role}
-            </p>
-            <h1 className="mt-0.5 font-display leading-none" style={{ fontSize: 'clamp(20px, 5.6vw, 26px)', color: 'var(--text-primary)' }}>
+            </span>
+            <h1 className="mt-1.5 font-display leading-none" style={{ fontSize: 'clamp(20px, 5.6vw, 26px)', color: isLight ? 'var(--text-primary)' : '#fff6ea' }}>
               Ol&aacute;, {firstName(employee.name)}!
             </h1>
           </motion.div>
 
           <motion.div className="flex shrink-0 flex-col items-center gap-1" {...rise(0.06)}>
             <LisHeaderAvatar globalProgress={globalProgress} size={80} onClick={() => navigate('/progresso')} />
-            <div className="text-center font-body" style={{ color: isLight ? '#1a0e00' : 'rgba(255,255,255,0.92)' }}>
+            <div className="text-center font-body" style={{ color: isLight ? '#1a0e00' : '#fff6ea' }}>
               <p style={{ fontSize: 13, fontWeight: 900, lineHeight: 1 }}>{timeLabel}</p>
-              <p style={{ fontSize: 8.5, lineHeight: 1.25, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{dateLabel}</p>
+              <p style={{ fontSize: 8.5, lineHeight: 1.25, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap', opacity: 0.85 }}>{dateLabel}</p>
             </div>
           </motion.div>
         </div>
@@ -295,36 +307,36 @@ export default function Feed() {
               onClick={onHero}
               whileTap={{ scale: 0.985 }}
               {...rise(0.14)}
-              className="relative mb-7 block w-full overflow-hidden text-left"
+              className="relative mb-6 block w-full overflow-hidden text-left"
               style={{
-                padding: 15,
+                padding: 13,
                 background: isLight ? '#ffffff' : 'var(--bg-card)',
                 border: `1.5px solid ${allDone ? 'rgba(93,216,122,0.45)' : heroAccent}`,
-                borderRadius: 20,
-                boxShadow: allDone ? 'none' : `0 14px 34px -22px ${heroAccent}`,
+                borderRadius: 18,
+                boxShadow: allDone ? 'none' : `0 12px 30px -22px ${heroAccent}`,
               }}
             >
-              <span aria-hidden="true" className="absolute left-0 top-4 bottom-4" style={{ width: 4, borderRadius: 999, background: allDone ? '#5dd87a' : heroAccent }} />
+              <span aria-hidden="true" className="absolute left-0 top-3 bottom-3" style={{ width: 4, borderRadius: 999, background: allDone ? '#5dd87a' : heroAccent }} />
 
-              <div className="relative flex items-center gap-3.5">
+              <div className="relative flex items-center gap-3">
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <ProgressRing progress={globalProgress} size={62} reduce={reduce} />
-                  <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Montserrat, sans-serif', fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)' }}>
+                  <ProgressRing progress={globalProgress} size={52} reduce={reduce} />
+                  <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Montserrat, sans-serif', fontSize: 12, fontWeight: 800, color: 'var(--text-primary)' }}>
                     {Math.round(globalProgress)}%
                   </span>
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <p className="font-body uppercase" style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', color: allDone ? '#5dd87a' : heroAccent }}>
+                  <p className="font-body uppercase" style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: '0.14em', color: allDone ? '#5dd87a' : heroAccent }}>
                     {heroEyebrow}
                     {!allDone && ordered.length > 0 && (
                       <span style={{ color: 'var(--text-secondary)', letterSpacing: '0.03em' }}> · faltam {remaining} de {ordered.length}</span>
                     )}
                   </p>
-                  <p className="font-display" style={{ fontSize: 'clamp(16px, 4.6vw, 20px)', color: 'var(--text-primary)', lineHeight: 1.14, marginTop: 2, overflowWrap: 'anywhere' }}>
+                  <p className="font-display" style={{ fontSize: 'clamp(15px, 4.3vw, 18.5px)', color: 'var(--text-primary)', lineHeight: 1.12, marginTop: 1, overflowWrap: 'anywhere' }}>
                     {heroTitle}
                   </p>
                   {heroState && (
-                    <p className="font-body" style={{ fontSize: 'clamp(11px, 3.2vw, 12.5px)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                    <p className="font-body" style={{ fontSize: 'clamp(10.5px, 3.1vw, 12px)', color: 'var(--text-secondary)', marginTop: 1 }}>
                       {heroState}
                     </p>
                   )}
@@ -332,7 +344,7 @@ export default function Feed() {
               </div>
 
               {nextInProgress && nextModule && (
-                <div className="relative mt-3 overflow-hidden rounded-full" style={{ height: 4, background: 'var(--stroke-soft)' }}>
+                <div className="relative mt-2.5 overflow-hidden rounded-full" style={{ height: 4, background: 'var(--stroke-soft)' }}>
                   <motion.div
                     initial={{ width: reduce ? `${Math.round(fractionOf(nextModule.id) * 100)}%` : 0 }}
                     animate={{ width: `${Math.round(fractionOf(nextModule.id) * 100)}%` }}
@@ -343,8 +355,8 @@ export default function Feed() {
               )}
 
               <span
-                className="relative mt-3.5 flex w-full items-center justify-center gap-2 font-display"
-                style={{ height: 42, borderRadius: 12, background: allDone ? '#5dd87a' : heroAccent, color: '#fff', fontSize: 'clamp(13.5px, 3.8vw, 15px)', boxShadow: `0 8px 20px -12px ${allDone ? '#5dd87a' : heroAccent}` }}
+                className="relative mt-3 flex w-full items-center justify-center gap-2 font-display"
+                style={{ height: 38, borderRadius: 11, background: allDone ? '#5dd87a' : heroAccent, color: '#fff', fontSize: 'clamp(13px, 3.6vw, 14.5px)', boxShadow: `0 8px 18px -12px ${allDone ? '#5dd87a' : heroAccent}` }}
               >
                 {allDone ? <Check size={17} strokeWidth={2.6} /> : nextModule?.kind === 'signature' ? <PenLine size={16} strokeWidth={2.4} /> : null}
                 {heroCTA}
@@ -355,12 +367,9 @@ export default function Feed() {
             {/* TRILHA — 3 grupos separados visualmente; recomendado em destaque */}
             {groups.map(([section, mods], gi) => {
               const doneInSection = mods.filter(isModuleDone).length
+              const lockedHint = section === 'cargo' ? employee.role : SECTION_LABEL[section]
               return (
-                <section
-                  key={section}
-                  style={gi === 0 ? undefined : { marginTop: 8, paddingTop: 22, borderTop: `1px solid ${isLight ? 'rgba(94,55,49,0.10)' : 'rgba(255,255,255,0.07)'}` }}
-                  className="mb-2"
-                >
+                <section key={section} style={{ marginTop: gi === 0 ? 0 : 22 }} className="mb-2">
                   <SectionHeader label={SECTION_LABEL[section]} accent={SECTION_ACCENT[section]} done={doneInSection} total={mods.length} reduce={reduce} />
                   <div className="flex flex-col gap-2.5">
                     {mods.map((m, i) => (
@@ -371,7 +380,14 @@ export default function Feed() {
                         viewport={{ once: true, margin: '-40px' }}
                         transition={{ delay: reduce ? 0 : Math.min(i * 0.05, 0.2), duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                       >
-                        <ModuleCard module={m} status={statusOf(m.id)} progress={fractionOf(m.id)} onOpen={() => open(m)} highlight={m.id === nextModule?.id} />
+                        <ModuleCard
+                          module={m}
+                          status={statusOf(m.id)}
+                          progress={fractionOf(m.id)}
+                          onOpen={() => open(m)}
+                          highlight={m.id === nextModule?.id}
+                          lockedHint={lockedHint}
+                        />
                       </motion.div>
                     ))}
                   </div>
@@ -394,19 +410,31 @@ function SectionHeader({ label, accent, done, total, reduce }: { label: string; 
   const complete = total > 0 && done === total
   const donePercent = total > 0 ? Math.round((done / total) * 100) : 0
   const color = complete ? '#5dd87a' : accent
+  const band = complete ? '#5dd87a' : accent
   return (
-    <div className="mb-3">
+    <div
+      className="mb-3"
+      style={{
+        borderRadius: 13,
+        padding: '8px 11px 9px',
+        background: `color-mix(in srgb, ${band} 9%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${band} 24%, transparent)`,
+      }}
+    >
       <div className="flex items-center gap-2.5">
-        <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
-        <h2 className="font-body font-bold uppercase" style={{ fontSize: 11, color, letterSpacing: '0.18em', whiteSpace: 'nowrap' }}>
+        <span style={{ width: 4, height: 14, borderRadius: 999, background: color, flexShrink: 0 }} />
+        <h2 className="font-body font-bold uppercase" style={{ fontSize: 11, color, letterSpacing: '0.16em', whiteSpace: 'nowrap' }}>
           {label}
         </h2>
-        <span className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${complete ? 'rgba(93,216,122,0.35)' : 'rgba(232,207,160,0.28)'}, transparent)` }} />
-        <span className="font-body font-bold" style={{ fontSize: 10.5, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+        <span className="flex-1" />
+        <span
+          className="font-body font-bold"
+          style={{ fontSize: 10, color, background: `color-mix(in srgb, ${band} 18%, transparent)`, borderRadius: 999, padding: '2px 8px', fontVariantNumeric: 'tabular-nums' }}
+        >
           {done}/{total}
         </span>
       </div>
-      <div className="relative mt-2 overflow-hidden rounded-full" style={{ height: 3, background: 'var(--stroke-soft)' }}>
+      <div className="relative mt-2 overflow-hidden rounded-full" style={{ height: 3, background: 'rgba(255,255,255,0.10)' }}>
         <motion.div
           initial={{ width: reduce ? `${donePercent}%` : 0 }}
           whileInView={{ width: `${donePercent}%` }}
