@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Users, CheckCircle2, PenLine, TrendingUp, UserPlus, ChevronRight, ArrowRight,
+  Users, CheckCircle2, PenLine, TrendingUp, UserPlus, ChevronRight, ArrowRight, AlertTriangle, Clock,
 } from 'lucide-react'
 import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
 import { useAdminStore } from '@/lib/adminStore'
+import { PralisSymbol } from '@/app/components/PralisSymbol'
 import { getAdminSession, isDono } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
@@ -22,32 +23,46 @@ function initials(name: string) {
 
 interface Seg { label: string; value: number; color: string }
 
-/** Distribuição da jornada — barra empilhada horizontal (1 olhada = o time inteiro). */
+// entrada hierárquica dos blocos (cascata)
+const block = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } } }
+const cascade = { hidden: {}, visible: { transition: { staggerChildren: 0.09, delayChildren: 0.04 } } }
+
+/** Distribuição da jornada — barra empilhada que se desenha + legenda interativa (destaca o segmento). */
 function StackedBar({ stages, total }: { stages: Seg[]; total: number }) {
+  const [hover, setHover] = useState<string | null>(null)
   return (
     <div>
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--bg-inset)]">
+      <div className="flex h-4 w-full overflow-hidden rounded-full bg-[var(--bg-inset)]">
         {total > 0 && stages.map((s, i) =>
           s.value > 0 ? (
             <motion.div
               key={s.label}
               initial={{ width: 0 }}
               animate={{ width: `${(s.value / total) * 100}%` }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.1 + i * 0.06 }}
-              style={{ background: s.color }}
-              className={i > 0 ? 'border-l-2 border-white' : ''}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.15 + i * 0.1 }}
+              onMouseEnter={() => setHover(s.label)}
+              onMouseLeave={() => setHover(null)}
+              title={`${s.label}: ${s.value} (${pct(s.value, total)}%)`}
+              className={`h-full transition-opacity duration-200 ${i > 0 ? 'border-l-2 border-white' : ''}`}
+              style={{ background: s.color, opacity: hover && hover !== s.label ? 0.32 : 1 }}
             />
           ) : null,
         )}
       </div>
-      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2.5">
+      <div className="mt-4 flex flex-wrap gap-2">
         {stages.map((s) => (
-          <div key={s.label} className="flex items-center gap-2">
+          <button
+            key={s.label}
+            type="button"
+            onMouseEnter={() => setHover(s.label)}
+            onMouseLeave={() => setHover(null)}
+            className={`flex items-center gap-2 rounded-full border px-2.5 py-1 transition ${hover === s.label ? 'border-[var(--border-strong)] bg-[var(--bg-subtle)]' : 'border-[var(--border)]'}`}
+          >
             <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: s.color }} />
             <span className="text-[0.8125rem] text-[var(--text-secondary)]">{s.label}</span>
             <span className="text-[0.8125rem] font-semibold text-[var(--ink)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{s.value}</span>
-            <span className="text-[0.75rem] text-[var(--text-muted)]">{total > 0 ? `${pct(s.value, total)}%` : '—'}</span>
-          </div>
+            <span className="text-[0.72rem] text-[var(--text-muted)]">{total > 0 ? `${pct(s.value, total)}%` : '—'}</span>
+          </button>
         ))}
       </div>
     </div>
@@ -102,7 +117,7 @@ function DonoDashboard() {
 
   const attention = useMemo(() => {
     const r = rows ?? []
-    // Prioriza por ALAVANCAGEM: "Falta assinar" (1 clique p/ ficar conforme) antes de "Não começou".
+    // Prioriza por ALAVANCAGEM: "Falta assinar" (1 clique p/ conformidade) antes de "Não começou".
     const faltaAssinar: { e: EmployeeRow; reason: string; gold: boolean }[] = []
     const naoComecou: { e: EmployeeRow; reason: string; gold: boolean }[] = []
     for (const e of r) {
@@ -115,9 +130,9 @@ function DonoDashboard() {
   const notStarted = (rows ?? []).filter((e) => !e.signed && e.progress === 0).length
 
   const kpiCards = [
-    { label: 'Concluíram tudo', value: `${pct(kpis.concluded, total)}%`, sub: `${kpis.concluded}/${total} pessoas`, icon: CheckCircle2, tone: 'green' as const, to: '/admin/colaboradores' },
-    { label: 'Assinaram', value: `${pct(kpis.signed, total)}%`, sub: `${kpis.signed}/${total} pessoas`, icon: PenLine, tone: 'gold' as const, to: '/admin/colaboradores' },
-    { label: 'Colaboradores', value: kpis.total, sub: 'cadastrados', icon: Users, tone: 'orange' as const, to: '/admin/colaboradores' },
+    { label: 'Concluíram tudo', value: `${pct(kpis.concluded, total)}%`, sub: `${kpis.concluded}/${total} pessoas`, icon: CheckCircle2, tone: 'green' as const, to: '/admin/colaboradores', progress: pct(kpis.concluded, total) as number | undefined },
+    { label: 'Assinaram', value: `${pct(kpis.signed, total)}%`, sub: `${kpis.signed}/${total} pessoas`, icon: PenLine, tone: 'gold' as const, to: '/admin/colaboradores', progress: pct(kpis.signed, total) as number | undefined },
+    { label: 'Colaboradores', value: kpis.total, sub: 'cadastrados', icon: Users, tone: 'orange' as const, to: '/admin/colaboradores', progress: undefined },
   ]
 
   const saude = [
@@ -130,139 +145,146 @@ function DonoDashboard() {
     <>
       <AdminPageHeader eyebrow="Visão geral" title="Dashboard" />
 
-      {/* Status em linguagem humana — "como estamos?" em 1 olhada */}
-      {loading ? (
-        <Skeleton className="mb-6 h-5 w-80" />
-      ) : total === 0 ? (
-        <p className="mb-6 -mt-2 text-[0.95rem] text-[var(--text-secondary)]">Nenhum colaborador cadastrado ainda.</p>
-      ) : (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
-          className="mb-6 -mt-2 flex items-start gap-2.5">
-          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
-          <p className="text-[0.95rem] leading-relaxed text-[var(--text-secondary)]">
-            <strong className="font-semibold text-[var(--ink)]">{kpis.concluded}</strong> de <strong className="font-semibold text-[var(--ink)]">{total}</strong> concluíram o treinamento
-            {' · '}<strong className="font-semibold text-[var(--ink)]">{kpis.signed}</strong> {kpis.signed === 1 ? 'assinou' : 'assinaram'}
-            {notStarted > 0 && (<>{' · '}<strong className="font-semibold text-[var(--ink)]">{notStarted}</strong> ainda não {notStarted === 1 ? 'começou' : 'começaram'}</>)}
-          </p>
+      <motion.div variants={cascade} initial="hidden" animate="visible">
+        {/* Status headline — leitura humana em 1 olhada, com a assinatura Pralís */}
+        <motion.div variants={block} className="mb-6 -mt-1">
+          {loading ? (
+            <Skeleton className="h-6 w-96 max-w-full" />
+          ) : total === 0 ? (
+            <p className="text-[1.0625rem] text-[var(--text-secondary)]">Nenhum colaborador cadastrado ainda — vamos começar?</p>
+          ) : (
+            <div className="flex items-center gap-3">
+              <PralisSymbol size={22} colorA="#5e3731" colorB="#f37435" animate={false} />
+              <p className="text-[1.0625rem] leading-snug text-[var(--text-secondary)]">
+                <strong className="font-semibold text-[var(--ink)]">{kpis.concluded}</strong> de <strong className="font-semibold text-[var(--ink)]">{total}</strong> concluíram o treinamento
+                {' · '}<strong className="font-semibold text-[var(--ink)]">{kpis.signed}</strong> {kpis.signed === 1 ? 'assinou' : 'assinaram'}
+                {notStarted > 0 && (<>{' · '}<strong className="font-semibold text-[var(--ink)]">{notStarted}</strong> ainda não {notStarted === 1 ? 'começou' : 'começaram'}</>)}
+              </p>
+            </div>
+          )}
         </motion.div>
-      )}
 
-      {/* KPIs — outcomes primeiro, clicáveis (drill-down) */}
-      <motion.div
-        initial="hidden" animate="visible"
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
-        className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3"
-      >
-        {kpiCards.map((k) => (
-          <motion.div key={k.label} variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-            <StatCard icon={k.icon} tone={k.tone} value={k.value} label={k.label} sub={k.sub} loading={loading} onClick={() => navigate(k.to)} />
-          </motion.div>
-        ))}
-      </motion.div>
+        {/* KPIs — status com anel (número sincronizado ao gráfico), clicáveis */}
+        <motion.div variants={block} className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {kpiCards.map((k) => (
+            <StatCard key={k.label} icon={k.icon} tone={k.tone} value={k.value} label={k.label} sub={k.sub} loading={loading} progress={k.progress} onClick={() => navigate(k.to)} />
+          ))}
+        </motion.div>
 
-      {/* Distribuição da jornada — uma visão escaneável do time inteiro */}
-      <div className="mb-4">
-        <SectionCard title="Distribuição da jornada">
-          {loading ? (
-            <div>
-              <Skeleton className="h-3 w-full" />
-              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2.5">
-                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-4 w-28" />)}
+        {/* Analítico — distribuição que se desenha + interativa */}
+        <motion.div variants={block} className="mb-4">
+          <SectionCard title="Distribuição da jornada">
+            {loading ? (
+              <div>
+                <Skeleton className="h-4 w-full" />
+                <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2.5">
+                  {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-7 w-28 rounded-full" />)}
+                </div>
               </div>
-            </div>
-          ) : total === 0 ? (
-            <EmptyState icon={Users} title="Sem dados ainda" hint="A distribuição aparece quando houver colaboradores." compact />
-          ) : (
-            <StackedBar stages={stages} total={total} />
-          )}
-        </SectionCard>
-      </div>
+            ) : total === 0 ? (
+              <EmptyState icon={Users} title="Sem dados ainda" hint="A distribuição aparece quando houver colaboradores." compact />
+            ) : (
+              <StackedBar stages={stages} total={total} />
+            )}
+          </SectionCard>
+        </motion.div>
 
-      {/* Herói (ação) + Saúde do treinamento (contexto, quieto) */}
-      <div className="grid items-start gap-4 lg:grid-cols-[1fr_320px]">
-        <SectionCard
-          title="Precisam de atenção"
-          action={attention.length > 0 ? <span className="adm-badge adm-badge--gold">{attention.length}</span> : undefined}
-        >
-          {loading ? (
-            <div className="-mx-1 flex flex-col gap-1">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 px-2 py-2">
-                  <Skeleton className="h-8 w-8 rounded-lg" />
-                  <div className="flex-1">
-                    <Skeleton className="h-3.5 w-40" />
-                    <Skeleton className="mt-1.5 h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-5 w-20 rounded-full" />
+        {/* Ação (herói) + Saúde (contexto, quieto) */}
+        <motion.div variants={block} className="grid items-start gap-4 lg:grid-cols-[1fr_340px]">
+          {/* CARD DE AÇÃO — identidade própria: spine laranja + ícone de alerta */}
+          <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+            <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[var(--accent)] to-[#e0a24a]" />
+            <div className="p-5 pl-6">
+              <header className="mb-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-tint)]">
+                    <AlertTriangle className="h-[15px] w-[15px] text-[#c9501a]" strokeWidth={2} />
+                  </span>
+                  <h2 className="text-[0.95rem] font-semibold text-[var(--ink)]">Precisam de atenção</h2>
                 </div>
-              ))}
-            </div>
-          ) : total === 0 ? (
-            <EmptyState
-              icon={UserPlus}
-              title="Cadastre seu primeiro colaborador"
-              hint="Adicione alguém e envie o link de treinamento — o acompanhamento começa aqui."
-              action={<button className="adm-btn adm-btn--primary" onClick={() => navigate('/admin/colaboradores')}><UserPlus className="h-[18px] w-[18px]" strokeWidth={2} /> Cadastrar colaborador</button>}
-            />
-          ) : attention.length === 0 ? (
-            <EmptyState icon={CheckCircle2} title="Tudo certo" hint="Toda a equipe está em dia — ninguém parado ou pendente de assinatura." compact />
-          ) : (
-            <motion.ul
-              initial="hidden" animate="visible"
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
-              className="-mx-1 flex flex-col"
-            >
-              {attention.slice(0, 7).map(({ e, reason, gold }) => (
-                <motion.li key={e.employee.id} variants={{ hidden: { opacity: 0, x: -6 }, visible: { opacity: 1, x: 0 } }}>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/admin/colaboradores?q=${encodeURIComponent(e.employee.name)}`)}
-                    className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-[var(--bg-subtle)] focus-visible:bg-[var(--bg-subtle)] focus-visible:outline-none active:scale-[0.99]"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] text-[0.7rem] font-bold text-white">{initials(e.employee.name)}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[0.875rem] font-medium text-[var(--ink)]">{e.employee.name}</span>
-                      <span className="block truncate text-[0.75rem] text-[var(--text-muted)]">{e.employee.role}</span>
-                    </span>
-                    <span className={`adm-badge ${gold ? 'adm-badge--gold' : 'adm-badge--muted'}`}>{reason}</span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100" />
-                  </button>
-                </motion.li>
-              ))}
-              {attention.length > 7 && (
-                <li>
-                  <button type="button" onClick={() => navigate('/admin/colaboradores')} className="mt-1 w-full rounded-lg px-2 py-2 text-left text-[0.8125rem] font-semibold text-[var(--accent-text)] transition-colors hover:bg-[var(--bg-subtle)]">
-                    Ver todos os {attention.length} →
-                  </button>
-                </li>
+                {!loading && attention.length > 0 && <span className="adm-badge adm-badge--gold">{attention.length}</span>}
+              </header>
+
+              {loading ? (
+                <div className="-mx-1 flex flex-col gap-1">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 px-2 py-2">
+                      <Skeleton className="h-9 w-9 rounded-lg" />
+                      <div className="flex-1"><Skeleton className="h-3.5 w-44" /><Skeleton className="mt-1.5 h-3 w-24" /></div>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : total === 0 ? (
+                <EmptyState
+                  icon={UserPlus}
+                  title="Cadastre seu primeiro colaborador"
+                  hint="Adicione alguém e envie o link de treinamento — o acompanhamento começa aqui."
+                  action={<button className="adm-btn adm-btn--primary group" onClick={() => navigate('/admin/colaboradores')}><UserPlus className="h-[18px] w-[18px]" strokeWidth={2} /> Cadastrar colaborador</button>}
+                />
+              ) : attention.length === 0 ? (
+                <EmptyState icon={CheckCircle2} title="Tudo certo" hint="Toda a equipe está em dia — ninguém parado ou pendente de assinatura." compact />
+              ) : (
+                <motion.ul initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } } }} className="-mx-1 flex flex-col">
+                  {attention.slice(0, 7).map(({ e, reason, gold }) => {
+                    const ReasonIcon = gold ? PenLine : Clock
+                    return (
+                      <motion.li key={e.employee.id} variants={{ hidden: { opacity: 0, x: -8 }, visible: { opacity: 1, x: 0 } }}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/colaboradores?q=${encodeURIComponent(e.employee.name)}`)}
+                          className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:translate-x-0.5 hover:bg-[var(--bg-subtle)] focus-visible:bg-[var(--bg-subtle)] focus-visible:outline-none active:scale-[0.99]"
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] text-[0.72rem] font-bold text-white">{initials(e.employee.name)}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[0.875rem] font-medium text-[var(--ink)]">{e.employee.name}</span>
+                            <span className="block truncate text-[0.75rem] text-[var(--text-muted)]">{e.employee.role}</span>
+                          </span>
+                          <span className={`adm-badge ${gold ? 'adm-badge--gold' : 'adm-badge--muted'} gap-1`}>
+                            <ReasonIcon className="h-3 w-3" strokeWidth={2.2} /> {reason}
+                          </span>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-muted)] transition-transform group-hover:translate-x-0.5" />
+                        </button>
+                      </motion.li>
+                    )
+                  })}
+                  {attention.length > 7 && (
+                    <li>
+                      <button type="button" onClick={() => navigate('/admin/colaboradores')} className="mt-1 w-full rounded-lg px-2 py-2 text-left text-[0.8125rem] font-semibold text-[var(--accent-text)] transition-colors hover:bg-[var(--bg-subtle)]">
+                        Ver todos os {attention.length} →
+                      </button>
+                    </li>
+                  )}
+                </motion.ul>
               )}
-            </motion.ul>
-          )}
-        </SectionCard>
+            </div>
+          </div>
 
-        <SectionCard title="Saúde do treinamento">
-          <ul className="flex flex-col gap-3">
-            {saude.map((item) => (
-              <li key={item.l} className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[0.875rem] text-[var(--text-secondary)]">{item.l}</p>
-                  <p className="text-[0.72rem] text-[var(--text-muted)]">{item.s}</p>
-                </div>
-                <span className="text-[1.05rem] font-bold text-[var(--ink)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {loading ? '—' : <AnimatedNumber value={item.v} />}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            onClick={() => navigate('/admin/relatorios')}
-            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] py-2 text-[0.8125rem] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)] hover:text-[var(--ink)]"
-          >
-            Ver relatórios <ArrowRight className="h-4 w-4" />
-          </button>
-        </SectionCard>
-      </div>
+          {/* CARD DE CONTEXTO — quieto, secundário */}
+          <SectionCard title="Saúde do treinamento">
+            <ul className="flex flex-col gap-3">
+              {saude.map((item) => (
+                <li key={item.l} className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[0.875rem] text-[var(--text-secondary)]">{item.l}</p>
+                    <p className="text-[0.72rem] text-[var(--text-muted)]">{item.s}</p>
+                  </div>
+                  <span className="text-[1.05rem] font-bold text-[var(--ink)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {loading ? '—' : <AnimatedNumber value={item.v} />}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => navigate('/admin/relatorios')}
+              className="group mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] py-2 text-[0.8125rem] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)] hover:text-[var(--ink)]"
+            >
+              Ver relatórios <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </SectionCard>
+        </motion.div>
+      </motion.div>
     </>
   )
 }
@@ -288,10 +310,10 @@ function GerenteDashboard() {
   const avg = team.length ? Math.round((team.reduce((a, e) => a + e.progress, 0) / team.length) * 100) : 0
 
   const kpiCards = [
-    { label: 'Minha equipe', value: team.length, sub: 'colaboradores', icon: Users, tone: 'orange' as const, to: '/admin/colaboradores' },
-    { label: 'Concluíram', value: `${pct(concluded, team.length)}%`, sub: `${concluded}/${team.length} pessoas`, icon: CheckCircle2, tone: 'green' as const, to: '/admin/colaboradores' },
-    { label: 'Assinaram', value: `${pct(signed, team.length)}%`, sub: `${signed}/${team.length} pessoas`, icon: PenLine, tone: 'gold' as const, to: '/admin/colaboradores' },
-    { label: 'Progresso médio', value: `${avg}%`, sub: 'da equipe', icon: TrendingUp, tone: 'brown' as const, to: '/admin/colaboradores' },
+    { label: 'Minha equipe', value: team.length, sub: 'colaboradores', icon: Users, tone: 'orange' as const, to: '/admin/colaboradores', progress: undefined as number | undefined },
+    { label: 'Concluíram', value: `${pct(concluded, team.length)}%`, sub: `${concluded}/${team.length} pessoas`, icon: CheckCircle2, tone: 'green' as const, to: '/admin/colaboradores', progress: pct(concluded, team.length) as number | undefined },
+    { label: 'Assinaram', value: `${pct(signed, team.length)}%`, sub: `${signed}/${team.length} pessoas`, icon: PenLine, tone: 'gold' as const, to: '/admin/colaboradores', progress: pct(signed, team.length) as number | undefined },
+    { label: 'Progresso médio', value: `${avg}%`, sub: 'da equipe', icon: TrendingUp, tone: 'brown' as const, to: '/admin/colaboradores', progress: avg as number | undefined },
   ]
 
   return (
@@ -309,7 +331,7 @@ function GerenteDashboard() {
       >
         {kpiCards.map((k) => (
           <motion.div key={k.label} variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-            <StatCard icon={k.icon} tone={k.tone} value={k.value} label={k.label} sub={k.sub} loading={loading} onClick={() => navigate(k.to)} />
+            <StatCard icon={k.icon} tone={k.tone} value={k.value} label={k.label} sub={k.sub} loading={loading} progress={k.progress} onClick={() => navigate(k.to)} />
           </motion.div>
         ))}
       </motion.div>
