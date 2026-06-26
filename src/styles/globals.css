@@ -193,3 +193,24 @@
     padding-bottom: var(--safe-bottom);
   }
 }
+
+/* Acessibilidade: respeita prefers-reduced-motion (espelha o admin.css).
+   Cobre animações/transições CSS. Loops do Framer Motion precisam de
+   useReducedMotion() por componente — Feed/admin já fazem; demais a evoluir. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Foco visível por teclado em todo o app do colaborador (não afeta toque/clique). */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+  border-radius: 6px;
+}

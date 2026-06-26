@@ -10,7 +10,7 @@ export default function Splash() {
   const navigate = useNavigate()
   const { theme } = useTheme()
   const isLight = theme === 'light'
-  const welcomeText = getAdminData().splashConfig.welcomeText
+  const welcomeText = getAdminData().splashConfig.welcomeText || 'é provar e ser feliz'
 
   useEffect(() => {
     const current = localStorage.getItem('pralis:current-employee')

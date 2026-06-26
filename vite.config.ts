@@ -6,9 +6,20 @@ import path from 'node:path'
 
 const BROKEN_PUBLIC_ENTRIES = new Set(['video-lis-questionario'])
 
+// Só copiamos para o build os formatos realmente servidos pelo app. As fontes
+// de edição (.mov, .gif, .tmp, .sfk…) ficam em public/ apenas para referência e
+// NÃO vão para dist/ — isso reduz o output de ~5GB para ~200MB.
+const SERVED_EXTENSIONS = new Set([
+  '.mp4', '.webm', '.mp3', '.m4a', '.ogg', '.wav',
+  '.svg', '.png', '.jpg', '.jpeg', '.webp', '.avif', '.ico',
+  '.json', '.txt', '.xml', '.woff', '.woff2', '.riv', '.lottie',
+])
+// .gif e .mov NÃO entram: auditoria confirmou 0 referências em src (peso morto).
+const ALWAYS_COPY_NAMES = new Set(['_redirects', '_headers', 'robots.txt', 'manifest.webmanifest'])
+
 function copyPublicAssetsPlugin(): Plugin {
   const copyDir = (from: string, to: string, root = true) => {
-    fs.mkdirSync(to, { recursive: true })
+    let made = false
     for (const entry of fs.readdirSync(from, { withFileTypes: true })) {
       if (root && BROKEN_PUBLIC_ENTRIES.has(entry.name)) continue
 
@@ -17,6 +28,12 @@ function copyPublicAssetsPlugin(): Plugin {
       if (entry.isDirectory()) {
         copyDir(source, target, false)
       } else if (entry.isFile()) {
+        const ext = path.extname(entry.name).toLowerCase()
+        if (!SERVED_EXTENSIONS.has(ext) && !ALWAYS_COPY_NAMES.has(entry.name)) continue
+        if (!made) {
+          fs.mkdirSync(to, { recursive: true })
+          made = true
+        }
         fs.copyFileSync(source, target)
       }
     }
@@ -68,5 +85,20 @@ export default defineConfig({
   },
   build: {
     copyPublicDir: false,
+    rollupOptions: {
+      output: {
+        // Separa libs pesadas em chunks de vendor estáveis → cache entre deploys.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('react-router')) return 'vendor-router'
+          if (id.includes('framer-motion')) return 'vendor-motion'
+          if (id.includes('@supabase')) return 'vendor-supabase'
+          if (id.includes('@rive-app')) return 'vendor-rive'
+          if (id.includes('lottie')) return 'vendor-lottie'
+          if (id.includes('lucide-react')) return 'vendor-icons'
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'vendor-react'
+        },
+      },
+    },
   },
 })

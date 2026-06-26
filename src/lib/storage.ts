@@ -53,14 +53,28 @@ function uid() {
       })
 }
 
+/** Bytes aleatórios criptograficamente seguros (CSPRNG), com fallback. */
+function randomBytes(n: number): Uint8Array {
+  const out = new Uint8Array(n)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(out)
+  } else {
+    for (let i = 0; i < n; i++) out[i] = Math.floor(Math.random() * 256)
+  }
+  return out
+}
+
 export function makeToken() {
-  const part = () => Math.random().toString(36).slice(2, 8)
-  return `${part()}${part()}`
+  // 12 chars base36 a partir de bytes CSPRNG (tokens de acesso são "segredos").
+  return Array.from(randomBytes(9))
+    .map((b) => b.toString(36).padStart(2, '0'))
+    .join('')
+    .slice(0, 12)
 }
 
 export function makeAccessCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('')
+  return Array.from(randomBytes(6), (b) => alphabet[b % alphabet.length]).join('')
 }
 
 // ------------------------------------------------------------

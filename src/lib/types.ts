@@ -74,6 +74,16 @@ export interface SignatureRecord {
   ip_address: string | null
   confirmed: boolean
   terms: string[]
+  // Metadados aditivos para robustez probatória (Lei 14.063/2020).
+  // Capturados no cliente; IP/timestamp de servidor entram quando o Supabase
+  // for ligado (ver docs/IMPLEMENTATION_PLAN.md). Todos opcionais → retrocompatível.
+  terms_version?: string
+  /** SHA-256 (hex) do HTML exato dos termos exibidos no momento da assinatura. */
+  document_hash?: string
+  user_agent?: string
+  signer_name?: string
+  signer_cpf?: string
+  app_version?: string
 }
 
 export interface VideoView {

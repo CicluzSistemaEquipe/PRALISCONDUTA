@@ -105,11 +105,31 @@ export default function Completion() {
   const sign = async () => {
     if (!allChecked || busy || (!allModulesDone && !isDevMode())) return
     setBusy(true)
+
+    // Hash do documento exato que o colaborador assinou (integridade probatória).
+    let documentHash: string | undefined
+    try {
+      if (typeof crypto !== 'undefined' && crypto.subtle) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data.termsText ?? ''))
+        documentHash = Array.from(new Uint8Array(buf))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('')
+      }
+    } catch {
+      /* hash best-effort — não bloqueia a assinatura */
+    }
+
     const sig: SignatureRecord = {
       signed_at: new Date().toISOString(),
       ip_address: null,
       confirmed: true,
       terms: TERMS.map((term) => term.id),
+      terms_version: data.termsVersion,
+      document_hash: documentHash,
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+      signer_name: employee.name,
+      signer_cpf: employee.phone || undefined,
+      app_version: '1.0.0',
     }
     await saveSignature(employee.id, sig)
     setSignature(sig)
