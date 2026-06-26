@@ -90,7 +90,7 @@ export function StatCard({
         type="button"
         onClick={onClick}
         aria-label={`${label}: ${typeof value === 'string' || typeof value === 'number' ? value : ''} — ver detalhes`}
-        className={`${base} cursor-pointer hover:-translate-y-0.5 focus-visible:border-[var(--accent)] focus-visible:shadow-[0_0_0_3px_rgba(242,107,42,0.25)] focus-visible:outline-none`}
+        className={`${base} cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] focus-visible:border-[var(--accent)] focus-visible:shadow-[0_0_0_3px_rgba(242,107,42,0.25)] focus-visible:outline-none`}
       >
         {inner}
       </button>

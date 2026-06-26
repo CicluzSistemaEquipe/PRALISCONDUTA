@@ -68,7 +68,6 @@ function DonoDashboard() {
 
   const loading = rows === null
   const total = rows?.length ?? 0
-  const hasPeople = !loading && total > 0
 
   const kpis = useMemo(() => {
     const r = rows ?? []
@@ -103,12 +102,14 @@ function DonoDashboard() {
 
   const attention = useMemo(() => {
     const r = rows ?? []
-    const out: { e: EmployeeRow; reason: string; gold: boolean }[] = []
+    // Prioriza por ALAVANCAGEM: "Falta assinar" (1 clique p/ ficar conforme) antes de "Não começou".
+    const faltaAssinar: { e: EmployeeRow; reason: string; gold: boolean }[] = []
+    const naoComecou: { e: EmployeeRow; reason: string; gold: boolean }[] = []
     for (const e of r) {
-      if (!e.signed && e.progress === 0) out.push({ e, reason: 'Não começou', gold: false })
-      else if (!e.signed && e.totalModules > 0 && e.completedModules >= e.totalModules) out.push({ e, reason: 'Falta assinar', gold: true })
+      if (!e.signed && e.totalModules > 0 && e.completedModules >= e.totalModules) faltaAssinar.push({ e, reason: 'Falta assinar', gold: true })
+      else if (!e.signed && e.progress === 0) naoComecou.push({ e, reason: 'Não começou', gold: false })
     }
-    return out
+    return [...faltaAssinar, ...naoComecou]
   }, [rows])
 
   const notStarted = (rows ?? []).filter((e) => !e.signed && e.progress === 0).length
@@ -162,7 +163,14 @@ function DonoDashboard() {
       {/* Distribuição da jornada — uma visão escaneável do time inteiro */}
       <div className="mb-4">
         <SectionCard title="Distribuição da jornada">
-          {!hasPeople ? (
+          {loading ? (
+            <div>
+              <Skeleton className="h-3 w-full" />
+              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2.5">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-4 w-28" />)}
+              </div>
+            </div>
+          ) : total === 0 ? (
             <EmptyState icon={Users} title="Sem dados ainda" hint="A distribuição aparece quando houver colaboradores." compact />
           ) : (
             <StackedBar stages={stages} total={total} />
@@ -176,8 +184,26 @@ function DonoDashboard() {
           title="Precisam de atenção"
           action={attention.length > 0 ? <span className="adm-badge adm-badge--gold">{attention.length}</span> : undefined}
         >
-          {!hasPeople ? (
-            <EmptyState icon={UserPlus} title="Nenhum colaborador ainda" hint="Cadastre o primeiro colaborador para acompanhar por aqui." />
+          {loading ? (
+            <div className="-mx-1 flex flex-col gap-1">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-2 py-2">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <div className="flex-1">
+                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="mt-1.5 h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : total === 0 ? (
+            <EmptyState
+              icon={UserPlus}
+              title="Cadastre seu primeiro colaborador"
+              hint="Adicione alguém e envie o link de treinamento — o acompanhamento começa aqui."
+              action={<button className="adm-btn adm-btn--primary" onClick={() => navigate('/admin/colaboradores')}><UserPlus className="h-[18px] w-[18px]" strokeWidth={2} /> Cadastrar colaborador</button>}
+            />
           ) : attention.length === 0 ? (
             <EmptyState icon={CheckCircle2} title="Tudo certo" hint="Toda a equipe está em dia — ninguém parado ou pendente de assinatura." compact />
           ) : (
@@ -191,7 +217,7 @@ function DonoDashboard() {
                   <button
                     type="button"
                     onClick={() => navigate(`/admin/colaboradores?q=${encodeURIComponent(e.employee.name)}`)}
-                    className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[var(--bg-subtle)] focus-visible:bg-[var(--bg-subtle)] focus-visible:outline-none"
+                    className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-[var(--bg-subtle)] focus-visible:bg-[var(--bg-subtle)] focus-visible:outline-none active:scale-[0.99]"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] text-[0.7rem] font-bold text-white">{initials(e.employee.name)}</span>
                     <span className="min-w-0 flex-1">
