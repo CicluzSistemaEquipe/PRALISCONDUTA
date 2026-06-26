@@ -33,6 +33,10 @@ export function newTextStory(): Story {
   return { type: 'text', tag: 'Seção', title: 'Novo slide', paragraphs: ['Texto do slide.'] }
 }
 
+export function newPollStory(): Story {
+  return { type: 'poll', question: 'Como você avalia este conteúdo?', options: ['Muito bom', 'Bom', 'Pode melhorar'] }
+}
+
 export function newQuizQuestion(): QuizQuestion {
   return {
     id: `q-${Date.now().toString(36)}`,
@@ -68,7 +72,7 @@ export function slideKind(s: Story): SlideKind | null {
 
 /** Indica se o slide é editável no editor de slides. */
 export function isEditableSlide(s: Story): boolean {
-  return s.type === 'text' || s.type === 'lis'
+  return s.type === 'text' || s.type === 'lis' || s.type === 'poll'
 }
 
 /** Converte um slide entre os tipos simplificados, preservando o texto. */

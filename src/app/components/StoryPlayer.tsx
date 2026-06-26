@@ -28,6 +28,9 @@ interface StoryPlayerProps {
   onVideoWatched: (moduleId: string, videoId: string) => void
   watchedVideos: Set<string>
   quizSeed?: string
+  /** modo pré-visualização (admin): desliga auto-advance, conclusão automática
+   *  e atalhos de teclado globais. Aditivo — não afeta o app do colaborador. */
+  preview?: boolean
 }
 
 function storyPatternAssets(story: Story, index: number) {
@@ -60,6 +63,7 @@ export function StoryPlayer({
   onVideoWatched,
   watchedVideos,
   quizSeed,
+  preview = false,
 }: StoryPlayerProps) {
   const stories = module.stories
   const [index, setIndex] = useState(Math.min(startIndex, stories.length - 1))
@@ -80,22 +84,24 @@ export function StoryPlayer({
       const current = stories[index]
       const waitingForNarration =
         current?.type === 'text' && Boolean(current.audioSrc) && direction > 0 && target > index
-      if (!force && waitingForNarration && fraction < 0.995) return
+      if (!force && !preview && waitingForNarration && fraction < 0.995) return
       // bloqueia avanço em slide de vídeo enquanto não assistido
       const waitingForVideo =
         current?.type === 'video' && !watchedVideos.has(current.videoId) && direction > 0
-      if (!force && waitingForVideo) return
+      if (!force && !preview && waitingForVideo) return
       if (target >= stories.length) {
-        onModuleComplete()
-        onClose()
+        if (!preview) {
+          onModuleComplete()
+          onClose()
+        }
         return
       }
       setDir(direction)
       setIndex(target)
       onIndexChange?.(target)
-      soundDing()
+      if (!preview) soundDing()
     },
-    [stories, index, fraction, watchedVideos, onClose, onModuleComplete, onIndexChange],
+    [stories, index, fraction, watchedVideos, onClose, onModuleComplete, onIndexChange, preview],
   )
 
   const handleQuizAnswer = useCallback(
@@ -121,6 +127,7 @@ export function StoryPlayer({
 
   // timer automático Instagram-style para slides lis e text
   useEffect(() => {
+    if (preview) return // no preview o slide fica parado para inspeção
     const s = stories[index]
     let duration = 0
     if (s.type === 'lis' && !s.videoSrc) {
@@ -142,15 +149,16 @@ export function StoryPlayer({
       }
     }, 50)
     return () => clearInterval(id)
-  }, [index, stories])
+  }, [index, stories, preview])
 
   // marca conclusão ao chegar no card de completion
   useEffect(() => {
-    if (story.type === 'completion') onModuleComplete()
-  }, [story, onModuleComplete])
+    if (story.type === 'completion' && !preview) onModuleComplete()
+  }, [story, onModuleComplete, preview])
 
-  // navegação por teclado
+  // navegação por teclado (desligada no preview p/ não roubar as setas do admin)
   useEffect(() => {
+    if (preview) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') nextNormal()
       else if (e.key === 'ArrowLeft') prev()
@@ -158,7 +166,7 @@ export function StoryPlayer({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [nextNormal, prev, onClose])
+  }, [nextNormal, prev, onClose, preview])
 
   const accent = module.accent
   const [g0] = module.gradient

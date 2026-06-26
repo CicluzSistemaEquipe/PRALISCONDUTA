@@ -6,23 +6,24 @@ import {
   Trash2, ChevronDown, Users, Film,
   ClipboardList, Flag, MessageSquare, FileText, Sparkles, Eye,
   Tag, Palette, UploadCloud, FileVideo, X as XIcon,
-  GripVertical, Save,
+  GripVertical, Save, BarChart3,
 } from 'lucide-react'
 import { useAdminStore } from '@/lib/adminStore'
 import { ROLES, type Module, type Role, type Story } from '@/lib/types'
 import { ModulePreview } from '../components/ModulePreview'
 import { SlideEditor } from '../components/SlideEditor'
+import { PollSlideEditor } from '../components/PollSlideEditor'
 import { QuizEditor } from '../components/QuizEditor'
 import { ModuleIcon } from '@/app/components/ModuleIcon'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { EmptyState } from '../components/ui'
 import {
-  isEditableSlide, newTextStory, newQuizQuestion,
+  isEditableSlide, newTextStory, newPollStory, newQuizQuestion,
   firstQuizIndex, firstVideoIndex, moveItem,
 } from '../lib/modules'
 
 type Tab     = 'info' | 'conteudo' | 'video' | 'quiz'
-type AddKind = 'texto' | 'destaque' | 'lis'
+type AddKind = 'texto' | 'destaque' | 'lis' | 'enquete'
 type VideoStory = Extract<Story, { type: 'video' }>
 type QuizStory  = Extract<Story, { type: 'quiz' }>
 
@@ -46,6 +47,7 @@ const ADD_KINDS: { id: AddKind; label: string; Icon: typeof FileText; hint: stri
   { id: 'texto',    label: 'Texto',       Icon: FileText,      hint: 'Slide com título e parágrafos' },
   { id: 'destaque', label: 'Destaque',    Icon: Sparkles,      hint: 'Texto com frase em destaque' },
   { id: 'lis',      label: 'Fala da Lis', Icon: MessageSquare, hint: 'A Lis narra este conteúdo' },
+  { id: 'enquete',  label: 'Enquete',     Icon: BarChart3,     hint: 'Pergunta de opinião, sem certo/errado' },
 ]
 
 const READONLY_SLIDE: Record<string, { Icon: typeof Film; label: string; hint: string }> = {
@@ -58,6 +60,7 @@ const READONLY_SLIDE: Record<string, { Icon: typeof Film; label: string; hint: s
 // ── helpers ───────────────────────────────────────────────────────────────────
 function slideTypeInfo(s: Story) {
   if (s.type === 'lis') return { label: 'Fala da Lis', Icon: MessageSquare }
+  if (s.type === 'poll') return { label: 'Enquete', Icon: BarChart3 }
   if (s.type === 'text' && s.highlight !== undefined)
     return { label: 'Destaque', Icon: Sparkles }
   return { label: 'Texto', Icon: FileText }
@@ -66,6 +69,7 @@ function slideTypeInfo(s: Story) {
 function slidePreview(s: Story): string {
   if (s.type === 'text') return s.title || '(sem título)'
   if (s.type === 'lis')  return s.text ? s.text.slice(0, 80) + (s.text.length > 80 ? '…' : '') : '(sem texto)'
+  if (s.type === 'poll') return s.question || '(sem pergunta)'
   return ''
 }
 
@@ -141,6 +145,7 @@ export default function AdminModuloEditor() {
     let newStory: Story
     if (kind === 'lis')      newStory = { type: 'lis', state: 'talking', text: 'Escreva aqui o que a Lis vai falar…' }
     else if (kind === 'destaque') newStory = { type: 'text', tag: 'Seção', title: 'Novo slide', paragraphs: ['Texto do slide.'], highlight: 'Frase em destaque.' }
+    else if (kind === 'enquete') newStory = newPollStory()
     else                     newStory = newTextStory()
     setStories((s) => { const n = s.slice(); n.splice(insertAt, 0, newStory); return n })
     setSel(insertAt)
@@ -211,6 +216,7 @@ export default function AdminModuloEditor() {
     tab === 'video' ? video :
     tab === 'quiz'  ? quiz  :
     mod.stories[sel] ?? mod.stories.find(isEditableSlide) ?? null
+  const previewIndex = previewStory ? mod.stories.indexOf(previewStory) : sel
 
   // ── salvar ────────────────────────────────────────────────────────────────
   const save = () => {
@@ -274,7 +280,7 @@ export default function AdminModuloEditor() {
       </div>
 
       {/* ── conteúdo das abas + preview ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
 
         <div className="min-w-0">
           <AnimatePresence mode="wait">
@@ -589,10 +595,17 @@ export default function AdminModuloEditor() {
                           return (
                             <div key={`expanded-${i}`} className="list-none">
                               <div className="overflow-hidden rounded-xl border-2 border-[var(--accent)] bg-white">
-                                <SlideEditor story={s} index={i} total={mod.stories.length}
-                                  onChange={(ns) => updateStory(i, ns)}
-                                  onDelete={() => deleteStory(i)}
-                                  onMove={(dir) => moveStory(i, dir)} />
+                                {s.type === 'poll' ? (
+                                  <PollSlideEditor story={s} index={i} total={mod.stories.length}
+                                    onChange={(ns) => updateStory(i, ns)}
+                                    onDelete={() => deleteStory(i)}
+                                    onMove={(dir) => moveStory(i, dir)} />
+                                ) : (
+                                  <SlideEditor story={s} index={i} total={mod.stories.length}
+                                    onChange={(ns) => updateStory(i, ns)}
+                                    onDelete={() => deleteStory(i)}
+                                    onMove={(dir) => moveStory(i, dir)} />
+                                )}
                               </div>
                             </div>
                           )
@@ -797,9 +810,9 @@ export default function AdminModuloEditor() {
           </AnimatePresence>
         </div>
 
-        {/* ── coluna de preview (espelho fiel do app — dark por ser o app real) ── */}
+        {/* ── coluna de preview (StoryPlayer real do app, ao vivo) ── */}
         <div className="sticky top-5 hidden lg:block">
-          <ModulePreview module={mod} story={previewStory} />
+          <ModulePreview module={mod} startIndex={previewIndex} />
         </div>
       </div>
     </div>
