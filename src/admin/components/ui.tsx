@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowUpRight, type LucideIcon } from 'lucide-react'
+import { ArrowUpRight, X, type LucideIcon } from 'lucide-react'
 
 /* ============================================================
    Primitivos do Admin (Design System v1) — claros, reutilizáveis.
@@ -178,4 +178,70 @@ export function EmptyState({
 /** Skeleton de carregamento — shimmer premium (respeita prefers-reduced-motion via admin.css). */
 export function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`adm-skel ${className}`} />
+}
+
+/* ---------- Avatar com iniciais (compartilhado por todas as telas) ---------- */
+export function initials(name: string) {
+  const p = name.trim().split(/\s+/)
+  return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
+}
+
+export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
+  return (
+    <div
+      className="flex shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] font-bold text-white"
+      style={{ width: size, height: size, fontSize: size * 0.34 }}
+    >
+      {initials(name)}
+    </div>
+  )
+}
+
+/* ---------- Modal (bottom-sheet no mobile, centralizado no desktop) ----------
+   Fecha com ESC e move o foco para dentro ao abrir (acessibilidade). */
+export function ModalShell({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    ref.current?.focus()
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <>
+      <motion.div className="fixed inset-0 z-50 bg-[rgba(26,23,20,0.45)]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" onClick={onClose}>
+        <motion.div ref={ref} role="dialog" aria-modal="true" tabIndex={-1}
+          initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 28 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+          onClick={(e) => e.stopPropagation()}
+          className="max-h-[92dvh] w-full max-w-[460px] overflow-y-auto rounded-t-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-md)] outline-none sm:rounded-2xl"
+        >
+          {children}
+        </motion.div>
+      </div>
+    </>
+  )
+}
+
+export function ModalHeader({ icon: Icon, eyebrow, title, onClose }: { icon: LucideIcon; eyebrow: string; title: string; onClose: () => void }) {
+  return (
+    <div className="mb-5 flex items-start justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--accent-tint)]">
+          <Icon className="h-5 w-5 text-[#f26b2a]" strokeWidth={1.9} />
+        </div>
+        <div>
+          <p className="adm-eyebrow">{eyebrow}</p>
+          <h2 className="mt-0.5 text-[1.15rem] font-semibold text-[var(--ink)]">{title}</h2>
+        </div>
+      </div>
+      <button type="button" onClick={onClose} aria-label="Fechar"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
+        <X className="h-[18px] w-[18px]" />
+      </button>
+    </div>
+  )
 }

@@ -615,7 +615,7 @@ export default function AdminModuloEditor() {
                               </span>
                               <div className="min-w-0 flex-1">
                                 <div className="mb-0.5 flex items-center gap-2">
-                                  <span className="adm-eyebrow">Slide {i + 1}</span>
+                                  <span className="adm-eyebrow">Bloco {i + 1}</span>
                                   <span className="adm-badge adm-badge--muted">{info.label}</span>
                                 </div>
                                 <p className="truncate text-[0.875rem] font-semibold text-[var(--ink)]">
@@ -626,7 +626,7 @@ export default function AdminModuloEditor() {
                                 <button
                                   type="button"
                                   onClick={() => deleteStory(i)}
-                                  aria-label={`Excluir slide ${i + 1}`}
+                                  aria-label={`Excluir bloco ${i + 1}`}
                                   className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--danger)] transition-colors hover:bg-[var(--danger-bg)]"
                                 >
                                   <Trash2 size={14} />

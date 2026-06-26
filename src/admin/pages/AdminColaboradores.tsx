@@ -13,7 +13,7 @@ import { getAdminSession, isDono, listGerentes } from '../auth'
 import { enviarNotificacao } from '@/lib/notifications'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
-import { EmptyState, Skeleton } from '../components/ui'
+import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader } from '../components/ui'
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 export function acessoLink(id: string) {
@@ -31,63 +31,8 @@ function maskCPF(v: string) {
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
 }
 const rawCPF = (v: string) => v.replace(/\D/g, '')
-function initials(name: string) {
-  const p = name.trim().split(/\s+/)
-  return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
-}
 const todayISO = () => new Date().toISOString().slice(0, 10)
 const quizPctOf = (r: EmployeeRow) => (r.quizTotal > 0 ? Math.round((r.quizCorrect / r.quizTotal) * 100) : null)
-
-function Avatar({ name, size = 36 }: { name: string; size?: number }) {
-  return (
-    <div
-      className="flex shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] font-bold text-white"
-      style={{ width: size, height: size, fontSize: size * 0.34 }}
-    >
-      {initials(name)}
-    </div>
-  )
-}
-
-// ── Modal shell (bottom-sheet no mobile, centralizado no desktop) ────────────
-function ModalShell({ onClose, children }: { onClose: () => void; children: ReactNode }) {
-  return (
-    <>
-      <motion.div className="fixed inset-0 z-50 bg-[rgba(26,23,20,0.45)]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" onClick={onClose}>
-        <motion.div role="dialog" aria-modal="true"
-          initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 28 }}
-          transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-          onClick={(e) => e.stopPropagation()}
-          className="max-h-[92dvh] w-full max-w-[460px] overflow-y-auto rounded-t-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-md)] sm:rounded-2xl"
-        >
-          {children}
-        </motion.div>
-      </div>
-    </>
-  )
-}
-
-function ModalHeader({ icon: Icon, eyebrow, title, onClose }: { icon: typeof UserPlus; eyebrow: string; title: string; onClose: () => void }) {
-  return (
-    <div className="mb-5 flex items-start justify-between gap-3">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--accent-tint)]">
-          <Icon className="h-5 w-5 text-[#f26b2a]" strokeWidth={1.9} />
-        </div>
-        <div>
-          <p className="adm-eyebrow">{eyebrow}</p>
-          <h2 className="mt-0.5 text-[1.15rem] font-semibold text-[var(--ink)]">{title}</h2>
-        </div>
-      </div>
-      <button type="button" onClick={onClose} aria-label="Fechar"
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
-        <X className="h-[18px] w-[18px]" />
-      </button>
-    </div>
-  )
-}
 
 // ── Modal: novo colaborador ──────────────────────────────────────────────────
 const maskPhone = (v: string) => {

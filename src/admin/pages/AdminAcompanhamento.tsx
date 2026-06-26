@@ -7,22 +7,10 @@ import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
 import { listGerentes } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf, type EmpStatus } from '../components/StatusBadge'
-import { EmptyState, Skeleton } from '../components/ui'
+import { EmptyState, Skeleton, Avatar } from '../components/ui'
 import { ColaboradorDetailModal } from './AdminColaboradores'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-function initials(name: string) {
-  const p = name.trim().split(/\s+/)
-  return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
-}
-function Avatar({ name, size = 34 }: { name: string; size?: number }) {
-  return (
-    <div className="flex shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] font-bold text-white"
-      style={{ width: size, height: size, fontSize: size * 0.34 }}>
-      {initials(name)}
-    </div>
-  )
-}
 function fmtDateTime(dt: string | null) {
   return dt ? new Date(dt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
 }

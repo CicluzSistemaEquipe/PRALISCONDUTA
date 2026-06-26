@@ -30,7 +30,7 @@ function rolesLabel(m: Module): string {
 
 function counts(m: Module) {
   return {
-    slides: m.stories.filter((s) => s.type === 'text' || s.type === 'lis').length,
+    blocks: m.stories.length,
     quiz:   m.stories.some((s) => s.type === 'quiz'),
     video:  m.stories.some((s) => s.type === 'video'),
   }
@@ -140,13 +140,14 @@ function ModuleRow({ m, highlight, cardRef, onToggle, onEdit, onDelete }: {
           <span className={`truncate text-[0.9375rem] font-semibold ${inactive ? 'text-[var(--text-muted)]' : 'text-[var(--ink)]'}`}>
             {m.title}
           </span>
+          {(m.status ?? 'published') === 'draft' && <span className="adm-badge adm-badge--gold">Rascunho</span>}
           {inactive && <span className="adm-badge adm-badge--muted">Inativo</span>}
         </div>
 
         <p className="truncate text-[0.75rem] text-[var(--text-muted)]">{rolesLabel(m)}</p>
 
         <div className="mt-0.5 flex flex-wrap gap-1.5">
-          <ContentChip icon={Layers} label={`${c.slides} slide${c.slides !== 1 ? 's' : ''}`} />
+          <ContentChip icon={Layers} label={`${c.blocks} bloco${c.blocks !== 1 ? 's' : ''}`} />
           {c.video && <ContentChip icon={Video} label="vídeo" />}
           {c.quiz && <ContentChip icon={HelpCircle} label="quiz" />}
         </div>
