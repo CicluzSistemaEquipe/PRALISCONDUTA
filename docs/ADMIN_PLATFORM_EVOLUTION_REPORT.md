@@ -119,10 +119,10 @@ regras nem novas queries**.
 > Escopadas, com plano. Várias dependem da **Fase 1 (Supabase/Storage)** dos docs da
 > plataforma. **Nada disso muda o app do colaborador.**
 
-### A. Gerentes ↔ Equipe (drill-down) — *próxima, local*
-Clicar no gerente → ver a equipe, status agregado, pendências por colaborador e ações em
-massa (reenviar link a todos os pendentes). Reusa a mesma visão 360°. Local, sem
-dependências.
+### A. Gerentes ↔ Equipe (drill-down) — ✅ **ENTREGUE** (ver Atualização abaixo)
+Clicar no gerente → ver a equipe, status agregado, pendências por colaborador e ações
+rápidas. Reusa a mesma visão 360° do colaborador. *(Ação em massa "reenviar a todos os
+pendentes" fica como evolução futura.)*
 
 ### B. Relatórios profissional — *próxima, local*
 Filtros combináveis (loja, gerente, cargo, status, período), busca, agrupamentos e
@@ -176,3 +176,35 @@ passo de maior impacto é o **roadmap C (editor de módulos + preview ao vivo)**
 de **D (mídia/Lis via Storage)**. Recomendo encadear: **B (Relatórios) + A (Gerentes
 drill-down)** ainda localmente, e então abrir a **Fase 1 de Supabase/Storage** para
 destravar C/D. Com C/D entregues, a plataforma chega a **9**.
+
+---
+
+## Atualização — Roadmap A (Gerentes drill-down) ENTREGUE
+
+Fechado o ciclo **Gerentes → Equipe → Colaboradores → Status de treinamento**, local e
+retrocompatível (sem Supabase, sem tocar app/lógica do colaborador).
+
+**Implementado (`src/admin/pages/AdminGerentes.tsx` + export reutilizado de
+`AdminColaboradores.tsx`):**
+- **Visão 360° do gerente** ao clicar: cabeçalho + **status geral da equipe** (total, em
+  dia, pendentes, progresso médio) e quantos já assinaram o termo.
+- **Equipe vinculada** listada com avatar, progresso (X/Y), status e **pendências por
+  colaborador** (badge de status + filtro).
+- **Filtros simples** dentro da equipe: Todos · Pendentes · Em dia · Assinaram.
+- **Ações rápidas** por colaborador: copiar link · WhatsApp · **ver colaborador** (abre a
+  mesma visão 360° do colaborador — uma fonte de verdade, "tudo interligado").
+- **Coluna "Equipe"** na tabela de gerentes (em dia / N pendentes); linhas e cards
+  clicáveis com affordance "Ver equipe".
+- **Empty state** claro quando o gerente não tem equipe; **responsivo** (tabela no desktop,
+  cards + bottom-sheet no mobile); design system preservado.
+
+**Gate:** `tsc -b` ✅ + `vite build` ✅. Validado visualmente (lista + drill-down).
+
+**Próximo:** **Relatórios Pro** (filtros combináveis por loja/gerente/cargo/status/período,
+agrupamentos e exportação CSV) — roadmap B, também local.
+
+### Nota da plataforma administrativa (revisada): **8,0 / 10**
+A área de **Pessoas agora está completa e interligada** (Colaboradores 360° + Gerentes
+360° + cadastro completo + navegação organizada) — sobe de ~9 e puxa a média. O caminho
+restante para 9+ segue sendo **Conteúdo** (editor de módulos + preview ao vivo, mídia, Lis
+visual) e **Relatórios Pro**.
