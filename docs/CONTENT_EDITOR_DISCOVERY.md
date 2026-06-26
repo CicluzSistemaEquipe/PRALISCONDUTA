@@ -252,3 +252,56 @@ Arquivos: `src/app/components/StoryPlayer.tsx` (prop `preview`),
 O **preview real ao vivo** (o pedido marcante) e a **enquete criável** elevam muito a
 confiança e a completude. Para 9+ falta a **timeline única de blocos** (C1 restante) e a
 **autoria de Lis/áudio + mídia** (C2/C3).
+
+---
+
+## Implementação — Fase C1 COMPLETA
+
+> `tsc -b` ✅ + `vite build` ✅. Validado visualmente (timeline + quiz inline + preview real).
+
+### Entregue (fecha a C1)
+- **Timeline única de blocos.** Vídeo e Quiz **deixaram de ser abas** e viraram **blocos
+  editáveis inline** na própria sequência (`VideoBlockEditor`, `QuizBlockEditor`, cada um
+  com cabeçalho de mover/excluir). As abas ficaram só **Informações + Conteúdo**. Adicionar
+  qualquer tipo pelo menu único (`+ Texto/Destaque/Fala da Lis/Enquete`, e `+ Vídeo`/`+ Quiz`
+  só aparecem se ainda não existirem). **Ordem no editor === ordem no app** —
+  `prepareStories` segue intacto no runtime.
+- **Drag & drop natural:** blocos da timeline (já existia), **perguntas do quiz** (Reorder +
+  alça via `useDragControls`) e **opções da enquete** (Reorder + alça).
+- **Rascunho → Publicar:** `Module.status` (`'draft' | 'published'`); botões **Salvar
+  rascunho** e **Publicar** + **badge** de status; módulo novo nasce rascunho;
+  `content.ts` **esconde `status === 'draft'`** do colaborador (aditivo/retrocompatível —
+  módulos sem status seguem visíveis). Não toca desbloqueio/progresso.
+- **Preview real ao vivo** mantido.
+
+### Arquivos
+`src/lib/types.ts` (`Module.status`), `src/lib/content.ts` (filtro de rascunho),
+`src/admin/lib/modules.ts` (`newPollStory` + módulo novo = rascunho),
+`src/admin/pages/AdminModuloEditor.tsx` (timeline unificada, blocos inline, publicar),
+`src/admin/components/QuizEditor.tsx` (DnD de perguntas),
+`src/admin/components/PollSlideEditor.tsx` (DnD de opções),
+`src/app/components/StoryPlayer.tsx` (prop `preview`, no commit anterior).
+
+### Riscos / observações
+- **DnD de opções da enquete** usa a string como identidade do `Reorder`. Em opções
+  **duplicadas** (texto idêntico) o arrasto pode ficar ambíguo. Mitigação futura: dar `id`
+  estável às opções (mudança de modelo — fica para depois). Reordenar por arrasto funciona
+  bem no caso comum (opções distintas).
+- **Lista de Módulos** ainda não mostra badge "Rascunho" — o autor vê o status no editor,
+  mas não na listagem. Quick-win do próximo incremento.
+- `prepareStories` ainda injeta um vídeo-placeholder antes do quiz **se não houver vídeo** —
+  comportamento de runtime **inalterado**; como agora dá pra adicionar o vídeo como bloco,
+  o autor controla a posição.
+
+### Nota do Editor de Conteúdo: **7,5 → 8,5 / 10**
+Timeline única + preview real + DnD + rascunho/publicar entregam o núcleo do Conceito B.
+Falta para 9+: autoria visual de **Lis/áudio com sincronização (cues)** e **mídia/upload**.
+
+## Próximos passos — C2 / C3
+- **C2 (local):** Lis/áudio com **timeline de cues** (sincronização visual) + legendas
+  (WebVTT) opcionais; **versionamento** completo (histórico de versões publicadas, badge
+  "Rascunho" na lista de módulos, preview de rascunho). Detalhe técnico em
+  `MEDIA_ARCHITECTURE.md` §5.
+- **C3 (Fase 1 — Storage):** **upload real** de áudio/vídeo (drag&drop → bucket, URL na
+  Story) + **biblioteca de mídia** (imagens/vídeos/áudios/anexos/miniaturas). Requer
+  Supabase Storage — fora do escopo local.
