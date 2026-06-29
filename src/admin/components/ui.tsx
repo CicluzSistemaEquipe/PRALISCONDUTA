@@ -201,10 +201,16 @@ export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
    Fecha com ESC e move o foco para dentro ao abrir (acessibilidade). */
 export function ModalShell({ onClose, children }: { onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
+  // Foco move-se para o modal SO na montagem. (Antes ficava em [onClose]: como o
+  // onClose costuma ser uma arrow nova a cada render, o efeito re-rodava a cada
+  // tecla e roubava o foco do input — impedindo digitar mais de 1 caractere.)
+  useEffect(() => {
+    ref.current?.focus()
+  }, [])
+  // Listener de ESC separado: pode re-vincular sem mexer no foco.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
-    ref.current?.focus()
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
