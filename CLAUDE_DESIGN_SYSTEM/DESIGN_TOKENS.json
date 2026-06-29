@@ -1,0 +1,265 @@
+{
+  "$meta": {
+    "name": "Pralís Design Tokens",
+    "version": "1.0.0",
+    "description": "Fonte única de tokens para o Claude Design. Extraído de tailwind.config.ts, src/styles/pralis.css e src/admin/admin.css. Dois mundos: app (colaborador, escuro/quente) e admin (claro/produtivo).",
+    "sourceOfTruth": ["tailwind.config.ts", "src/styles/pralis.css", "src/admin/admin.css"],
+    "rule": "Para valores exatos, o código vence. Nunca usar hex/px solto: referenciar estes tokens."
+  },
+
+  "color": {
+    "brand": {
+      "preto": "#000000",
+      "pretoQuente": "#0d0800",
+      "marrom": "#5e3731",
+      "dourado": "#b8860b",
+      "douradoLight": "#d4a017",
+      "douradoVivid": "#e6b020",
+      "laranja": "#f37435",
+      "laranjaLight": "#f8936a",
+      "branco": "#ffffff",
+      "creme": "#e8cfa0",
+      "_espigaSvgExport": {
+        "comment": "Hex literais do arquivo simbolo-espiga.svg (export Illustrator). Equivalentes visuais dos tokens canônicos acima — usar os tokens ao recriar em código.",
+        "laranja": "#ee7436",
+        "dourado": "#b2832c",
+        "marrom": "#5e3832"
+      }
+    },
+
+    "appDark": {
+      "_comment": "Mundo colaborador (tema padrão). Fundo quente, nunca preto puro. Sem sombras pesadas, sem blur.",
+      "bgBase": "#0d0800",
+      "bgDeep": "#050200",
+      "surfaceCard": "#1c1008",
+      "surfaceCardWarm": "#261508",
+      "surfaceCardStrong": "#221308",
+      "surfaceCardSoft": "rgba(255,255,255,0.05)",
+      "textPrimary": "#ffffff",
+      "textSecondary": "#e8cfa0",
+      "textMuted": "rgba(232,207,160,0.65)",
+      "textLocked": "rgba(255,255,255,0.46)",
+      "textOnGold": "#1a0e00",
+      "action": "#f37435",
+      "actionText": "#ffffff",
+      "gold": "#b8860b",
+      "goldLight": "#d4a017",
+      "success": "#5dd87a",
+      "successBg": "#0d2e18",
+      "danger": "#ef4444",
+      "dangerBg": "#2d0f0f",
+      "purple": "#a855f7",
+      "border": "rgba(184,134,11,0.22)",
+      "borderGold": "rgba(184,134,11,0.35)",
+      "strokeSoft": "rgba(255,255,255,0.08)",
+      "navBg": "#150900",
+      "navActiveBg": "#f37435"
+    },
+
+    "appLight": {
+      "_comment": "Tema claro OPCIONAL do app (toggle no Perfil). Tons quentes, não branco puro. Mesmo mundo emocional, mais claro.",
+      "bgBase": "#fdf8f2",
+      "bgDeep": "#f5ece1",
+      "bgSurface": "#ffffff",
+      "bgElevated": "#fff9f4",
+      "textPrimary": "#1a0e00",
+      "textSecondary": "#5e3731",
+      "textMuted": "#8a6058",
+      "action": "#f37435",
+      "gold": "#b8860b",
+      "success": "#1e7e4e",
+      "successNote": "No light o sucesso vira #1e7e4e porque #5dd87a não passa AA sobre creme. Ajuste de contraste do mesmo mundo.",
+      "danger": "#c0392b",
+      "stroke": "#e5d5c5",
+      "shadowCard": "0 1px 8px rgba(26,14,0,0.06)"
+    },
+
+    "admin": {
+      "_comment": "Mundo admin/CMS — SEMPRE claro. SaaS premium (Linear/Notion/Vercel + leveza Apple). 1 laranja por tela. SEM dourado na UI.",
+      "bgApp": "#FFFFFF",
+      "bgSubtle": "#FAF9F8",
+      "bgMuted": "#F5F4F2",
+      "bgInset": "#F2F0ED",
+      "border": "#ECEAE7",
+      "borderStrong": "#DAD6D1",
+      "ink": "#1A1714",
+      "textSecondary": "#57514B",
+      "textMuted": "#8A837C",
+      "textDisabled": "#B8B2AB",
+      "accent": "#F26B2A",
+      "accentHover": "#E25E1F",
+      "accentActive": "#C9501A",
+      "accentText": "#C9501A",
+      "accentTextNote": "#C9501A serve a active E a texto/link sobre branco (AA). Para texto sobre branco, referenciar o token accentText.",
+      "accentTint": "#FEF1EA",
+      "brandBrown": "#5E3731",
+      "brownTint": "#F4EFEE",
+      "success": "#1E7E4E",
+      "successBg": "#ECF7F0",
+      "danger": "#C0392B",
+      "dangerBg": "#FCEEEC",
+      "warning": "#B7791F",
+      "warningBg": "#FBF3E5",
+      "ring": "0 0 0 3px rgba(242,107,42,0.25)"
+    },
+
+    "chartOrder": ["#F26B2A", "#5E3731", "#64748b", "#5f7d7a", "#B7791F"],
+    "chartOrderNote": "Máx 4–5 cores dessaturadas: laranja → marrom → slate-500 → teal-gray → âmbar-700."
+  },
+
+  "spacing": {
+    "_scale": "Base 4",
+    "0": "0px", "1": "4px", "2": "8px", "3": "12px", "4": "16px",
+    "5": "20px", "6": "24px", "8": "32px", "10": "40px", "12": "48px", "16": "64px",
+    "usage": {
+      "cardPadding": "20–24px",
+      "inputPadding": "10px 12px",
+      "buttonPadding": "8px 14px",
+      "sectionRhythm": "32–40px",
+      "contentMaxWidth": "1200px",
+      "contentPaddingDesktop": "32px",
+      "contentPaddingMobile": "16px"
+    }
+  },
+
+  "radius": {
+    "sm": "6px",
+    "md": "8px",
+    "lg": "12px",
+    "card": "20px",
+    "pill": "999px",
+    "usage": {
+      "adminInputsButtons": "8px (md)",
+      "adminCards": "12px (lg)",
+      "appCards": "20px (card)",
+      "badgesButtonsPill": "999px (pill)"
+    }
+  },
+
+  "typography": {
+    "fontFamily": {
+      "display": ["MadeByDillan", "Georgia", "serif"],
+      "displayNote": "MadeByDillan SÓ dentro do logotipo. Nunca em texto de UI.",
+      "body": ["Montserrat", "system-ui", "sans-serif"],
+      "hand": ["TR Freehand", "cursive"],
+      "mono": ["JetBrains Mono", "IBM Plex Mono", "ui-monospace", "monospace"],
+      "presentationSerif": ["Fraunces", "Georgia", "serif"],
+      "presentationSerifNote": "Serif editorial permitido SÓ em apresentações/keynote, não na UI do produto."
+    },
+    "weight": { "regular": 400, "semibold": 600, "bold": 700 },
+    "numeric": "font-variant-numeric: tabular-nums (sempre em dados/KPIs)",
+    "scaleAdmin": {
+      "h1": { "size": 22, "line": 28, "weight": 700, "tracking": "-0.01em", "use": "título da tela" },
+      "h2": { "size": 17, "line": 24, "weight": 600, "use": "títulos de bloco" },
+      "h3": { "size": 15, "line": 22, "weight": 600, "use": "cards, grupos" },
+      "body": { "size": 14, "line": 22, "weight": 400, "use": "texto padrão" },
+      "bodyStrong": { "size": 14, "line": 22, "weight": 600, "use": "nome/valor destaque" },
+      "label": { "size": 13, "line": 18, "weight": 500, "use": "labels de input" },
+      "eyebrow": { "size": 11, "line": 16, "weight": 600, "tracking": "0.06em", "transform": "uppercase", "use": "overline, header de tabela" },
+      "kpi": { "size": "28-32", "weight": 700, "tracking": "-0.01em", "use": "métricas (tabular)" }
+    },
+    "scaleApp": {
+      "_comment": "App é mais expressivo (story fullscreen). Títulos maiores; corpo Montserrat legível.",
+      "heroTitle": { "size": "clamp(28px, 6vw, 40px)", "weight": 700 },
+      "storyTitle": { "size": "20-26px", "weight": 700 },
+      "body": { "size": "15-17px", "weight": 400 },
+      "caption": { "size": "11-13px", "weight": 600, "transform": "uppercase" }
+    }
+  },
+
+  "motion": {
+    "durations": {
+      "micro": { "admin": "120ms", "app": "150ms", "use": "hover, tap, troca de cor" },
+      "ui": { "admin": "180ms", "app": "220ms", "use": "revelar elemento, toggle" },
+      "panel": { "admin": "240ms", "app": "280ms", "use": "modal/drawer/slide" },
+      "page": { "admin": "280ms", "app": "300ms", "use": "transição de rota" },
+      "progressDraw": "600ms",
+      "kpiCountUp": "600ms",
+      "celebration": "~3000ms (confetti pontual)",
+      "maxFunctionalUi": "≤400ms"
+    },
+    "easing": {
+      "standard": "cubic-bezier(0.2, 0, 0, 1)",
+      "emphasized": "cubic-bezier(0.16, 1, 0.3, 1)",
+      "emphasizedNote": "Ease assinatura Pralís — entradas de conteúdo e apresentação."
+    },
+    "spring": {
+      "default": { "type": "spring", "stiffness": 200, "damping": 22 },
+      "navPill": { "type": "spring", "stiffness": 360, "damping": 30 }
+    },
+    "stagger": {
+      "adminLow": "40ms",
+      "appNarrative": "40-140ms",
+      "presentation": "70ms"
+    },
+    "rules": {
+      "animateOnly": ["transform", "opacity"],
+      "appForbidden": ["repeat: Infinity", "backdrop-filter: blur"],
+      "reducedMotion": "Sempre respeitar prefers-reduced-motion (desliga transforms, mantém opacity).",
+      "pageWrapper": "Wrapper de transição de página NUNCA começa em opacity:0 (evita tela preta se a animação travar)."
+    }
+  },
+
+  "zIndex": {
+    "base": 0,
+    "nav": 40,
+    "stickyHeader": 30,
+    "dropdown": 50,
+    "overlay": 60,
+    "modal": 70,
+    "toast": 80,
+    "note": "Valores de referência. No código, BottomNav usa z-40; progress/chrome z-30/40."
+  },
+
+  "elevation": {
+    "_principle": "Admin prefere BORDA 1px a sombra. App usa borda quente fina, sem sombra pesada.",
+    "appShadow": "none (telas críticas do colaborador) — sombras de marca (pralis-glow/pralis-card/play) só fora do caminho de performance",
+    "adminXs": "0 1px 2px rgba(26,23,20,.05)",
+    "adminSm": "0 1px 3px rgba(26,23,20,.06), 0 1px 2px rgba(26,23,20,.04)",
+    "adminMd": "0 8px 24px rgba(26,23,20,.10)",
+    "adminMdUse": "Só dropdown/popover/modal/toast. Cards usam borda, não sombra.",
+    "brandTailwind": {
+      "pralis-glow": "0 0 40px rgba(243,116,53,0.25)",
+      "pralis-card": "0 8px 30px rgba(0,0,0,0.3)",
+      "play": "0 8px 24px rgba(243,116,53,0.45)"
+    }
+  },
+
+  "grid": {
+    "columns": 12,
+    "gutter": "24px",
+    "adminSidebar": "248px (colapsa para rail 64px)",
+    "contentMaxWidth": "1200px",
+    "kpiColumns": { "lt480": 1, "480to1024": 2, "gte1024": 4 },
+    "appContainer": "mobile-first, app-shell fullscreen, max 480px em barras (BottomNav)"
+  },
+
+  "breakpoints": {
+    "sm": "640px",
+    "md": "768px",
+    "lg": "1024px",
+    "xl": "1280px",
+    "behavior": {
+      "adminSidebar": "fixa ≥1024; drawer off-canvas < 1024",
+      "tables": "stacked cards < 768",
+      "touchTarget": "≥44px no mobile; 36px controles desktop"
+    }
+  },
+
+  "iconography": {
+    "library": "lucide-react",
+    "stroke": 1.5,
+    "sizes": { "nav": "18px", "inline": "16px", "story": "21px" },
+    "color": "text-secondary; laranja quando ativo; nunca multicor",
+    "brandIcons": "ModuleIcon (flower, sprout, grain, wheat, bread, croissant, cake, star, heart, chef) — SVGs temáticos de padaria"
+  },
+
+  "accessibility": {
+    "contrastText": "≥4.5:1",
+    "contrastLargeIcon": "≥3:1",
+    "textOnWhite": "Usar accentText #C9501A (não o laranja vivo) para texto/link sobre branco.",
+    "statusRule": "Status sempre cor + ícone + texto (nunca só cor).",
+    "focus": "Sempre visível (ring). Esc fecha, Enter envia, setas no story.",
+    "target": "WCAG 2.2 AA"
+  }
+}

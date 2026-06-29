@@ -1,0 +1,456 @@
+{
+  "$meta": {
+    "name": "Pralís Component Map",
+    "version": "1.0.0",
+    "description": "Índice de máquina dos componentes reais do produto. Espelha COMPONENTS.md. Dois mundos: app (colaborador, escuro quente) e admin (CMS, claro). 'shared' lê tokens via ThemeContext.",
+    "tokenSource": "DESIGN_TOKENS.json",
+    "humanDoc": "COMPONENTS.md",
+    "philosophy": "../DESIGN_KNOWLEDGE_BASE_PRALIS/",
+    "rules": [
+      "Evolução é aditiva: novas props opcionais, novas variantes — nunca redefinir o existente.",
+      "Contrato congelado (não tocar): prevDone/desbloqueio, progresso, conclusão, assinatura, Module, Story.",
+      "Tokens em 'tokens' são caminhos do DESIGN_TOKENS.json. Nunca inventar hex.",
+      "Componente 'app' (🌙) não importa estética 'admin' (☀️) e vice-versa.",
+      "App: sem backdrop-filter blur, sem repeat:Infinity (motion.rules.appForbidden)."
+    ],
+    "worlds": {
+      "app": "🌙 colaborador — escuro quente, ação laranja, dourado de brilho, mobile-first",
+      "admin": "☀️ CMS — claro, 1 laranja por tela, sem dourado na UI, cards com borda",
+      "shared": "◐ resolve tokens por tema via ThemeContext"
+    }
+  },
+
+  "components": {
+    "SproutLogo": {
+      "world": "app",
+      "section": "marca",
+      "purpose": "Logo espiga animado (pathLength no traço da marca).",
+      "tokens": ["color.brand.laranja", "color.brand.dourado", "color.brand.marrom", "motion.easing.emphasized", "motion.durations.progressDraw"],
+      "use": "Splash, header de marca, vazios de marca.",
+      "avoid": "Como ícone genérico de UI ou repetido em listas.",
+      "states": ["idle", "drawing"]
+    },
+    "PralisSymbol": {
+      "world": "app",
+      "section": "marca",
+      "purpose": "Par de folhas — marca compacta.",
+      "tokens": ["color.brand.dourado", "color.brand.laranja", "motion.spring.default"],
+      "use": "Marca compacta em headers e selos.",
+      "avoid": "Quando a intenção é celebrar (use PralisSymbolX)."
+    },
+    "PralisSymbolX": {
+      "world": "app",
+      "section": "marca",
+      "purpose": "Variante celebrativa do símbolo (folhas + X).",
+      "tokens": ["color.brand.dourado", "color.brand.laranja", "color.appDark.success", "motion.spring.default", "motion.durations.celebration"],
+      "use": "Momento de conquista/conclusão.",
+      "avoid": "Fora de celebração — perde o significado."
+    },
+    "AnimatedBackground": {
+      "world": "app",
+      "section": "marca",
+      "purpose": "Fundo fixo, theme-aware, sutil.",
+      "tokens": ["color.appDark.bgBase", "color.appDark.bgDeep", "motion.rules.animateOnly"],
+      "use": "Camada de fundo do app-shell.",
+      "avoid": "Atrás de texto longo sem contraste; com repeat:Infinity (proibido)."
+    },
+    "Icon": {
+      "world": "app",
+      "section": "marca",
+      "purpose": "Wrapper do registry de ícones lucide.",
+      "tokens": ["iconography.stroke", "iconography.sizes", "iconography.color"],
+      "use": "Qualquer ícone funcional de UI do app.",
+      "avoid": "Multicor; ícone fora do registry."
+    },
+    "ModuleIcon": {
+      "world": "app",
+      "section": "marca",
+      "purpose": "SVGs temáticos de padaria (flower, sprout, grain, wheat, bread, croissant, cake, star, heart, chef).",
+      "tokens": ["color.appDark.gold", "color.appDark.action", "iconography.brandIcons"],
+      "use": "Identidade visual de um módulo/trilha.",
+      "avoid": "Como ícone funcional genérico (use Icon)."
+    },
+
+    "LisAvatar": {
+      "world": "app",
+      "section": "lis",
+      "purpose": "Mascote Lis com 7+ estados emocionais, Rive com fallback PNG.",
+      "tokens": ["color.appDark.action", "color.appDark.gold", "motion.spring.default"],
+      "use": "Presença da Lis em headers, cards e conclusão.",
+      "avoid": "Como avatar de usuário; em loop infinito.",
+      "states": ["idle", "happy", "celebrating", "thinking", "encouraging", "sad", "surprised", "loading", "fallbackPng"]
+    },
+    "LisHeaderAvatar": {
+      "world": "app",
+      "section": "lis",
+      "purpose": "LisAvatar com ring de progresso ao redor.",
+      "tokens": ["color.appDark.gold", "color.appDark.action", "motion.durations.progressDraw"],
+      "use": "Header do feed/trilha comunicando avanço.",
+      "avoid": "Onde não há progresso a mostrar.",
+      "states": ["idle", "progressDrawing"]
+    },
+    "LisCard": {
+      "world": "app",
+      "section": "lis",
+      "purpose": "Fala da Lis com typewriter + avatar/vídeo.",
+      "tokens": ["color.appDark.surfaceCard", "radius.card", "motion.stagger.appNarrative", "motion.rules.reducedMotion"],
+      "use": "Onboarding, dica, transição narrada.",
+      "avoid": "Texto puramente informativo/denso.",
+      "states": ["typing", "done", "withVideo"]
+    },
+
+    "StoryPlayer": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Shell de reprodução: barra, setas, swipe drag-x, teclado, auto-advance, prop preview.",
+      "tokens": ["motion.durations.panel", "motion.spring.default", "zIndex.stickyHeader", "accessibility.focus"],
+      "use": "Reproduzir qualquer trilha de Stories; reuso no admin via preview.",
+      "avoid": "Fora do fluxo de Story; como carrossel genérico. Não duplicar — reusar.",
+      "states": ["playing", "preview", "autoAdvancing", "ended"]
+    },
+    "StoryProgressBar": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Segmentos de progresso: ouro=feito, laranja=atual.",
+      "tokens": ["color.appDark.gold", "color.appDark.action", "motion.durations.progressDraw"],
+      "use": "Topo do StoryPlayer.",
+      "avoid": "Como barra de loading genérica.",
+      "states": ["done", "current", "upcoming"]
+    },
+    "TextCard": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Story de texto com narração TTS.",
+      "tokens": ["color.appDark.textPrimary", "color.appDark.textSecondary", "radius.card"],
+      "use": "Conteúdo textual de um Story.",
+      "avoid": "Vídeo (VideoCard); listas (SummaryCard).",
+      "states": ["idle", "playing"]
+    },
+    "VideoCard": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Player de vídeo — sempre dark.",
+      "tokens": ["color.appDark.bgDeep", "elevation.brandTailwind.play"],
+      "use": "Story de vídeo.",
+      "avoid": "Forçar tema claro (proibido aqui).",
+      "states": ["loading", "playing", "paused", "error"]
+    },
+    "QuizCard": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Quiz A–E com feedback, review e confetti.",
+      "tokens": ["color.appDark.success", "color.appDark.successBg", "color.appDark.danger", "color.appDark.dangerBg", "color.appDark.action", "motion.durations.celebration"],
+      "use": "Verificação de aprendizado.",
+      "avoid": "Coleta de opinião (use PollCard).",
+      "states": ["idle", "selected", "correct", "incorrect", "review"]
+    },
+    "PollCard": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Enquete single/multiple, sem certo/errado.",
+      "tokens": ["color.appDark.action", "radius.card"],
+      "use": "Opinião/sentimento.",
+      "avoid": "Avaliação com resposta correta (use QuizCard).",
+      "states": ["idle", "selected", "submitted"]
+    },
+    "SummaryCard": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Resumo em bullets.",
+      "tokens": ["color.appDark.surfaceCard", "color.appDark.gold", "motion.stagger.appNarrative"],
+      "use": "Fechar um bloco com pontos-chave.",
+      "avoid": "Texto corrido longo (use TextCard).",
+      "states": ["entering"]
+    },
+    "ValuesCard": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Apresenta os 5 valores.",
+      "tokens": ["color.appDark.gold", "color.appDark.action", "motion.stagger.appNarrative"],
+      "use": "Apresentar valores institucionais.",
+      "avoid": "Conteúdo genérico de lista.",
+      "states": ["entering"]
+    },
+    "WordByWord": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Revela texto palavra a palavra.",
+      "tokens": ["motion.stagger.appNarrative", "motion.easing.emphasized", "motion.rules.reducedMotion"],
+      "use": "Ênfase narrativa/dramática pontual.",
+      "avoid": "Texto longo (cansa).",
+      "states": ["revealing", "done"]
+    },
+    "TopicIllustration": {
+      "world": "app",
+      "section": "story",
+      "purpose": "SVG ilustrativo por tópico.",
+      "tokens": ["color.appDark.gold", "color.appDark.action", "motion.rules.animateOnly"],
+      "use": "Ilustrar o tema de um Story.",
+      "avoid": "Como ícone de UI funcional."
+    },
+    "CompletionCard": {
+      "world": "app",
+      "section": "story",
+      "purpose": "Conclusão com badge e confetti.",
+      "tokens": ["color.appDark.gold", "color.appDark.success", "motion.durations.celebration"],
+      "use": "Fim de módulo/trilha (celebração).",
+      "avoid": "Como tela de erro/vazio.",
+      "states": ["celebrating"]
+    },
+
+    "BottomNav": {
+      "world": "app",
+      "section": "nav",
+      "purpose": "Navegação raiz de 2 abas (Início→/feed, Perfil→/perfil) com pílula laranja layoutId nav-pill.",
+      "tokens": ["color.appDark.navBg", "color.appDark.navActiveBg", "motion.spring.navPill", "zIndex.nav", "breakpoints.behavior.touchTarget"],
+      "use": "Navegação raiz do app.",
+      "avoid": "Dentro do StoryPlayer (fullscreen); >2 abas sem revisão.",
+      "states": ["inicio", "perfil"]
+    },
+    "ModuleCard": {
+      "world": "app",
+      "section": "nav",
+      "purpose": "Card de módulo com estados de trilha e highlight recomendado.",
+      "tokens": ["color.appDark.action", "color.appDark.gold", "color.appDark.textLocked", "radius.card"],
+      "use": "Lista da trilha/feed.",
+      "avoid": "Conteúdo que não é módulo.",
+      "states": ["locked", "active", "in-progress", "done", "recommended"]
+    },
+    "SkeletonCard": {
+      "world": "app",
+      "section": "estado",
+      "purpose": "Placeholder na forma do ModuleCard.",
+      "tokens": ["color.appDark.surfaceCardSoft", "motion.rules.animateOnly"],
+      "use": "Carregamento da trilha.",
+      "avoid": "Após dados prontos; loading <300ms.",
+      "states": ["loading"]
+    },
+    "Loading": {
+      "world": "app",
+      "section": "estado",
+      "purpose": "Indicador de marca para boot/transição.",
+      "tokens": ["color.appDark.action", "motion.rules.appForbidden"],
+      "use": "Boot/transição sem layout conhecido.",
+      "avoid": "Onde cabe skeleton (preferir skeleton).",
+      "states": ["loading"]
+    },
+    "ErrorBoundary": {
+      "world": "app",
+      "section": "estado",
+      "purpose": "Captura erro de render; auto-reload de chunk (PWA).",
+      "tokens": ["color.appDark.danger", "color.appDark.dangerBg"],
+      "use": "Raiz de rotas/áreas do app.",
+      "avoid": "Validação de form (use estado de erro do campo).",
+      "states": ["error", "reloadingChunk"]
+    },
+    "ThemeToggle": {
+      "world": "shared",
+      "section": "estado",
+      "purpose": "Alterna tema (app: dark↔light opcional).",
+      "tokens": ["color.appLight", "color.appDark", "motion.durations.micro"],
+      "use": "Perfil do app.",
+      "avoid": "Telas que são sempre dark (ex.: VideoCard).",
+      "states": ["dark", "light"]
+    },
+    "DevToolbar": {
+      "world": "app",
+      "section": "estado",
+      "purpose": "Ferramenta de desenvolvimento.",
+      "tokens": [],
+      "use": "Apenas em desenvolvimento.",
+      "avoid": "Em produção."
+    },
+
+    "AdminLayout": {
+      "world": "admin",
+      "section": "shell",
+      "purpose": "Raiz .adm-root (sidebar + topbar + conteúdo).",
+      "tokens": ["color.admin.bgApp", "grid.contentMaxWidth", "spacing.usage.contentPaddingDesktop"],
+      "use": "Envolver toda tela do CMS.",
+      "avoid": "No app colaborador."
+    },
+    "AdminSidebar": {
+      "world": "admin",
+      "section": "shell",
+      "purpose": "Nav agrupada (Pessoas/Conteúdo/Análise), marca preta, ativo laranja, rail colapsável, drawer mobile.",
+      "tokens": ["grid.adminSidebar", "color.admin.accent", "color.admin.border", "breakpoints.behavior.adminSidebar"],
+      "use": "Navegação primária do CMS.",
+      "avoid": "Como menu secundário/contextual.",
+      "states": ["expanded", "rail", "drawerOpen", "active"]
+    },
+    "AdminTopbar": {
+      "world": "admin",
+      "section": "shell",
+      "purpose": "Saudação + data/hora viva + sino de notificação.",
+      "tokens": ["color.admin.ink", "color.admin.textSecondary", "zIndex.stickyHeader", "motion.rules.reducedMotion"],
+      "use": "Topo de toda tela admin.",
+      "avoid": "Empilhar com outra topbar."
+    },
+    "AdminPageHeader": {
+      "world": "admin",
+      "section": "shell",
+      "purpose": "Eyebrow + título + subtítulo + 1 ação primária.",
+      "tokens": ["typography.scaleAdmin.eyebrow", "typography.scaleAdmin.h1", "color.admin.accent", "radius.md"],
+      "use": "Cabeçalho de cada tela do CMS.",
+      "avoid": "Múltiplas ações primárias (1 accent por tela)."
+    },
+    "AdminGuard": {
+      "world": "admin",
+      "section": "shell",
+      "purpose": "Gate de acesso às rotas do admin.",
+      "tokens": [],
+      "use": "Proteger rotas do CMS.",
+      "avoid": "Lógica de UI; validação client como segurança.",
+      "states": ["loading", "allowed", "redirect"]
+    },
+
+    "StatCard": {
+      "world": "admin",
+      "section": "primitivos",
+      "purpose": "KPI com count-up e tone (orange/green/gold/brown/neutral).",
+      "tokens": ["color.admin.accent", "color.admin.success", "color.admin.warning", "color.admin.brandBrown", "color.admin.textSecondary", "typography.scaleAdmin.kpi", "motion.durations.kpiCountUp"],
+      "use": "Métrica única destacada.",
+      "avoid": "Bloco de texto; tabela.",
+      "states": ["loading", "countingUp", "ready"]
+    },
+    "SectionCard": {
+      "world": "admin",
+      "section": "primitivos",
+      "purpose": "Card de conteúdo com borda (não sombra).",
+      "tokens": ["color.admin.border", "radius.lg", "elevation._principle"],
+      "use": "Agrupar conteúdo numa seção.",
+      "avoid": "Como botão; aninhar cards de fundo."
+    },
+    "EmptyState": {
+      "world": "admin",
+      "section": "primitivos",
+      "purpose": "Ícone + texto + CTA para área vazia.",
+      "tokens": ["color.admin.textMuted", "color.admin.accent", "radius.md"],
+      "use": "Lista/área sem dados.",
+      "avoid": "Estado de erro (use mensagem de erro).",
+      "states": ["empty"]
+    },
+    "ModalShell": {
+      "world": "admin",
+      "section": "primitivos",
+      "purpose": "Modal com ESC e foco preso.",
+      "tokens": ["elevation.adminMd", "zIndex.modal", "accessibility.focus", "motion.durations.panel"],
+      "use": "Fluxo focado/confirmação.",
+      "avoid": "Conteúdo que cabe inline.",
+      "states": ["open", "closing"]
+    },
+    "ModalHeader": {
+      "world": "admin",
+      "section": "primitivos",
+      "purpose": "Cabeçalho do ModalShell (título + fechar).",
+      "tokens": ["color.admin.ink", "color.admin.border", "typography.scaleAdmin.h2"],
+      "use": "Topo de qualquer modal.",
+      "avoid": "Fora de um ModalShell."
+    },
+    "Avatar": {
+      "world": "shared",
+      "section": "primitivos",
+      "purpose": "Avatar de iniciais.",
+      "tokens": ["color.admin.brownTint", "color.admin.brandBrown", "radius.pill"],
+      "use": "Identificar pessoa sem foto.",
+      "avoid": "Logo de marca (use PralisSymbol)."
+    },
+    "StatusBadge": {
+      "world": "admin",
+      "section": "primitivos",
+      "purpose": "Status com cor + ícone + texto.",
+      "tokens": ["color.admin.success", "color.admin.successBg", "color.admin.warning", "color.admin.warningBg", "color.admin.danger", "color.admin.dangerBg", "radius.pill", "accessibility.statusRule"],
+      "use": "Sinalizar estado (ativo/pendente/erro).",
+      "avoid": "Só cor (proibido por accessibility.statusRule).",
+      "states": ["success", "warning", "danger", "neutral"]
+    },
+    "AnimatedNumber": {
+      "world": "shared",
+      "section": "primitivos",
+      "purpose": "Número com transição easeOutExpo.",
+      "tokens": ["motion.easing.emphasized", "motion.durations.kpiCountUp", "typography.numeric"],
+      "use": "Valor que muda/entra (KPI, contagem).",
+      "avoid": "Texto estático.",
+      "states": ["animating", "settled"]
+    },
+    "Skeleton": {
+      "world": "admin",
+      "section": "primitivos",
+      "purpose": "Placeholder genérico de carregamento.",
+      "tokens": ["color.admin.bgMuted", "motion.rules.animateOnly"],
+      "use": "Carregamento de qualquer bloco admin.",
+      "avoid": "Loading <300ms.",
+      "states": ["loading"]
+    },
+
+    "AdminModuloEditor": {
+      "world": "admin",
+      "section": "editor",
+      "purpose": "Editor de módulo: abas (Informações + Conteúdo) e timeline única de blocos.",
+      "tokens": ["color.admin.accent", "radius.lg", "motion.stagger.adminLow"],
+      "use": "Criar/editar módulo no CMS.",
+      "avoid": "Edição rápida inline.",
+      "states": ["dirty", "saving", "saved", "error"]
+    },
+    "SlideEditor": {
+      "world": "admin",
+      "section": "editor",
+      "purpose": "Edita um slide/bloco de texto.",
+      "tokens": ["color.admin.border", "radius.md", "spacing.usage.inputPadding"],
+      "use": "Bloco textual na timeline.",
+      "avoid": "Quiz/Poll (use editores próprios)."
+    },
+    "QuizEditor": {
+      "world": "admin",
+      "section": "editor",
+      "purpose": "Edita quiz com drag & drop de alternativas e gabarito.",
+      "tokens": ["color.admin.accent", "color.admin.success", "color.admin.danger", "motion.spring.default", "accessibility.focus"],
+      "use": "Configurar QuizCard.",
+      "avoid": "Enquete (use PollSlideEditor).",
+      "states": ["editing", "dragging"]
+    },
+    "PollSlideEditor": {
+      "world": "admin",
+      "section": "editor",
+      "purpose": "Edita enquete com drag & drop de opções.",
+      "tokens": ["color.admin.accent", "radius.md", "motion.spring.default"],
+      "use": "Configurar PollCard.",
+      "avoid": "Quiz com resposta certa.",
+      "states": ["editing", "dragging"]
+    },
+    "ModulePreview": {
+      "world": "admin",
+      "section": "editor",
+      "purpose": "Renderiza o StoryPlayer real num frame de celular (300x600, scale 0.8) com prop preview.",
+      "tokens": ["color.appDark.bgBase", "color.appDark.action", "motion.spring.default"],
+      "use": "Pré-visualizar exatamente o que o colaborador verá.",
+      "avoid": "Reimplementar o player — sempre reusar o StoryPlayer real.",
+      "states": ["preview"]
+    },
+
+    "SessionContext": {
+      "world": "shared",
+      "section": "compartilhado",
+      "purpose": "Sessão/usuário atual.",
+      "tokens": [],
+      "use": "Ler usuário/permissão em qualquer mundo.",
+      "avoid": "Como cache de conteúdo (use adminStore)."
+    },
+    "ThemeContext": {
+      "world": "shared",
+      "section": "compartilhado",
+      "purpose": "Tema ativo (app dark/light; admin sempre claro).",
+      "tokens": ["color.appDark", "color.appLight", "color.admin"],
+      "use": "Resolver tokens por tema.",
+      "avoid": "Forçar admin para dark."
+    },
+    "adminStore": {
+      "world": "shared",
+      "section": "compartilhado",
+      "purpose": "Store de conteúdo do CMS via useSyncExternalStore.",
+      "tokens": [],
+      "use": "Estado de conteúdo do CMS.",
+      "avoid": "Estado efêmero de um único componente (use useState)."
+    }
+  }
+}
