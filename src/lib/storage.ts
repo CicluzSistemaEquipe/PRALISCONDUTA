@@ -112,6 +112,9 @@ export async function createEmployee(input: {
   admission_date?: string
   store?: string
   status?: Employee['status']
+  nomePublico?: string
+  avatarUrl?: string
+  descricao?: string
   notes?: string
 }): Promise<Employee> {
   const employee: Employee = {
@@ -129,6 +132,9 @@ export async function createEmployee(input: {
     admission_date: input.admission_date,
     store: input.store,
     status: input.status ?? 'ativo',
+    nomePublico: input.nomePublico,
+    avatarUrl: input.avatarUrl,
+    descricao: input.descricao,
     notes: input.notes,
   }
 
@@ -167,7 +173,8 @@ export async function updateEmployee(
   id: string,
   patch: Partial<Pick<Employee,
     'name' | 'phone' | 'role' | 'token' | 'access_code' | 'gerenteId'
-    | 'email' | 'whatsapp' | 'birth_date' | 'admission_date' | 'store' | 'status' | 'notes'
+    | 'email' | 'whatsapp' | 'birth_date' | 'admission_date' | 'store' | 'status'
+    | 'nomePublico' | 'avatarUrl' | 'descricao' | 'notes'
   >>,
 ): Promise<Employee | null> {
   if (hasSupabase && supabase) {

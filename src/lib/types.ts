@@ -57,6 +57,12 @@ export interface Employee {
   /** loja/unidade (texto livre por enquanto) */
   store?: string
   status?: EmployeeStatus
+  /** nome que aparece no app/Social (default: primeiro nome) */
+  nomePublico?: string
+  /** foto de perfil (data URL no modo localStorage; Storage/CDN na producao) */
+  avatarUrl?: string
+  /** descricao curta / observacao do colaborador */
+  descricao?: string
   notes?: string
 }
 

@@ -1,9 +1,9 @@
-import { useEffect, useState, useMemo, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useMemo, type FormEvent, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Plus, Copy, Check, X, Search, MessageCircle, Link2, CheckCircle2,
-  UserPlus, Pencil, Trash2, AlertTriangle, Save,
+  UserPlus, Pencil, Trash2, AlertTriangle, Save, Camera, User, Briefcase,
   Mail, Phone, CalendarDays, Building2, ShieldCheck, FileSignature, Clock, IdCard,
 } from 'lucide-react'
 import { createEmployee, updateEmployee, deleteEmployee } from '@/lib/storage'
@@ -11,9 +11,10 @@ import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
 import { ROLES, type Role, type AdminUser, type EmployeeStatus } from '@/lib/types'
 import { getAdminSession, isDono, listGerentes } from '../auth'
 import { enviarNotificacao } from '@/lib/notifications'
+import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
-import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader } from '../components/ui'
+import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader, ModalFooter, ModalSection } from '../components/ui'
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 export function acessoLink(id: string) {
@@ -43,6 +44,32 @@ const maskPhone = (v: string) => {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
 
+// Seletor de foto circular reutilizável (reaproveita o downscaler de imagem).
+function PhotoField({ name, avatarUrl, busy, onPick, onRemove, label }: {
+  name: string; avatarUrl?: string; busy: boolean; onPick: (f?: File) => void; onRemove: () => void; label: string
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <div className="flex items-center gap-3">
+      <div className="relative shrink-0">
+        <Avatar name={name || label} size={56} src={avatarUrl} />
+        <button type="button" onClick={() => ref.current?.click()} disabled={busy} aria-label="Alterar foto"
+          className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[var(--accent)] text-white shadow-sm transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-60">
+          <Camera className="h-3 w-3" />
+        </button>
+      </div>
+      <div className="min-w-0">
+        <p className="text-[0.82rem] font-semibold text-[var(--ink)]">{label}</p>
+        <p className="text-[0.72rem] text-[var(--text-muted)]">{busy ? 'Processando…' : ALLOWED_LABEL}</p>
+        {avatarUrl && (
+          <button type="button" onClick={onRemove} className="mt-0.5 text-[0.72rem] font-semibold text-[var(--danger)] hover:underline">Remover foto</button>
+        )}
+      </div>
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => onPick(e.target.files?.[0])} />
+    </div>
+  )
+}
+
 function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lockGerente }: {
   onClose: () => void
   onSaved: (emp: { name: string; role: string; link: string }) => void
@@ -51,12 +78,22 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
   lockGerente: boolean
 }) {
   const [form, setForm] = useState({
-    name: '', cpf: '', whatsapp: '', email: '', birth: '', admission: todayISO(),
+    name: '', nomePublico: '', cpf: '', whatsapp: '', email: '', birth: '', admission: todayISO(),
     role: ROLES[0] as Role, status: 'ativo' as EmployeeStatus, store: '', gerenteId: defaultGerenteId,
+    descricao: '', avatarUrl: undefined as string | undefined,
   })
   const [err, setErr] = useState('')
+  const [imgBusy, setImgBusy] = useState(false)
   const [saving, setSaving] = useState(false)
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
+
+  const handlePhoto = async (file?: File) => {
+    if (!file) return
+    setErr(''); setImgBusy(true)
+    try { const res = await fileToDownscaledDataURL(file); set({ avatarUrl: res.dataUrl }) }
+    catch (e) { setErr(e instanceof Error ? e.message : 'Falha ao processar a imagem.') }
+    finally { setImgBusy(false) }
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -76,6 +113,9 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
         admission_date: form.admission || undefined,
         store: form.store.trim() || undefined,
         status: form.status,
+        nomePublico: form.nomePublico.trim() || undefined,
+        descricao: form.descricao.trim() || undefined,
+        avatarUrl: form.avatarUrl,
       })
       const gerente = gerentes.find((g) => g.id === form.gerenteId)
       void enviarNotificacao({
@@ -90,71 +130,104 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
   }
 
   return (
-    <ModalShell onClose={onClose}>
-      <ModalHeader icon={UserPlus} eyebrow="Pessoas" title="Novo colaborador" onClose={onClose} />
-      <form onSubmit={submit} className="flex flex-col gap-4">
-        <div>
-          <label className="adm-label" htmlFor="nc-nome">Nome completo</label>
-          <input id="nc-nome" className="adm-input" autoFocus placeholder="Ex.: Marina Souza"
-            value={form.name} onChange={(e) => set({ name: e.target.value })} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="adm-label" htmlFor="nc-cpf">CPF</label>
-            <input id="nc-cpf" className="adm-input" inputMode="numeric" placeholder="000.000.000-00"
-              value={form.cpf} onChange={(e) => set({ cpf: maskCPF(e.target.value) })} />
+    <ModalShell
+      onClose={onClose}
+      size="md"
+      header={<ModalHeader icon={UserPlus} eyebrow="Pessoas" title="Novo colaborador" onClose={onClose} />}
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
+          <button type="submit" form="colab-form" disabled={saving} className="adm-btn adm-btn--primary flex-[2]">
+            {saving ? 'Cadastrando…' : <><UserPlus className="h-[18px] w-[18px]" strokeWidth={2} /> Cadastrar colaborador</>}
+          </button>
+        </ModalFooter>
+      }
+    >
+      <form id="colab-form" onSubmit={submit} className="flex flex-col gap-4">
+        <ModalSection title="Identificação" description="Quem é o colaborador e como ele aparece no app." icon={IdCard} tone="orange">
+          <div className="flex flex-col gap-4">
+            <PhotoField name={form.name} avatarUrl={form.avatarUrl} busy={imgBusy} label="Foto do colaborador"
+              onPick={handlePhoto} onRemove={() => set({ avatarUrl: undefined })} />
+            <div>
+              <label className="adm-label" htmlFor="nc-nome">Nome completo</label>
+              <input id="nc-nome" className="adm-input" autoFocus placeholder="Ex.: Marina Souza"
+                value={form.name} onChange={(e) => set({ name: e.target.value })} />
+            </div>
+            <div>
+              <label className="adm-label" htmlFor="nc-pub">Nome público <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+              <input id="nc-pub" className="adm-input" placeholder="Ex.: Marina"
+                value={form.nomePublico} onChange={(e) => set({ nomePublico: e.target.value })} />
+              <p className="mt-1 text-[0.72rem] text-[var(--text-muted)]">Nome exibido no app. Em branco, usamos o primeiro nome.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="adm-label" htmlFor="nc-cpf">CPF</label>
+                <input id="nc-cpf" className="adm-input" inputMode="numeric" placeholder="000.000.000-00"
+                  value={form.cpf} onChange={(e) => set({ cpf: maskCPF(e.target.value) })} />
+              </div>
+              <div>
+                <label className="adm-label" htmlFor="nc-wa">WhatsApp</label>
+                <input id="nc-wa" className="adm-input" inputMode="tel" placeholder="(00) 00000-0000"
+                  value={form.whatsapp} onChange={(e) => set({ whatsapp: maskPhone(e.target.value) })} />
+              </div>
+            </div>
+            <div>
+              <label className="adm-label" htmlFor="nc-email">E-mail <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+              <input id="nc-email" type="email" className="adm-input" placeholder="nome@exemplo.com"
+                value={form.email} onChange={(e) => set({ email: e.target.value })} />
+            </div>
           </div>
-          <div>
-            <label className="adm-label" htmlFor="nc-wa">WhatsApp</label>
-            <input id="nc-wa" className="adm-input" inputMode="tel" placeholder="(00) 00000-0000"
-              value={form.whatsapp} onChange={(e) => set({ whatsapp: maskPhone(e.target.value) })} />
+        </ModalSection>
+
+        <ModalSection title="Cargo e vínculo" description="Função, situação e a quem responde." icon={Briefcase} tone="gold">
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="adm-label" htmlFor="nc-role">Cargo</label>
+                <select id="nc-role" className="adm-input" value={form.role} onChange={(e) => set({ role: e.target.value as Role })}>
+                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="adm-label" htmlFor="nc-status">Situação</label>
+                <select id="nc-status" className="adm-input" value={form.status} onChange={(e) => set({ status: e.target.value as EmployeeStatus })}>
+                  <option value="ativo">Ativo</option>
+                  <option value="afastado">Afastado</option>
+                  <option value="inativo">Inativo</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="adm-label" htmlFor="nc-store">Loja/Unidade <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+                <input id="nc-store" className="adm-input" placeholder="Ex.: Vila Nova" value={form.store} onChange={(e) => set({ store: e.target.value })} />
+              </div>
+              <div>
+                <label className="adm-label" htmlFor="nc-ger">Gerente responsável</label>
+                <select id="nc-ger" className="adm-input" value={form.gerenteId} disabled={lockGerente}
+                  onChange={(e) => set({ gerenteId: e.target.value })}>
+                  <option value="">Sem gerente</option>
+                  {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="adm-label" htmlFor="nc-birth">Nascimento</label>
+                <input id="nc-birth" type="date" className="adm-input" value={form.birth} onChange={(e) => set({ birth: e.target.value })} />
+              </div>
+              <div>
+                <label className="adm-label" htmlFor="nc-admission">Admissão</label>
+                <input id="nc-admission" type="date" className="adm-input" value={form.admission} onChange={(e) => set({ admission: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className="adm-label" htmlFor="nc-desc">Descrição curta <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+              <textarea id="nc-desc" className="adm-input" rows={2} placeholder="Ex.: Atendimento do balcão, turno da manhã."
+                value={form.descricao} onChange={(e) => set({ descricao: e.target.value })} />
+            </div>
           </div>
-        </div>
-        <div>
-          <label className="adm-label" htmlFor="nc-email">E-mail <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
-          <input id="nc-email" type="email" className="adm-input" placeholder="nome@exemplo.com"
-            value={form.email} onChange={(e) => set({ email: e.target.value })} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="adm-label" htmlFor="nc-birth">Nascimento</label>
-            <input id="nc-birth" type="date" className="adm-input" value={form.birth} onChange={(e) => set({ birth: e.target.value })} />
-          </div>
-          <div>
-            <label className="adm-label" htmlFor="nc-admission">Admissão</label>
-            <input id="nc-admission" type="date" className="adm-input" value={form.admission} onChange={(e) => set({ admission: e.target.value })} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="adm-label" htmlFor="nc-role">Cargo</label>
-            <select id="nc-role" className="adm-input" value={form.role} onChange={(e) => set({ role: e.target.value as Role })}>
-              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="adm-label" htmlFor="nc-status">Situação</label>
-            <select id="nc-status" className="adm-input" value={form.status} onChange={(e) => set({ status: e.target.value as EmployeeStatus })}>
-              <option value="ativo">Ativo</option>
-              <option value="afastado">Afastado</option>
-              <option value="inativo">Inativo</option>
-            </select>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="adm-label" htmlFor="nc-store">Loja/Unidade <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
-            <input id="nc-store" className="adm-input" placeholder="Ex.: Vila Nova" value={form.store} onChange={(e) => set({ store: e.target.value })} />
-          </div>
-          <div>
-            <label className="adm-label" htmlFor="nc-ger">Gerente responsável</label>
-            <select id="nc-ger" className="adm-input" value={form.gerenteId} disabled={lockGerente}
-              onChange={(e) => set({ gerenteId: e.target.value })}>
-              <option value="">Sem gerente</option>
-              {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
-            </select>
-          </div>
-        </div>
+        </ModalSection>
 
         <div className="flex items-start gap-2.5 rounded-lg bg-[var(--bg-subtle)] px-3.5 py-3">
           <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={1.8} />
@@ -164,13 +237,6 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
         </div>
 
         {err && <p className="text-[0.8125rem] font-medium text-[var(--danger)]">{err}</p>}
-
-        <div className="flex gap-3 pt-1">
-          <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
-          <button type="submit" disabled={saving} className="adm-btn adm-btn--primary flex-[2]">
-            {saving ? 'Cadastrando…' : <><UserPlus className="h-[18px] w-[18px]" strokeWidth={2} /> Cadastrar colaborador</>}
-          </button>
-        </div>
       </form>
     </ModalShell>
   )
@@ -182,18 +248,28 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
 }) {
   const emp = row.employee
   const [form, setForm] = useState({
-    name: emp.name, cpf: maskCPF(emp.phone ?? ''),
+    name: emp.name, nomePublico: emp.nomePublico ?? '', cpf: maskCPF(emp.phone ?? ''),
     whatsapp: emp.whatsapp ? maskPhone(emp.whatsapp) : '', email: emp.email ?? '',
     birth: emp.birth_date ?? '', admission: emp.admission_date ?? '',
     store: emp.store ?? '', status: (emp.status ?? 'ativo') as EmployeeStatus,
     role: emp.role as Role, gerenteId: emp.gerenteId ?? '',
+    descricao: emp.descricao ?? '', avatarUrl: emp.avatarUrl as string | undefined,
   })
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
   const [saving, setSaving] = useState(false)
+  const [imgBusy, setImgBusy] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [err, setErr] = useState('')
   const link = acessoLink(emp.id)
+
+  const handlePhoto = async (file?: File) => {
+    if (!file) return
+    setErr(''); setImgBusy(true)
+    try { const res = await fileToDownscaledDataURL(file); set({ avatarUrl: res.dataUrl }) }
+    catch (e) { setErr(e instanceof Error ? e.message : 'Falha ao processar a imagem.') }
+    finally { setImgBusy(false) }
+  }
 
   const save = async (e: FormEvent) => {
     e.preventDefault()
@@ -213,6 +289,9 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
         admission_date: form.admission || undefined,
         store: form.store.trim() || undefined,
         status: form.status,
+        nomePublico: form.nomePublico.trim() || undefined,
+        descricao: form.descricao.trim() || undefined,
+        avatarUrl: form.avatarUrl,
       })
       onSaved()
     } catch {
@@ -227,67 +306,97 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
   }
 
   return (
-    <ModalShell onClose={onClose}>
-      <ModalHeader icon={Pencil} eyebrow="Editar cadastro" title={emp.name} onClose={onClose} />
-      <form onSubmit={save} className="flex flex-col gap-4">
-        <div>
-          <label className="adm-label" htmlFor="ed-nome">Nome completo</label>
-          <input id="ed-nome" className="adm-input" value={form.name} onChange={(e) => set({ name: e.target.value })} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="adm-label" htmlFor="ed-cpf">CPF</label>
-            <input id="ed-cpf" className="adm-input" inputMode="numeric" value={form.cpf} onChange={(e) => set({ cpf: maskCPF(e.target.value) })} />
+    <ModalShell
+      onClose={onClose}
+      size="md"
+      header={<ModalHeader icon={Pencil} eyebrow="Editar cadastro" title={emp.name} onClose={onClose} />}
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
+          <button type="submit" form="colab-edit" disabled={saving} className="adm-btn adm-btn--primary flex-[2]">
+            {saving ? 'Salvando…' : <><Save className="h-[18px] w-[18px]" strokeWidth={2} /> Salvar alterações</>}
+          </button>
+        </ModalFooter>
+      }
+    >
+      <form id="colab-edit" onSubmit={save} className="flex flex-col gap-4">
+        <ModalSection title="Identificação" description="Dados pessoais e como aparece no app." icon={IdCard} tone="orange">
+          <div className="flex flex-col gap-4">
+            <PhotoField name={form.name} avatarUrl={form.avatarUrl} busy={imgBusy} label="Foto do colaborador"
+              onPick={handlePhoto} onRemove={() => set({ avatarUrl: undefined })} />
+            <div>
+              <label className="adm-label" htmlFor="ed-nome">Nome completo</label>
+              <input id="ed-nome" className="adm-input" value={form.name} onChange={(e) => set({ name: e.target.value })} />
+            </div>
+            <div>
+              <label className="adm-label" htmlFor="ed-pub">Nome público <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+              <input id="ed-pub" className="adm-input" placeholder="Ex.: Marina" value={form.nomePublico} onChange={(e) => set({ nomePublico: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="adm-label" htmlFor="ed-cpf">CPF</label>
+                <input id="ed-cpf" className="adm-input" inputMode="numeric" value={form.cpf} onChange={(e) => set({ cpf: maskCPF(e.target.value) })} />
+              </div>
+              <div>
+                <label className="adm-label" htmlFor="ed-wa">WhatsApp</label>
+                <input id="ed-wa" className="adm-input" inputMode="tel" placeholder="(00) 00000-0000" value={form.whatsapp} onChange={(e) => set({ whatsapp: maskPhone(e.target.value) })} />
+              </div>
+            </div>
+            <div>
+              <label className="adm-label" htmlFor="ed-email">E-mail <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+              <input id="ed-email" type="email" className="adm-input" placeholder="nome@exemplo.com" value={form.email} onChange={(e) => set({ email: e.target.value })} />
+            </div>
           </div>
-          <div>
-            <label className="adm-label" htmlFor="ed-wa">WhatsApp</label>
-            <input id="ed-wa" className="adm-input" inputMode="tel" placeholder="(00) 00000-0000" value={form.whatsapp} onChange={(e) => set({ whatsapp: maskPhone(e.target.value) })} />
+        </ModalSection>
+
+        <ModalSection title="Cargo e vínculo" description="Função, situação e a quem responde." icon={Briefcase} tone="gold">
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="adm-label" htmlFor="ed-role">Cargo</label>
+                <select id="ed-role" className="adm-input" value={form.role} onChange={(e) => set({ role: e.target.value as Role })}>
+                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="adm-label" htmlFor="ed-status">Situação</label>
+                <select id="ed-status" className="adm-input" value={form.status} onChange={(e) => set({ status: e.target.value as EmployeeStatus })}>
+                  <option value="ativo">Ativo</option>
+                  <option value="afastado">Afastado</option>
+                  <option value="inativo">Inativo</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="adm-label" htmlFor="ed-store">Loja/Unidade</label>
+                <input id="ed-store" className="adm-input" placeholder="Ex.: Vila Nova" value={form.store} onChange={(e) => set({ store: e.target.value })} />
+              </div>
+              <div>
+                <label className="adm-label" htmlFor="ed-ger">Gerente responsável</label>
+                <select id="ed-ger" className="adm-input" value={form.gerenteId} disabled={lockGerente}
+                  onChange={(e) => set({ gerenteId: e.target.value })}>
+                  <option value="">Sem gerente</option>
+                  {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="adm-label" htmlFor="ed-birth">Nascimento</label>
+                <input id="ed-birth" type="date" className="adm-input" value={form.birth} onChange={(e) => set({ birth: e.target.value })} />
+              </div>
+              <div>
+                <label className="adm-label" htmlFor="ed-admission">Admissão</label>
+                <input id="ed-admission" type="date" className="adm-input" value={form.admission} onChange={(e) => set({ admission: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className="adm-label" htmlFor="ed-desc">Descrição curta <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+              <textarea id="ed-desc" className="adm-input" rows={2} value={form.descricao} onChange={(e) => set({ descricao: e.target.value })} />
+            </div>
           </div>
-        </div>
-        <div>
-          <label className="adm-label" htmlFor="ed-email">E-mail <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
-          <input id="ed-email" type="email" className="adm-input" placeholder="nome@exemplo.com" value={form.email} onChange={(e) => set({ email: e.target.value })} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="adm-label" htmlFor="ed-birth">Nascimento</label>
-            <input id="ed-birth" type="date" className="adm-input" value={form.birth} onChange={(e) => set({ birth: e.target.value })} />
-          </div>
-          <div>
-            <label className="adm-label" htmlFor="ed-admission">Admissão</label>
-            <input id="ed-admission" type="date" className="adm-input" value={form.admission} onChange={(e) => set({ admission: e.target.value })} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="adm-label" htmlFor="ed-role">Cargo</label>
-            <select id="ed-role" className="adm-input" value={form.role} onChange={(e) => set({ role: e.target.value as Role })}>
-              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="adm-label" htmlFor="ed-status">Situação</label>
-            <select id="ed-status" className="adm-input" value={form.status} onChange={(e) => set({ status: e.target.value as EmployeeStatus })}>
-              <option value="ativo">Ativo</option>
-              <option value="afastado">Afastado</option>
-              <option value="inativo">Inativo</option>
-            </select>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="adm-label" htmlFor="ed-store">Loja/Unidade</label>
-            <input id="ed-store" className="adm-input" placeholder="Ex.: Vila Nova" value={form.store} onChange={(e) => set({ store: e.target.value })} />
-          </div>
-          <div>
-            <label className="adm-label" htmlFor="ed-ger">Gerente responsável</label>
-            <select id="ed-ger" className="adm-input" value={form.gerenteId} disabled={lockGerente}
-              onChange={(e) => set({ gerenteId: e.target.value })}>
-              <option value="">Sem gerente</option>
-              {gerentes.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
-            </select>
-          </div>
-        </div>
+        </ModalSection>
 
         <div>
           <label className="adm-label">Link de acesso</label>
@@ -302,46 +411,39 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
 
         {err && <p className="text-[0.8125rem] font-medium text-[var(--danger)]">{err}</p>}
 
-        <div className="flex gap-3">
-          <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
-          <button type="submit" disabled={saving} className="adm-btn adm-btn--primary flex-[2]">
-            {saving ? 'Salvando…' : <><Save className="h-[18px] w-[18px]" strokeWidth={2} /> Salvar alterações</>}
-          </button>
+        {/* zona de perigo — min-height fixa evita o modal "pular" ao confirmar */}
+        <div className="rounded-xl border border-[#f3d2cd] bg-[var(--danger-bg)] p-4">
+          <AnimatePresence mode="wait" initial={false}>
+            {!confirm ? (
+              <motion.div key="ask" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="flex min-h-[40px] items-center justify-between gap-3">
+                <div>
+                  <p className="text-[0.8125rem] font-semibold text-[var(--danger)]">Excluir colaborador</p>
+                  <p className="text-[0.75rem] text-[var(--text-muted)]">Remove o cadastro e todo o progresso.</p>
+                </div>
+                <button type="button" onClick={() => setConfirm(true)} className="adm-btn adm-btn--danger shrink-0">
+                  <Trash2 className="h-4 w-4" /> Excluir
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div key="confirm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div className="mb-2 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-[var(--danger)]" />
+                  <p className="text-[0.875rem] font-semibold text-[var(--danger)]">Confirma a exclusão de {emp.name}?</p>
+                </div>
+                <p className="mb-3 text-[0.8125rem] text-[var(--text-muted)]">Progresso, quizzes e assinatura serão apagados permanentemente.</p>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setConfirm(false)} className="adm-btn flex-1">Cancelar</button>
+                  <button type="button" onClick={remove} disabled={deleting}
+                    className="adm-btn flex-[2] border-[var(--danger)] bg-[var(--danger)] text-white hover:bg-[#a93226]">
+                    {deleting ? 'Excluindo…' : <><Trash2 className="h-4 w-4" /> Sim, excluir</>}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </form>
-
-      {/* zona de perigo */}
-      <div className="mt-5 rounded-xl border border-[#f3d2cd] bg-[var(--danger-bg)] p-4">
-        <AnimatePresence mode="wait">
-          {!confirm ? (
-            <motion.div key="ask" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[0.8125rem] font-semibold text-[var(--danger)]">Excluir colaborador</p>
-                <p className="text-[0.75rem] text-[var(--text-muted)]">Remove o cadastro e todo o progresso.</p>
-              </div>
-              <button onClick={() => setConfirm(true)} className="adm-btn adm-btn--danger shrink-0">
-                <Trash2 className="h-4 w-4" /> Excluir
-              </button>
-            </motion.div>
-          ) : (
-            <motion.div key="confirm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="mb-2 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-[var(--danger)]" />
-                <p className="text-[0.875rem] font-semibold text-[var(--danger)]">Confirma a exclusão de {emp.name}?</p>
-              </div>
-              <p className="mb-3 text-[0.8125rem] text-[var(--text-muted)]">Progresso, quizzes e assinatura serão apagados permanentemente.</p>
-              <div className="flex gap-3">
-                <button onClick={() => setConfirm(false)} className="adm-btn flex-1">Cancelar</button>
-                <button onClick={remove} disabled={deleting}
-                  className="adm-btn flex-[2] border-[var(--danger)] bg-[var(--danger)] text-white hover:bg-[#a93226]">
-                  {deleting ? 'Excluindo…' : <><Trash2 className="h-4 w-4" /> Sim, excluir</>}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
     </ModalShell>
   )
 }
@@ -354,7 +456,7 @@ function SuccessModal({ name, role, link, onClose }: { name: string; role: strin
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
   return (
-    <ModalShell onClose={onClose}>
+    <ModalShell onClose={onClose} size="sm">
       <div className="text-center">
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 18, delay: 0.05 }}
           className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ecf7f0]">
@@ -433,25 +535,44 @@ export function ColaboradorDetailModal({ row, gerenteName, onClose, onEdit, onCo
   const emDia = pending === 0 && row.signed
 
   return (
-    <ModalShell onClose={onClose}>
-      {/* cabeçalho */}
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Avatar name={emp.name} size={48} />
-          <div className="min-w-0">
-            <h2 className="truncate text-[1.15rem] font-semibold text-[var(--ink)]">{emp.name}</h2>
-            <div className="mt-1 flex items-center gap-2">
-              <span className="adm-badge adm-badge--muted">{emp.role}</span>
-              <StatusPill status={emp.status} />
+    <ModalShell
+      onClose={onClose}
+      size="lg"
+      header={
+        <div className="flex items-start justify-between gap-3 pb-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar name={emp.name} size={48} src={emp.avatarUrl} />
+            <div className="min-w-0">
+              <h2 className="truncate text-[1.15rem] font-semibold text-[var(--ink)]">{emp.name}</h2>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="adm-badge adm-badge--muted">{emp.role}</span>
+                <StatusPill status={emp.status} />
+              </div>
             </div>
           </div>
+          <button type="button" onClick={onClose} aria-label="Fechar"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
+            <X className="h-[18px] w-[18px]" />
+          </button>
         </div>
-        <button type="button" onClick={onClose} aria-label="Fechar"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
-          <X className="h-[18px] w-[18px]" />
-        </button>
-      </div>
-
+      }
+      footer={
+        <ModalFooter>
+          <button onClick={() => onCopy(link, emp.id)} className="adm-btn flex-1">
+            {isCopied ? <><Check className="h-4 w-4 text-[var(--success)]" /> Copiado</> : <><Copy className="h-4 w-4" /> Copiar link</>}
+          </button>
+          <a href={waLink(emp.name, link)} target="_blank" rel="noopener noreferrer"
+            className="adm-btn flex-1 no-underline border-[#cdebd9] bg-[#ecf7f0] text-[#1e7e4e]">
+            <MessageCircle className="h-4 w-4" /> WhatsApp
+          </a>
+          {onEdit && (
+            <button onClick={() => onEdit(row)} className="adm-btn adm-btn--primary flex-1">
+              <Pencil className="h-4 w-4" /> Editar
+            </button>
+          )}
+        </ModalFooter>
+      }
+    >
       {/* situação do treinamento */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4">
         <div className="mb-2 flex items-center justify-between">
@@ -506,6 +627,7 @@ export function ColaboradorDetailModal({ row, gerenteName, onClose, onEdit, onCo
       <div className="mt-4">
         <span className="adm-eyebrow">Identificação</span>
         <div className="mt-1 divide-y divide-[var(--border)]">
+          {emp.nomePublico && <InfoRow icon={User} label="Nome público" value={emp.nomePublico} />}
           <InfoRow icon={IdCard} label="CPF" value={emp.phone ? maskCPF(emp.phone) : '—'} />
           <InfoRow icon={Phone} label="WhatsApp" value={emp.whatsapp ? maskPhone(emp.whatsapp) : '—'} />
           <InfoRow icon={Mail} label="E-mail" value={emp.email} />
@@ -515,21 +637,10 @@ export function ColaboradorDetailModal({ row, gerenteName, onClose, onEdit, onCo
           <InfoRow icon={ShieldCheck} label="Gerente" value={gerenteName} />
           <InfoRow icon={Link2} label="Código" value={<span className="font-mono">{emp.access_code ?? '—'}</span>} />
         </div>
-      </div>
-
-      {/* ações */}
-      <div className="mt-5 flex flex-wrap gap-2">
-        <button onClick={() => onCopy(link, emp.id)} className="adm-btn flex-1">
-          {isCopied ? <><Check className="h-4 w-4 text-[var(--success)]" /> Copiado</> : <><Copy className="h-4 w-4" /> Copiar link</>}
-        </button>
-        <a href={waLink(emp.name, link)} target="_blank" rel="noopener noreferrer"
-          className="adm-btn flex-1 no-underline border-[#cdebd9] bg-[#ecf7f0] text-[#1e7e4e]">
-          <MessageCircle className="h-4 w-4" /> WhatsApp
-        </a>
-        {onEdit && (
-          <button onClick={() => onEdit(row)} className="adm-btn adm-btn--primary flex-1">
-            <Pencil className="h-4 w-4" /> Editar
-          </button>
+        {emp.descricao && (
+          <p className="mt-3 rounded-lg bg-[var(--bg-subtle)] px-3 py-2.5 text-[0.82rem] leading-relaxed text-[var(--text-secondary)]">
+            {emp.descricao}
+          </p>
         )}
       </div>
     </ModalShell>
@@ -569,7 +680,7 @@ function ColabRow({ row, dono, gerenteName, onEdit, onCopy, copied }: {
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onEdit(row) } }}>
       <td>
         <div className="flex items-center gap-3">
-          <Avatar name={row.employee.name} />
+          <Avatar name={row.employee.name} src={row.employee.avatarUrl} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-[var(--ink)]">{row.employee.name}</p>
             <p className="font-mono text-[0.7rem] text-[var(--text-muted)]">{row.employee.access_code ?? '—'}</p>
@@ -601,7 +712,7 @@ function ColabCardMobile({ row, onEdit, onCopy, copied }: {
   return (
     <div className="rounded-xl border border-[var(--border)] bg-white p-4" onClick={() => onEdit(row)}>
       <div className="flex items-start gap-3">
-        <Avatar name={row.employee.name} size={40} />
+        <Avatar name={row.employee.name} size={40} src={row.employee.avatarUrl} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-[var(--ink)]">{row.employee.name}</p>
           <span className="adm-badge adm-badge--muted mt-1">{row.employee.role}</span>
