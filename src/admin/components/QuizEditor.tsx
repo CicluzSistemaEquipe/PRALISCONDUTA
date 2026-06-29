@@ -1,7 +1,13 @@
 import { Reorder, useDragControls } from 'framer-motion'
-import { Plus, Trash2, CheckCircle2, Circle, Hash, Shuffle, GripVertical } from 'lucide-react'
-import type { QuizQuestion } from '@/lib/types'
+import { Plus, Trash2, CheckCircle2, Circle, Hash, Shuffle, GripVertical, MessageCircleQuestion } from 'lucide-react'
+import type { QuizConfig, QuizQuestion } from '@/lib/types'
 import { newQuizQuestion } from '../lib/modules'
+
+type QuizIntro = NonNullable<QuizConfig['intro']>
+const DEFAULT_INTRO: QuizIntro = {
+  title: 'Vamos ver o que ficou claro?',
+  description: 'A Lis vai te fazer algumas perguntas rápidas para confirmar o que ficou claro.',
+}
 
 function QuestionCard({ q, index, total, onPatch, onDelete, onOption, onOptionExpl, onCorrect }: {
   q: QuizQuestion
@@ -74,15 +80,19 @@ export function QuizEditor({
   questions,
   sampleSize,
   randomize,
+  intro,
   onChange,
   onConfigChange,
 }: {
   questions: QuizQuestion[]
   sampleSize?: number
   randomize?: boolean
+  intro?: QuizConfig['intro']
   onChange: (q: QuizQuestion[]) => void
-  onConfigChange?: (patch: { sampleSize?: number; randomize?: boolean }) => void
+  onConfigChange?: (patch: { sampleSize?: number; randomize?: boolean; intro?: QuizConfig['intro'] }) => void
 }) {
+  const setIntro = (patch: Partial<QuizIntro>) =>
+    onConfigChange?.({ intro: { ...DEFAULT_INTRO, ...(intro ?? {}), ...patch } })
   const updateQ = (i: number, patch: Partial<QuizQuestion>) =>
     onChange(questions.map((q, idx) => (idx === i ? { ...q, ...patch } : q)))
   const updateOption = (qi: number, oi: number, value: string) =>
@@ -97,6 +107,38 @@ export function QuizEditor({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* ── apresentação (tela "Vamos ver o que ficou claro?") ── */}
+      <div className="adm-card p-5">
+        <div className="mb-1 flex items-center gap-2.5">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-tint)] text-[var(--accent-text)]"><MessageCircleQuestion size={15} /></span>
+          <h3 className="text-[0.95rem] font-semibold text-[var(--ink)]">Apresentação do quiz</h3>
+        </div>
+        <p className="mb-4 text-[0.8rem] text-[var(--text-muted)]">Tela exibida antes das perguntas (a "Vamos ver o que ficou claro?").</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="adm-label">Etiqueta</label>
+            <input className="adm-input" placeholder="HORA DE CONFERIR" value={intro?.eyebrow ?? ''} onChange={(e) => setIntro({ eyebrow: e.target.value })} />
+          </div>
+          <div>
+            <label className="adm-label">Texto do botão</label>
+            <input className="adm-input" placeholder="Responder agora" value={intro?.cta ?? ''} onChange={(e) => setIntro({ cta: e.target.value })} />
+          </div>
+        </div>
+        <div className="mt-3">
+          <label className="adm-label">Título</label>
+          <input className="adm-input" placeholder={DEFAULT_INTRO.title} value={intro?.title ?? ''} onChange={(e) => setIntro({ title: e.target.value })} />
+        </div>
+        <div className="mt-3">
+          <label className="adm-label">Descrição</label>
+          <textarea className="adm-input" rows={2} placeholder={DEFAULT_INTRO.description} value={intro?.description ?? ''} onChange={(e) => setIntro({ description: e.target.value })} />
+        </div>
+        <div className="mt-3">
+          <label className="adm-label">Fala da Lis (voz)</label>
+          <input className="adm-input" placeholder="O que a Lis narra ao abrir o quiz" value={intro?.voiceText ?? ''} onChange={(e) => setIntro({ voiceText: e.target.value })} />
+          <p className="mt-1 text-[0.72rem] text-[var(--text-muted)]">Opcional — narrado pela Lis nesta tela.</p>
+        </div>
+      </div>
+
       {/* ── configuração ── */}
       <div className="adm-card p-5">
         <div className="mb-4 flex items-center gap-2.5">

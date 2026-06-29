@@ -747,7 +747,7 @@ function QuizBlockEditor({ story, index, total, onChange, onDelete, onMove }: {
   return (
     <div className="p-4">
       <BlockHeader icon={<HelpCircle size={15} />} label="Quiz" index={index} total={total} onDelete={onDelete} onMove={onMove} />
-      <QuizEditor questions={story.questions} sampleSize={story.sampleSize} randomize={story.randomize}
+      <QuizEditor questions={story.questions} sampleSize={story.sampleSize} randomize={story.randomize} intro={story.intro}
         onChange={(qs) => onChange({ ...story, questions: qs })}
         onConfigChange={(patch) => onChange({ ...story, ...patch })} />
     </div>
