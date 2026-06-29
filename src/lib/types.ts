@@ -64,7 +64,29 @@ export interface Employee {
   /** descricao curta / observacao do colaborador */
   descricao?: string
   notes?: string
+
+  // ── Jornada e comunicação (aditivo, opcional) ───────────────────────────────
+  // Camada de DADOS para futuras automações inteligentes (push/notificações por
+  // horário). NADA é executado agora — ver IMPLEMENTATION_PLAN P3 (push_subscriptions
+  // + notifications + enviarNotificacao). Tudo opcional → cadastros antigos não quebram.
+  /** turno de trabalho */
+  turno?: Turno
+  /** horário de entrada 'HH:MM' */
+  horaEntrada?: string
+  /** horário de saída 'HH:MM' */
+  horaSaida?: string
+  /** dias trabalhados na semana */
+  diasTrabalho?: Weekday[]
+  /** folgas (campo livre) */
+  folgas?: string
+  /** melhor horário para receber notificações 'HH:MM' */
+  melhorHorarioNotificacao?: string
+  /** opt-in de notificações */
+  recebeNotificacoes?: boolean
 }
+
+export type Turno = 'manha' | 'tarde' | 'noite' | 'integral' | 'variavel'
+export type Weekday = 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab' | 'dom'
 
 export interface ModuleProgress {
   module_id: string

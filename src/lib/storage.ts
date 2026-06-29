@@ -116,6 +116,13 @@ export async function createEmployee(input: {
   avatarUrl?: string
   descricao?: string
   notes?: string
+  turno?: Employee['turno']
+  horaEntrada?: string
+  horaSaida?: string
+  diasTrabalho?: Employee['diasTrabalho']
+  folgas?: string
+  melhorHorarioNotificacao?: string
+  recebeNotificacoes?: boolean
 }): Promise<Employee> {
   const employee: Employee = {
     id: uid(),
@@ -136,6 +143,13 @@ export async function createEmployee(input: {
     avatarUrl: input.avatarUrl,
     descricao: input.descricao,
     notes: input.notes,
+    turno: input.turno,
+    horaEntrada: input.horaEntrada,
+    horaSaida: input.horaSaida,
+    diasTrabalho: input.diasTrabalho,
+    folgas: input.folgas,
+    melhorHorarioNotificacao: input.melhorHorarioNotificacao,
+    recebeNotificacoes: input.recebeNotificacoes,
   }
 
   if (hasSupabase && supabase) {
@@ -175,6 +189,8 @@ export async function updateEmployee(
     'name' | 'phone' | 'role' | 'token' | 'access_code' | 'gerenteId'
     | 'email' | 'whatsapp' | 'birth_date' | 'admission_date' | 'store' | 'status'
     | 'nomePublico' | 'avatarUrl' | 'descricao' | 'notes'
+    | 'turno' | 'horaEntrada' | 'horaSaida' | 'diasTrabalho' | 'folgas'
+    | 'melhorHorarioNotificacao' | 'recebeNotificacoes'
   >>,
 ): Promise<Employee | null> {
   if (hasSupabase && supabase) {

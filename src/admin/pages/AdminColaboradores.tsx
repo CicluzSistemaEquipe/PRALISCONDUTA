@@ -5,10 +5,11 @@ import {
   Plus, Copy, Check, X, Search, MessageCircle, Link2, CheckCircle2,
   UserPlus, Pencil, Trash2, AlertTriangle, Save, Camera, User, Briefcase,
   Mail, Phone, CalendarDays, Building2, ShieldCheck, FileSignature, Clock, IdCard,
+  CalendarClock, Bell, BellOff,
 } from 'lucide-react'
 import { createEmployee, updateEmployee, deleteEmployee } from '@/lib/storage'
 import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
-import { ROLES, type Role, type AdminUser, type EmployeeStatus } from '@/lib/types'
+import { ROLES, type Role, type AdminUser, type EmployeeStatus, type Turno, type Weekday } from '@/lib/types'
 import { getAdminSession, isDono, listGerentes } from '../auth'
 import { enviarNotificacao } from '@/lib/notifications'
 import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
@@ -72,6 +73,108 @@ function PhotoField({ name, avatarUrl, busy, onPick, onRemove, label }: {
   )
 }
 
+// ── Jornada e comunicação (estrutura p/ futuras automações — sem push agora) ──
+const TURNOS: { id: Turno; label: string }[] = [
+  { id: 'manha', label: 'Manhã' }, { id: 'tarde', label: 'Tarde' }, { id: 'noite', label: 'Noite' },
+  { id: 'integral', label: 'Integral' }, { id: 'variavel', label: 'Variável' },
+]
+const WEEKDAYS: { id: Weekday; label: string }[] = [
+  { id: 'seg', label: 'Seg' }, { id: 'ter', label: 'Ter' }, { id: 'qua', label: 'Qua' },
+  { id: 'qui', label: 'Qui' }, { id: 'sex', label: 'Sex' }, { id: 'sab', label: 'Sáb' }, { id: 'dom', label: 'Dom' },
+]
+const turnoLabel = (t?: Turno) => TURNOS.find((x) => x.id === t)?.label ?? '—'
+const diasResumo = (d?: Weekday[]) => (d && d.length ? WEEKDAYS.filter((w) => d.includes(w.id)).map((w) => w.label).join(' · ') : '—')
+
+interface JornadaValues {
+  turno: Turno | ''
+  horaEntrada: string
+  horaSaida: string
+  diasTrabalho: Weekday[]
+  folgas: string
+  melhorHorarioNotificacao: string
+  recebeNotificacoes: boolean
+}
+
+function JornadaFields({ idp, v, set }: { idp: string; v: JornadaValues; set: (p: Partial<JornadaValues>) => void }) {
+  const toggleDia = (d: Weekday) =>
+    set({ diasTrabalho: v.diasTrabalho.includes(d) ? v.diasTrabalho.filter((x) => x !== d) : [...v.diasTrabalho, d] })
+  const chip = (active: boolean) =>
+    `rounded-lg border px-3 py-1.5 text-[0.8125rem] font-semibold transition-colors ${
+      active ? 'border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent-text)]'
+        : 'border-[var(--border-strong)] bg-white text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'}`
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <span className="adm-label">Turno</span>
+        <div className="flex flex-wrap gap-2">
+          {TURNOS.map((t) => (
+            <button key={t.id} type="button" aria-pressed={v.turno === t.id}
+              onClick={() => set({ turno: v.turno === t.id ? '' : t.id })} className={chip(v.turno === t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="adm-label" htmlFor={`${idp}-ent`}>Horário de entrada</label>
+          <input id={`${idp}-ent`} type="time" className="adm-input" value={v.horaEntrada} onChange={(e) => set({ horaEntrada: e.target.value })} />
+        </div>
+        <div>
+          <label className="adm-label" htmlFor={`${idp}-sai`}>Horário de saída</label>
+          <input id={`${idp}-sai`} type="time" className="adm-input" value={v.horaSaida} onChange={(e) => set({ horaSaida: e.target.value })} />
+        </div>
+      </div>
+
+      <div>
+        <span className="adm-label">Dias trabalhados</span>
+        <div className="flex flex-wrap gap-1.5">
+          {WEEKDAYS.map((d) => {
+            const on = v.diasTrabalho.includes(d.id)
+            return (
+              <button key={d.id} type="button" aria-pressed={on} onClick={() => toggleDia(d.id)}
+                className={`h-9 w-11 rounded-lg border text-[0.8rem] font-semibold transition-colors ${
+                  on ? 'border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent-text)]'
+                    : 'border-[var(--border-strong)] bg-white text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'}`}>
+                {d.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label className="adm-label" htmlFor={`${idp}-folgas`}>Folgas</label>
+        <input id={`${idp}-folgas`} className="adm-input" placeholder="Ex.: domingos e feriados"
+          value={v.folgas} onChange={(e) => set({ folgas: e.target.value })} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className="adm-label" htmlFor={`${idp}-mh`}>Melhor horário p/ notificações</label>
+          <input id={`${idp}-mh`} type="time" className="adm-input" value={v.melhorHorarioNotificacao} onChange={(e) => set({ melhorHorarioNotificacao: e.target.value })} />
+        </div>
+        <div>
+          <span className="adm-label">Recebe notificações</span>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" aria-pressed={v.recebeNotificacoes} onClick={() => set({ recebeNotificacoes: true })}
+              className={`flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[0.82rem] font-semibold transition-colors ${
+                v.recebeNotificacoes ? 'border-[#cdebd9] bg-[#ecf7f0] text-[#1e7e4e]' : 'border-[var(--border)] text-[var(--text-muted)] hover:bg-white'}`}>
+              <Bell className="h-3.5 w-3.5" /> Sim
+            </button>
+            <button type="button" aria-pressed={!v.recebeNotificacoes} onClick={() => set({ recebeNotificacoes: false })}
+              className={`flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[0.82rem] font-semibold transition-colors ${
+                !v.recebeNotificacoes ? 'border-[var(--border-strong)] bg-[var(--bg-muted)] text-[var(--text-secondary)]' : 'border-[var(--border)] text-[var(--text-muted)] hover:bg-white'}`}>
+              <BellOff className="h-3.5 w-3.5" /> Não
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lockGerente }: {
   onClose: () => void
   onSaved: (emp: { name: string; role: string; link: string }) => void
@@ -83,6 +186,8 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
     name: '', nomePublico: '', cpf: '', whatsapp: '', email: '', birth: '', admission: todayISO(),
     role: ROLES[0] as Role, status: 'ativo' as EmployeeStatus, store: '', gerenteId: defaultGerenteId,
     descricao: '', avatarUrl: undefined as string | undefined,
+    turno: '' as Turno | '', horaEntrada: '', horaSaida: '', diasTrabalho: [] as Weekday[],
+    folgas: '', melhorHorarioNotificacao: '', recebeNotificacoes: true,
   })
   const [err, setErr] = useState('')
   const [imgBusy, setImgBusy] = useState(false)
@@ -120,6 +225,13 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
         nomePublico: form.nomePublico.trim() || undefined,
         descricao: form.descricao.trim() || undefined,
         avatarUrl: form.avatarUrl,
+        turno: form.turno || undefined,
+        horaEntrada: form.horaEntrada || undefined,
+        horaSaida: form.horaSaida || undefined,
+        diasTrabalho: form.diasTrabalho.length ? form.diasTrabalho : undefined,
+        folgas: form.folgas.trim() || undefined,
+        melhorHorarioNotificacao: form.melhorHorarioNotificacao || undefined,
+        recebeNotificacoes: form.recebeNotificacoes,
       })
       const gerente = gerentes.find((g) => g.id === form.gerenteId)
       void enviarNotificacao({
@@ -233,6 +345,12 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
           </div>
         </ModalSection>
 
+        <ModalSection title="Jornada e comunicação"
+          description="Usado futuramente para automatizar lembretes, avisos, mensagens e notificações no melhor horário para cada colaborador."
+          icon={CalendarClock} tone="gold">
+          <JornadaFields idp="nc" v={form} set={set} />
+        </ModalSection>
+
         <div className="flex items-start gap-2.5 rounded-lg bg-[var(--bg-subtle)] px-3.5 py-3">
           <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={1.8} />
           <p className="text-[0.8125rem] leading-relaxed text-[var(--text-muted)]">
@@ -258,6 +376,9 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
     store: emp.store ?? '', status: (emp.status ?? 'ativo') as EmployeeStatus,
     role: emp.role as Role, gerenteId: emp.gerenteId ?? '',
     descricao: emp.descricao ?? '', avatarUrl: emp.avatarUrl as string | undefined,
+    turno: (emp.turno ?? '') as Turno | '', horaEntrada: emp.horaEntrada ?? '', horaSaida: emp.horaSaida ?? '',
+    diasTrabalho: (emp.diasTrabalho ?? []) as Weekday[], folgas: emp.folgas ?? '',
+    melhorHorarioNotificacao: emp.melhorHorarioNotificacao ?? '', recebeNotificacoes: emp.recebeNotificacoes ?? true,
   })
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
   const lojas = useLojas()
@@ -298,6 +419,13 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
         nomePublico: form.nomePublico.trim() || undefined,
         descricao: form.descricao.trim() || undefined,
         avatarUrl: form.avatarUrl,
+        turno: form.turno || undefined,
+        horaEntrada: form.horaEntrada || undefined,
+        horaSaida: form.horaSaida || undefined,
+        diasTrabalho: form.diasTrabalho.length ? form.diasTrabalho : undefined,
+        folgas: form.folgas.trim() || undefined,
+        melhorHorarioNotificacao: form.melhorHorarioNotificacao || undefined,
+        recebeNotificacoes: form.recebeNotificacoes,
       })
       onSaved()
     } catch {
@@ -402,6 +530,12 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
               <textarea id="ed-desc" className="adm-input" rows={2} value={form.descricao} onChange={(e) => set({ descricao: e.target.value })} />
             </div>
           </div>
+        </ModalSection>
+
+        <ModalSection title="Jornada e comunicação"
+          description="Usado futuramente para automatizar lembretes, avisos, mensagens e notificações no melhor horário para cada colaborador."
+          icon={CalendarClock} tone="gold">
+          <JornadaFields idp="ed" v={form} set={set} />
         </ModalSection>
 
         <div>
@@ -649,6 +783,41 @@ export function ColaboradorDetailModal({ row, gerenteName, onClose, onEdit, onCo
           </p>
         )}
       </div>
+
+      {/* jornada (discreto) — turno · horário · dias · notificações */}
+      {(emp.turno || emp.horaEntrada || emp.horaSaida || (emp.diasTrabalho?.length ?? 0) > 0 || emp.recebeNotificacoes !== undefined) && (
+        <div className="mt-4">
+          <span className="adm-eyebrow">Jornada</span>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {emp.turno && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-subtle)] px-2.5 py-1 text-[0.75rem] font-medium text-[var(--text-secondary)]">
+                <Clock className="h-3 w-3 text-[var(--text-muted)]" /> {turnoLabel(emp.turno)}
+              </span>
+            )}
+            {(emp.horaEntrada || emp.horaSaida) && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-subtle)] px-2.5 py-1 text-[0.75rem] font-medium text-[var(--text-secondary)]">
+                <Clock className="h-3 w-3 text-[var(--text-muted)]" /> {emp.horaEntrada || '—'}–{emp.horaSaida || '—'}
+              </span>
+            )}
+            {(emp.diasTrabalho?.length ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-subtle)] px-2.5 py-1 text-[0.75rem] font-medium text-[var(--text-secondary)]">
+                <CalendarDays className="h-3 w-3 text-[var(--text-muted)]" /> {diasResumo(emp.diasTrabalho)}
+              </span>
+            )}
+            {emp.recebeNotificacoes !== undefined && (
+              emp.recebeNotificacoes ? (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#cdebd9] bg-[#ecf7f0] px-2.5 py-1 text-[0.75rem] font-semibold text-[#1e7e4e]">
+                  <Bell className="h-3 w-3" /> Notificações ativadas
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-muted)] px-2.5 py-1 text-[0.75rem] font-semibold text-[var(--text-muted)]">
+                  <BellOff className="h-3 w-3" /> Notificações desativadas
+                </span>
+              )
+            )}
+          </div>
+        </div>
+      )}
     </ModalShell>
   )
 }
