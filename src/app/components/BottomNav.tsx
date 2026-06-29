@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { House, UserRound, Megaphone } from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { GraduationCap, UserRound, Megaphone } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useSession } from '../context/SessionContext'
 import { useSocialVersion, unreadCountForEmployee } from '@/lib/social'
@@ -16,10 +16,10 @@ export const TAB_PATH: Record<Tab, string> = {
   profile:  '/perfil',
 }
 
-const NAV_ITEMS: { id: Tab; icon: typeof House; label: string }[] = [
-  { id: 'feed',    icon: House,      label: 'Início' },
-  { id: 'social',  icon: Megaphone,  label: 'Social' },
-  { id: 'profile', icon: UserRound,  label: 'Perfil' },
+const NAV_ITEMS: { id: Tab; icon: typeof GraduationCap; label: string }[] = [
+  { id: 'feed',    icon: GraduationCap, label: 'Treinamento' },
+  { id: 'social',  icon: Megaphone,     label: 'Social' },
+  { id: 'profile', icon: UserRound,     label: 'Perfil' },
 ]
 
 /**
@@ -32,6 +32,7 @@ export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab
   const { theme } = useTheme()
   const { employee } = useSession()
   const version = useSocialVersion()
+  const reduce = useReducedMotion()
   const isLight = theme === 'light'
   const idle = isLight ? '#8a7a6b' : '#e8cfa0'
 
@@ -76,7 +77,14 @@ export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab
                   transition={{ type: 'spring', stiffness: 360, damping: 30 }}
                 />
               )}
-              <I size={21} strokeWidth={isActive ? 2.6 : 2.1} className="relative" color={isActive ? '#ffffff' : idle} />
+              <motion.span
+                className="relative"
+                variants={{ off: { scale: 1 }, on: reduce ? { scale: 1 } : { scale: [1, 1.18, 1] } }}
+                animate={isActive && item.id === 'feed' ? 'on' : 'off'}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <I size={21} strokeWidth={isActive ? 2.6 : 2.1} color={isActive ? '#ffffff' : idle} />
+              </motion.span>
               {badge > 0 && (
                 <span
                   aria-hidden
