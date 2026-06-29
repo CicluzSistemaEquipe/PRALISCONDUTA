@@ -13,6 +13,7 @@ import { getAdminSession, isDono, listGerentes } from '../auth'
 import { enviarNotificacao } from '@/lib/notifications'
 import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
 import { useLojas, addLoja } from '@/lib/lojas'
+import { LojaSelect } from '../components/LojaSelect'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
 import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader, ModalFooter, ModalSection } from '../components/ui'
@@ -203,8 +204,7 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="adm-label" htmlFor="nc-store">Loja/Unidade <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
-                <input id="nc-store" className="adm-input" placeholder="Ex.: Vila Nova" list="lojas-dl-nc" value={form.store} onChange={(e) => set({ store: e.target.value })} />
-                <datalist id="lojas-dl-nc">{lojas.map((l) => <option key={l} value={l} />)}</datalist>
+                <LojaSelect id="nc-store" value={form.store} onChange={(v) => set({ store: v })} lojas={lojas} />
               </div>
               <div>
                 <label className="adm-label" htmlFor="nc-ger">Gerente responsável</label>
@@ -376,8 +376,7 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="adm-label" htmlFor="ed-store">Loja/Unidade</label>
-                <input id="ed-store" className="adm-input" placeholder="Ex.: Vila Nova" list="lojas-dl-ed" value={form.store} onChange={(e) => set({ store: e.target.value })} />
-                <datalist id="lojas-dl-ed">{lojas.map((l) => <option key={l} value={l} />)}</datalist>
+                <LojaSelect id="ed-store" value={form.store} onChange={(v) => set({ store: v })} lojas={lojas} />
               </div>
               <div>
                 <label className="adm-label" htmlFor="ed-ger">Gerente responsável</label>
