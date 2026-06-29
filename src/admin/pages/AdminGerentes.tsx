@@ -10,8 +10,10 @@ import { listGerentes, addGerente, updateGerente, removeGerente } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader, ModalFooter, ModalSection } from '../components/ui'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
+import { LojasManager } from '../components/LojasManager'
 import { ColaboradorDetailModal, acessoLink, waLink } from './AdminColaboradores'
 import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
+import { useLojas, addLoja } from '@/lib/lojas'
 
 type TeamFilter = 'todos' | 'pendentes' | 'emdia' | 'assinou'
 const TEAM_FILTERS: { id: TeamFilter; label: string }[] = [
@@ -44,6 +46,7 @@ function GerenteFormModal({ gerente, onClose, onSaved }: {
   gerente?: AdminUser; onClose: () => void; onSaved: () => void
 }) {
   const editing = Boolean(gerente)
+  const lojas = useLojas()
   const [form, setForm] = useState({
     nome: gerente?.nome ?? '',
     nomePublico: gerente?.nomePublico ?? '',
@@ -78,6 +81,7 @@ function GerenteFormModal({ gerente, onClose, onSaved }: {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('E-mail inválido.'); return }
     if (!editing && form.senha.length < 4) { setErr('A senha deve ter ao menos 4 caracteres.'); return }
     setSaving(true)
+    if (form.loja.trim()) addLoja(form.loja)   // registra a loja p/ reuso
     const payload = {
       nome, email,
       nomePublico: form.nomePublico, loja: form.loja, whatsapp: form.whatsapp,
@@ -177,9 +181,10 @@ function GerenteFormModal({ gerente, onClose, onSaved }: {
         <ModalSection title="Detalhes" description="Informações de apoio (opcionais)." icon={Store} tone="brown">
           <div className="flex flex-col gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <IconField id="ng-loja" label="Loja" icon={Store}>
+              <IconField id="ng-loja" label="Loja" icon={Store} hint="Escolha uma cadastrada ou digite uma nova.">
                 <input id="ng-loja" className="adm-input" placeholder="Ex.: Vila Nova" style={ICON_PAD}
-                  value={form.loja} onChange={(e) => set('loja', e.target.value)} />
+                  list="lojas-dl" value={form.loja} onChange={(e) => set('loja', e.target.value)} />
+                <datalist id="lojas-dl">{lojas.map((l) => <option key={l} value={l} />)}</datalist>
               </IconField>
               <IconField id="ng-wa" label="WhatsApp" icon={MessageCircle}>
                 <input id="ng-wa" className="adm-input" placeholder="(00) 00000-0000" style={ICON_PAD}
@@ -483,6 +488,7 @@ export default function AdminGerentes() {
   const [editing, setEditing] = useState<AdminUser | null>(null)
   const [removing, setRemoving] = useState<AdminUser | null>(null)
   const [viewing, setViewing] = useState<AdminUser | null>(null)
+  const [lojasOpen, setLojasOpen] = useState(false)
   const [viewingColab, setViewingColab] = useState<EmployeeRow | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -522,9 +528,14 @@ export default function AdminGerentes() {
         title="Gerentes"
         description="Cadastre gerentes e acompanhe quantos colaboradores cada um conduz."
         action={
-          <button className="adm-btn adm-btn--primary" onClick={() => setOpenForm(true)}>
-            <Plus className="h-[18px] w-[18px]" strokeWidth={2} /> Adicionar gerente
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="adm-btn" onClick={() => setLojasOpen(true)}>
+              <Store className="h-[18px] w-[18px]" /> Lojas
+            </button>
+            <button className="adm-btn adm-btn--primary" onClick={() => setOpenForm(true)}>
+              <Plus className="h-[18px] w-[18px]" strokeWidth={2} /> Adicionar gerente
+            </button>
+          </div>
         }
       />
 
@@ -586,6 +597,9 @@ export default function AdminGerentes() {
       )}
 
       {/* modais */}
+      <AnimatePresence>
+        {lojasOpen && <LojasManager onClose={() => setLojasOpen(false)} />}
+      </AnimatePresence>
       <AnimatePresence>
         {openForm && (
           <GerenteFormModal

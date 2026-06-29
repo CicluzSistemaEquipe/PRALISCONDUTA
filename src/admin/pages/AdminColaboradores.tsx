@@ -12,6 +12,7 @@ import { ROLES, type Role, type AdminUser, type EmployeeStatus } from '@/lib/typ
 import { getAdminSession, isDono, listGerentes } from '../auth'
 import { enviarNotificacao } from '@/lib/notifications'
 import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
+import { useLojas, addLoja } from '@/lib/lojas'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
 import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader, ModalFooter, ModalSection } from '../components/ui'
@@ -85,6 +86,7 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
   const [err, setErr] = useState('')
   const [imgBusy, setImgBusy] = useState(false)
   const [saving, setSaving] = useState(false)
+  const lojas = useLojas()
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
 
   const handlePhoto = async (file?: File) => {
@@ -104,6 +106,7 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
     if (cpf.length !== 11) { setErr('CPF inválido — informe os 11 dígitos.'); return }
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) { setErr('E-mail inválido.'); return }
     setSaving(true)
+    if (form.store.trim()) addLoja(form.store)
     try {
       const emp = await createEmployee({
         name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined,
@@ -200,7 +203,8 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="adm-label" htmlFor="nc-store">Loja/Unidade <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
-                <input id="nc-store" className="adm-input" placeholder="Ex.: Vila Nova" value={form.store} onChange={(e) => set({ store: e.target.value })} />
+                <input id="nc-store" className="adm-input" placeholder="Ex.: Vila Nova" list="lojas-dl-nc" value={form.store} onChange={(e) => set({ store: e.target.value })} />
+                <datalist id="lojas-dl-nc">{lojas.map((l) => <option key={l} value={l} />)}</datalist>
               </div>
               <div>
                 <label className="adm-label" htmlFor="nc-ger">Gerente responsável</label>
@@ -256,6 +260,7 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
     descricao: emp.descricao ?? '', avatarUrl: emp.avatarUrl as string | undefined,
   })
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
+  const lojas = useLojas()
   const [saving, setSaving] = useState(false)
   const [imgBusy, setImgBusy] = useState(false)
   const [confirm, setConfirm] = useState(false)
@@ -280,6 +285,7 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
     if (cpf.length !== 11) { setErr('CPF inválido.'); return }
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) { setErr('E-mail inválido.'); return }
     setSaving(true)
+    if (form.store.trim()) addLoja(form.store)
     try {
       await updateEmployee(emp.id, {
         name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined,
@@ -370,7 +376,8 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="adm-label" htmlFor="ed-store">Loja/Unidade</label>
-                <input id="ed-store" className="adm-input" placeholder="Ex.: Vila Nova" value={form.store} onChange={(e) => set({ store: e.target.value })} />
+                <input id="ed-store" className="adm-input" placeholder="Ex.: Vila Nova" list="lojas-dl-ed" value={form.store} onChange={(e) => set({ store: e.target.value })} />
+                <datalist id="lojas-dl-ed">{lojas.map((l) => <option key={l} value={l} />)}</datalist>
               </div>
               <div>
                 <label className="adm-label" htmlFor="ed-ger">Gerente responsável</label>
