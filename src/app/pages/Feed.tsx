@@ -262,11 +262,21 @@ export default function Feed() {
             </h1>
           </motion.div>
 
-          <motion.div className="flex shrink-0 flex-col items-center gap-1" {...rise(0.06)}>
-            <LisHeaderAvatar globalProgress={globalProgress} size={80} onClick={() => navigate('/progresso')} />
-            <div className="text-center font-body" style={{ color: isLight ? '#1a0e00' : '#fff6ea' }}>
-              <p style={{ fontSize: 13, fontWeight: 900, lineHeight: 1 }}>{timeLabel}</p>
-              <p style={{ fontSize: 8.5, lineHeight: 1.25, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap', opacity: 0.85 }}>{dateLabel}</p>
+          <motion.div className="flex shrink-0 flex-col items-center gap-2" {...rise(0.06)}>
+            <LisHeaderAvatar globalProgress={globalProgress} size={78} onClick={() => navigate('/progresso')} />
+            <div
+              className="flex flex-col items-center font-body"
+              style={{
+                color: isLight ? '#1a0e00' : '#fff6ea',
+                background: isLight ? 'rgba(94,55,49,0.06)' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${isLight ? 'rgba(94,55,49,0.12)' : 'rgba(255,255,255,0.10)'}`,
+                borderRadius: 10,
+                padding: '3px 10px',
+                lineHeight: 1,
+              }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{timeLabel}</span>
+              <span style={{ fontSize: 8.5, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap', opacity: 0.8 }}>{dateLabel}</span>
             </div>
           </motion.div>
         </div>
