@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { Megaphone, Plus, Pin, PinOff, Pencil, Send, Archive, Trash2, ImagePlus, X, Eye, CheckCheck, Palette, AlertTriangle } from 'lucide-react'
+import { Megaphone, Plus, Pin, PinOff, Pencil, Send, Archive, Trash2, ImagePlus, X, Eye, CheckCheck, Palette, AlertTriangle, FileText, Users } from 'lucide-react'
 import { AdminPageHeader } from '../components/AdminPageHeader'
-import { EmptyState, ModalShell, ModalHeader, Avatar } from '../components/ui'
+import { EmptyState, ModalShell, ModalHeader, ModalFooter, ModalSection, Avatar } from '../components/ui'
 import { getAdminSession, getAdminUserById, listGerentes } from '../auth'
 import { listEmployees } from '@/lib/storage'
 import { ROLES, type AdminUser, type Employee, type Role, type SocialPost, type SocialPostType } from '@/lib/types'
@@ -254,77 +254,102 @@ export default function AdminSocial() {
 
       <AnimatePresence>
         {modal && (
-          <ModalShell onClose={() => setModal(null)}>
-            <ModalHeader icon={Megaphone} eyebrow={modal.id ? 'Editar' : 'Novo'} title="Comunicado" onClose={() => setModal(null)} />
+          <ModalShell
+            onClose={() => setModal(null)}
+            size="md"
+            header={<ModalHeader icon={Megaphone} eyebrow={modal.id ? 'Editar' : 'Novo'} title="Comunicado" onClose={() => setModal(null)} />}
+            footer={
+              <ModalFooter>
+                <button onClick={() => save('draft')} className="adm-btn flex-1">Salvar rascunho</button>
+                <button onClick={() => save('published')} className="adm-btn adm-btn--primary flex-[2] justify-center">
+                  <Send className="h-[18px] w-[18px]" /> Publicar
+                </button>
+              </ModalFooter>
+            }
+          >
+            <div className="flex flex-col gap-4">
 
-            <label className="adm-label" htmlFor="sp-title">Titulo</label>
-            <input id="sp-title" className="adm-input mb-3" value={modal.title}
-              onChange={(e) => setModal({ ...modal, title: e.target.value })} placeholder="Ex.: Reuniao de seguranca na sexta" />
+            {/* Conteúdo */}
+            <ModalSection title="Conteúdo" description="O que será comunicado à equipe." icon={FileText} tone="orange">
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="adm-label" htmlFor="sp-title">Título</label>
+                  <input id="sp-title" className="adm-input" value={modal.title}
+                    onChange={(e) => setModal({ ...modal, title: e.target.value })} placeholder="Ex.: Reunião de segurança na sexta" />
+                </div>
+                <div>
+                  <label className="adm-label" htmlFor="sp-msg">Mensagem</label>
+                  <textarea id="sp-msg" className="adm-input" rows={4} value={modal.message}
+                    onChange={(e) => setModal({ ...modal, message: e.target.value })} placeholder="Escreva o comunicado..." />
+                </div>
+              </div>
+            </ModalSection>
 
-            <label className="adm-label" htmlFor="sp-msg">Mensagem</label>
-            <textarea id="sp-msg" className="adm-input mb-3" rows={4} value={modal.message}
-              onChange={(e) => setModal({ ...modal, message: e.target.value })} placeholder="Escreva o comunicado..." />
+            {/* Categoria e público */}
+            <ModalSection title="Categoria e público" description="Como ele é classificado e quem recebe." icon={Users} tone="gold">
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="adm-label" htmlFor="sp-type">Categoria</label>
+                    <select id="sp-type" className="adm-input" value={modal.type}
+                      onChange={(e) => setModal({ ...modal, type: e.target.value as SocialPostType })}>
+                      {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="adm-label" htmlFor="sp-aud">Público</label>
+                    <select id="sp-aud" className="adm-input" value={modal.audienceKind}
+                      onChange={(e) => setModal({ ...modal, audienceKind: e.target.value as AudienceKind })}>
+                      <option value="all">Todos</option>
+                      <option value="store">Loja específica</option>
+                      <option value="role">Cargo específico</option>
+                      <option value="employee">Colaborador específico</option>
+                      <option value="manager">Equipe de um gerente</option>
+                    </select>
+                  </div>
+                </div>
 
-            <div className="mb-3 grid grid-cols-2 gap-3">
-              <div>
-                <label className="adm-label" htmlFor="sp-type">Tipo</label>
-                <select id="sp-type" className="adm-input" value={modal.type}
-                  onChange={(e) => setModal({ ...modal, type: e.target.value as SocialPostType })}>
-                  {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
+                {modal.audienceKind === 'store' && (
+                  <div>
+                    <label className="adm-label" htmlFor="sp-store">Loja</label>
+                    <input id="sp-store" className="adm-input" value={modal.store}
+                      onChange={(e) => setModal({ ...modal, store: e.target.value })} placeholder="Ex.: Vila Nova" />
+                  </div>
+                )}
+                {modal.audienceKind === 'role' && (
+                  <div>
+                    <label className="adm-label" htmlFor="sp-role">Cargo</label>
+                    <select id="sp-role" className="adm-input" value={modal.role}
+                      onChange={(e) => setModal({ ...modal, role: e.target.value as Role })}>
+                      {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                )}
+                {modal.audienceKind === 'employee' && (
+                  <div>
+                    <label className="adm-label" htmlFor="sp-emp">Colaborador</label>
+                    <select id="sp-emp" className="adm-input" value={modal.employeeId}
+                      onChange={(e) => setModal({ ...modal, employeeId: e.target.value })}>
+                      <option value="">Selecione...</option>
+                      {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                    </select>
+                  </div>
+                )}
+                {modal.audienceKind === 'manager' && (
+                  <div>
+                    <label className="adm-label" htmlFor="sp-mgr">Gerente</label>
+                    <select id="sp-mgr" className="adm-input" value={modal.managerId}
+                      onChange={(e) => setModal({ ...modal, managerId: e.target.value })}>
+                      <option value="">Selecione o gerente...</option>
+                      {managers.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+                    </select>
+                    <p className="mt-1 text-[0.72rem] text-[var(--text-muted)]">
+                      O comunicado chega a todos os colaboradores sob a responsabilidade deste gerente.
+                    </p>
+                  </div>
+                )}
               </div>
-              <div>
-                <label className="adm-label" htmlFor="sp-aud">Publico</label>
-                <select id="sp-aud" className="adm-input" value={modal.audienceKind}
-                  onChange={(e) => setModal({ ...modal, audienceKind: e.target.value as AudienceKind })}>
-                  <option value="all">Todos</option>
-                  <option value="store">Loja especifica</option>
-                  <option value="role">Cargo especifico</option>
-                  <option value="employee">Colaborador especifico</option>
-                  <option value="manager">Equipe de um gerente</option>
-                </select>
-              </div>
-            </div>
-
-            {modal.audienceKind === 'store' && (
-              <div className="mb-3">
-                <label className="adm-label" htmlFor="sp-store">Loja</label>
-                <input id="sp-store" className="adm-input" value={modal.store}
-                  onChange={(e) => setModal({ ...modal, store: e.target.value })} placeholder="Ex.: Vila Nova" />
-              </div>
-            )}
-            {modal.audienceKind === 'role' && (
-              <div className="mb-3">
-                <label className="adm-label" htmlFor="sp-role">Cargo</label>
-                <select id="sp-role" className="adm-input" value={modal.role}
-                  onChange={(e) => setModal({ ...modal, role: e.target.value as Role })}>
-                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </div>
-            )}
-            {modal.audienceKind === 'employee' && (
-              <div className="mb-3">
-                <label className="adm-label" htmlFor="sp-emp">Colaborador</label>
-                <select id="sp-emp" className="adm-input" value={modal.employeeId}
-                  onChange={(e) => setModal({ ...modal, employeeId: e.target.value })}>
-                  <option value="">Selecione...</option>
-                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
-            )}
-            {modal.audienceKind === 'manager' && (
-              <div className="mb-3">
-                <label className="adm-label" htmlFor="sp-mgr">Gerente</label>
-                <select id="sp-mgr" className="adm-input" value={modal.managerId}
-                  onChange={(e) => setModal({ ...modal, managerId: e.target.value })}>
-                  <option value="">Selecione o gerente...</option>
-                  {managers.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
-                </select>
-                <p className="mt-1 text-[0.72rem] text-[var(--text-muted)]">
-                  O comunicado chega a todos os colaboradores sob a responsabilidade deste gerente.
-                </p>
-              </div>
-            )}
+            </ModalSection>
 
             {/* Aparencia do card — cor de fundo e de fonte com validacao de contraste */}
             {(() => {
@@ -335,10 +360,12 @@ export default function AdminSocial() {
               const aa = ratio >= 4.5
               const custom = modal.cardColor !== undefined || modal.textColor !== undefined
               return (
-                <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-3.5">
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4">
                   <div className="mb-2.5 flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-[0.8rem] font-semibold text-[var(--ink)]">
-                      <Palette className="h-4 w-4 text-[var(--accent-text)]" /> Cores do card
+                    <span className="flex items-center gap-2 text-[0.85rem] font-semibold text-[var(--ink)]">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'var(--accent-tint)' }}>
+                        <Palette className="h-[15px] w-[15px] text-[var(--accent-text)]" />
+                      </span> Aparência do card
                     </span>
                     <button type="button" onClick={() => setModal({ ...modal, cardColor: undefined, textColor: undefined })}
                       className={`h-7 rounded-lg border px-2.5 text-[0.7rem] font-semibold transition-colors ${!custom ? 'border-[var(--accent)] text-[var(--accent-text)]' : 'border-[var(--border-strong)] text-[var(--text-secondary)] hover:bg-white'}`}>
@@ -389,11 +416,10 @@ export default function AdminSocial() {
             })()}
 
             {/* Imagem opcional */}
-            <div className="mb-4">
-              <span className="adm-label">Imagem (opcional)</span>
+            <ModalSection title="Imagem" description="Opcional. Aparece dentro do comunicado." icon={ImagePlus} tone="brown">
               {modal.image ? (
                 <div className="relative overflow-hidden rounded-xl border border-[var(--border)]" style={{ background: '#14140f' }}>
-                  <img src={modal.image} alt="Pre-visualizacao" style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block' }} />
+                  <img src={modal.image} alt="Pré-visualização" style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block' }} />
                   <button type="button" onClick={() => setModal({ ...modal, image: undefined })}
                     aria-label="Remover imagem"
                     className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/55 text-white transition-colors hover:bg-black/75">
@@ -402,30 +428,26 @@ export default function AdminSocial() {
                 </div>
               ) : (
                 <button type="button" onClick={() => fileRef.current?.click()} disabled={imgBusy}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--border-strong)] px-4 py-5 text-[0.85rem] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)] disabled:opacity-60">
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--border-strong)] bg-white px-4 py-5 text-[0.85rem] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-muted)] disabled:opacity-60">
                   <ImagePlus className="h-[18px] w-[18px]" /> {imgBusy ? 'Processando...' : 'Adicionar imagem'}
                 </button>
               )}
               <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                 onChange={(e) => handleImage(e.target.files?.[0])} />
               <p className="mt-1.5 text-[0.72rem] text-[var(--text-muted)]">
-                {ALLOWED_LABEL} - redimensionada automaticamente. Em producao: Supabase Storage/CDN.
+                {ALLOWED_LABEL} — redimensionada automaticamente. Em produção: Supabase Storage/CDN.
               </p>
               {imgErr && <p className="mt-1 text-[0.75rem] font-medium text-[var(--danger)]">{imgErr}</p>}
-            </div>
+            </ModalSection>
 
-            <label className="mb-5 mt-1 flex cursor-pointer items-center gap-2.5 text-[0.85rem] text-[var(--ink)]">
-              <input type="checkbox" checked={modal.pinned} onChange={(e) => setModal({ ...modal, pinned: e.target.checked })} />
-              Fixar no topo do feed
+            {/* Fixar no topo */}
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] px-4 py-3">
+              <input type="checkbox" checked={modal.pinned} onChange={(e) => setModal({ ...modal, pinned: e.target.checked })} className="h-4 w-4 accent-[var(--accent)]" />
+              <span className="flex items-center gap-1.5 text-[0.85rem] font-medium text-[var(--ink)]">
+                <Pin className="h-4 w-4 text-[var(--text-muted)]" /> Fixar no topo do feed
+              </span>
             </label>
 
-            <div className="flex gap-2.5">
-              <button onClick={() => save('draft')} className="flex-1 rounded-lg border border-[var(--border-strong)] px-4 py-2.5 text-[0.875rem] font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--bg-subtle)]">
-                Salvar rascunho
-              </button>
-              <button onClick={() => save('published')} className="adm-btn adm-btn--primary flex-1 justify-center">
-                <Send className="h-[18px] w-[18px]" /> Publicar
-              </button>
             </div>
           </ModalShell>
         )}
