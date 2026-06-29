@@ -1,6 +1,8 @@
-import { Trash2, ChevronUp, ChevronDown, FileText, MessageSquare, Sparkles, Info } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Trash2, ChevronUp, ChevronDown, FileText, MessageSquare, Sparkles, Info, Music, X } from 'lucide-react'
 import type { Story } from '@/lib/types'
 import { setSlideKind, slideKind, type SlideKind } from '../lib/modules'
+import { fileToAudioDataURL } from '@/lib/audio'
 
 // Tom discreto por tipo de slide (sem cores arco-iris): neutro / laranja / marrom.
 const KINDS: { id: SlideKind; label: string; Icon: typeof FileText; hint: string; color: string }[] = [
@@ -39,6 +41,23 @@ export function SlideEditor({
   const currentKind = KINDS.find((k) => k.id === kind)!
   const KindIcon    = currentKind.Icon
   const color       = currentKind.color
+
+  const audioRef = useRef<HTMLInputElement>(null)
+  const [audioBusy, setAudioBusy] = useState(false)
+  const [audioErr, setAudioErr] = useState('')
+  const handleAudio = async (file?: File) => {
+    if (!file || story.type !== 'lis') return
+    setAudioErr(''); setAudioBusy(true)
+    try {
+      const res = await fileToAudioDataURL(file)
+      onChange({ ...story, audioSrc: res.dataUrl })
+    } catch (e) {
+      setAudioErr(e instanceof Error ? e.message : 'Falha ao anexar o áudio.')
+    } finally {
+      setAudioBusy(false)
+      if (audioRef.current) audioRef.current.value = ''
+    }
+  }
 
   return (
     <div className="bg-white">
@@ -207,6 +226,30 @@ export function SlideEditor({
                 placeholder="Olá! Hoje vamos falar sobre..."
               />
             </Field>
+
+            {/* áudio MP3 opcional — legenda sincroniza com o tempo do áudio */}
+            <div>
+              <label className="adm-label">Áudio da Lis (MP3, opcional)</label>
+              {story.audioSrc ? (
+                <div className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-subtle)] px-3 py-2">
+                  <Music size={16} style={{ color }} />
+                  <audio src={story.audioSrc} controls className="h-8 min-w-0 flex-1" />
+                  <button type="button" onClick={() => onChange({ ...story, audioSrc: undefined })}
+                    aria-label="Remover áudio"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--danger)] transition-colors hover:bg-[var(--danger-bg)]">
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => audioRef.current?.click()} disabled={audioBusy}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--border-strong)] px-4 py-3 text-[0.85rem] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)] disabled:opacity-60">
+                  <Music size={16} /> {audioBusy ? 'Processando...' : 'Anexar MP3'}
+                </button>
+              )}
+              <input ref={audioRef} type="file" accept="audio/mpeg,.mp3" className="hidden" onChange={(e) => handleAudio(e.target.files?.[0])} />
+              <p className="mt-1 text-[0.72rem] text-[var(--text-muted)]">A legenda sincroniza com o tempo do áudio. Máx ~1MB — fica salvo no navegador; em produção vai para Storage/CDN.</p>
+              {audioErr && <p className="mt-1 text-[0.72rem] text-[var(--danger)]">{audioErr}</p>}
+            </div>
           </div>
         )}
       </div>
