@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowUpRight, X, type LucideIcon } from 'lucide-react'
 
@@ -224,11 +225,15 @@ export function ModalShell({ onClose, children }: { onClose: () => void; childre
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  return (
+  // Renderiza via PORTAL no <body> para escapar de qualquer contexto de
+  // empilhamento de ancestrais (ex.: o modal de perfil aberto pela sidebar
+  // ficava ATRAS da página — bug P15). z-index alto garante o topo.
+  if (typeof document === 'undefined') return null
+  return createPortal(
     <>
-      <motion.div className="fixed inset-0 z-50 bg-[rgba(26,23,20,0.45)]"
+      <motion.div className="fixed inset-0 z-[100] bg-[rgba(26,23,20,0.45)]"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" onClick={onClose}>
+      <div className="fixed inset-0 z-[101] flex items-end justify-center sm:items-center sm:p-4" onClick={onClose}>
         <motion.div ref={ref} role="dialog" aria-modal="true" tabIndex={-1}
           initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 28 }}
           transition={{ type: 'spring', stiffness: 280, damping: 26 }}
@@ -238,7 +243,8 @@ export function ModalShell({ onClose, children }: { onClose: () => void; childre
           {children}
         </motion.div>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
 
