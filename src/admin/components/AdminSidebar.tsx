@@ -19,7 +19,7 @@ import { brand } from '@/lib/brand'
 import { PralisSymbol } from '@/app/components/PralisSymbol'
 import { adminLogout, getAdminSession } from '../auth'
 import { AdminProfileButton } from './AdminProfileButton'
-import { useInboxVersion, unreadInboxCount } from '@/lib/inbox'
+import { useInboxVersion, unreadInboxCount, unreadForGerente } from '@/lib/inbox'
 import { enableAdminPreview } from '@/lib/devMode'
 
 type NavEntry = { to: string; label: string; icon: typeof LayoutDashboard }
@@ -152,8 +152,8 @@ export function AdminSidebar() {
 
   const inboxV = useInboxVersion()
   const badges = useMemo<Record<string, number>>(
-    () => ({ '/admin/mensagens': isDono ? unreadInboxCount() : 0 }),
-    [inboxV, isDono],
+    () => ({ '/admin/mensagens': isDono ? unreadInboxCount() : (session ? unreadForGerente(session.id) : 0) }),
+    [inboxV, isDono, session],
   )
 
   const logout = () => {

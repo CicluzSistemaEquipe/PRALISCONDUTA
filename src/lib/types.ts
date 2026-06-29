@@ -187,15 +187,33 @@ export interface SocialPostRead {
 }
 
 /** Mensagem privada Gerente -> Admin (caixa de entrada do dono). */
+export interface AdminMessageReply {
+  from_id: string
+  from_name: string
+  from_role: 'dono' | 'gerente'
+  text: string
+  created_at: string
+}
+
 export interface AdminMessage {
   id: string
   from_id: string
   from_name: string
+  /** papel de quem enviou (default 'gerente' p/ retrocompat) */
+  from_role?: 'dono' | 'gerente'
+  /** destino: gerente específico (AdminUser.id). Ausente = mensagem para o Admin */
+  to_id?: string
+  /** destino: todos os gerentes (cargo gerente) */
+  to_all_gerentes?: boolean
   title: string
   message: string
   created_at: string
   read: boolean
   archived: boolean
+  /** marcada como concluída/resolvida pelo Admin */
+  resolved?: boolean
+  /** respostas (thread) */
+  replies?: AdminMessageReply[]
 }
 
 // ---------- Conteúdo dos módulos ----------

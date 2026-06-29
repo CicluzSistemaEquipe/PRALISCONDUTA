@@ -6,7 +6,7 @@
 // ============================================================
 
 import { useSyncExternalStore } from 'react'
-import type { AdminMessage } from './types'
+import type { AdminMessage, AdminMessageReply } from './types'
 
 const KEY = 'pralis:admin-inbox'
 
@@ -38,12 +38,19 @@ if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => { if (e.key === KEY) bump() })
 }
 
-/** Gerente envia uma mensagem para o Admin. */
-export function sendMessage(input: { from_id: string; from_name: string; title: string; message: string }): AdminMessage {
+/** Envia uma mensagem. Sem `to_id`/`to_all_gerentes` => vai para o Admin (gerente
+ *  -> dono). Com destino => Admin envia para gerente específico ou todos. */
+export function sendMessage(input: {
+  from_id: string; from_name: string; title: string; message: string
+  from_role?: 'dono' | 'gerente'; to_id?: string; to_all_gerentes?: boolean
+}): AdminMessage {
   const msg: AdminMessage = {
     id: uid(),
     from_id: input.from_id,
     from_name: input.from_name,
+    from_role: input.from_role ?? 'gerente',
+    to_id: input.to_id,
+    to_all_gerentes: input.to_all_gerentes,
     title: input.title.trim(),
     message: input.message.trim(),
     created_at: new Date().toISOString(),
@@ -57,17 +64,26 @@ export function sendMessage(input: { from_id: string; from_name: string; title: 
   return msg
 }
 
+/** Uma mensagem é "para o Admin" quando não tem destino de gerente. */
+function isToAdmin(m: AdminMessage): boolean {
+  return !m.to_id && !m.to_all_gerentes
+}
+
 /** Todas as mensagens, mais recentes primeiro. */
 export function listMessages(): AdminMessage[] {
   return readLS().sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
-/** Caixa de entrada do Admin: recebidas e nao arquivadas. */
+/** Caixa de entrada do Admin: recebidas dos gerentes, nao arquivadas. */
 export function inboxForAdmin(): AdminMessage[] {
-  return listMessages().filter((m) => !m.archived)
+  return listMessages().filter((m) => isToAdmin(m) && !m.archived)
 }
-/** Mensagens enviadas por um gerente (com status lido/enviado). */
-export function sentBy(gerenteId: string): AdminMessage[] {
-  return listMessages().filter((m) => m.from_id === gerenteId)
+/** Caixa de entrada de um gerente: enviadas pelo Admin a ele (ou a todos). */
+export function inboxForGerente(gerenteId: string): AdminMessage[] {
+  return listMessages().filter((m) => !m.archived && (m.to_id === gerenteId || m.to_all_gerentes))
+}
+/** Mensagens enviadas por alguem (gerente -> admin), com status/respostas. */
+export function sentBy(senderId: string): AdminMessage[] {
+  return listMessages().filter((m) => m.from_id === senderId && isToAdmin(m))
 }
 export function markMessageRead(id: string) {
   const all = readLS()
@@ -83,7 +99,28 @@ export function archiveMessage(id: string) {
   all[idx] = { ...all[idx], archived: true, read: true }
   writeLS(all); bump()
 }
-/** Mensagens novas (nao lidas e nao arquivadas) — badge do Admin. */
+/** Adiciona uma resposta (thread) a uma mensagem. */
+export function replyMessage(id: string, reply: Omit<AdminMessageReply, 'created_at'>) {
+  const all = readLS()
+  const idx = all.findIndex((m) => m.id === id)
+  if (idx < 0) return
+  const full: AdminMessageReply = { ...reply, created_at: new Date().toISOString() }
+  all[idx] = { ...all[idx], replies: [...(all[idx].replies ?? []), full], read: true }
+  writeLS(all); bump()
+}
+/** Marca/desmarca como concluída (resolvida). */
+export function resolveMessage(id: string, resolved = true) {
+  const all = readLS()
+  const idx = all.findIndex((m) => m.id === id)
+  if (idx < 0) return
+  all[idx] = { ...all[idx], resolved, read: true }
+  writeLS(all); bump()
+}
+/** Mensagens novas para o Admin (nao lidas, nao arquivadas) — badge do Admin. */
 export function unreadInboxCount(): number {
-  return readLS().filter((m) => !m.read && !m.archived).length
+  return readLS().filter((m) => isToAdmin(m) && !m.read && !m.archived).length
+}
+/** Mensagens novas para um gerente — badge do gerente. */
+export function unreadForGerente(gerenteId: string): number {
+  return readLS().filter((m) => !m.archived && !m.read && (m.to_id === gerenteId || m.to_all_gerentes)).length
 }
