@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Plus, X, Mail, User, Lock, Users, Trash2, ShieldCheck, AlertTriangle, UserCog,
-  MessageCircle, Copy, Check, ChevronRight, FileSignature,
+  MessageCircle, Copy, Check, ChevronRight, FileSignature, Pencil, Camera, Store, IdCard,
 } from 'lucide-react'
 import { loadEmployeeRows, type EmployeeRow } from '@/dashboard/data'
 import type { AdminUser } from '@/lib/types'
-import { listGerentes, addGerente, removeGerente } from '../auth'
+import { listGerentes, addGerente, updateGerente, removeGerente } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
-import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader } from '../components/ui'
+import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader, ModalFooter, ModalSection } from '../components/ui'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
 import { ColaboradorDetailModal, acessoLink, waLink } from './AdminColaboradores'
+import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
 
 type TeamFilter = 'todos' | 'pendentes' | 'emdia' | 'assinou'
 const TEAM_FILTERS: { id: TeamFilter; label: string }[] = [
@@ -21,11 +22,52 @@ const TEAM_FILTERS: { id: TeamFilter; label: string }[] = [
 ]
 const isEmDia = (r: EmployeeRow) => r.progress >= 1 && r.signed
 
-// ── Modal: adicionar gerente ─────────────────────────────────────────────────
-function NovoGerenteModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ nome: '', email: '', senha: '' })
+// ── Campo com ícone à esquerda (reutilizável) ────────────────────────────────
+function IconField({ id, label, icon: Icon, hint, children }: {
+  id?: string; label: string; icon?: typeof User; hint?: string; children: ReactNode
+}) {
+  return (
+    <div>
+      <label className="adm-label" htmlFor={id}>{label}</label>
+      <div className="relative">
+        {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 h-[17px] w-[17px] -translate-y-1/2 text-[var(--text-muted)]" strokeWidth={1.8} />}
+        {children}
+      </div>
+      {hint && <p className="mt-1 text-[0.72rem] text-[var(--text-muted)]">{hint}</p>}
+    </div>
+  )
+}
+const ICON_PAD = { paddingLeft: 38 }
+
+// ── Modal: adicionar / editar gerente ────────────────────────────────────────
+function GerenteFormModal({ gerente, onClose, onSaved }: {
+  gerente?: AdminUser; onClose: () => void; onSaved: () => void
+}) {
+  const editing = Boolean(gerente)
+  const [form, setForm] = useState({
+    nome: gerente?.nome ?? '',
+    nomePublico: gerente?.nomePublico ?? '',
+    email: gerente?.email ?? '',
+    senha: '',
+    loja: gerente?.loja ?? '',
+    whatsapp: gerente?.whatsapp ?? '',
+    descricao: gerente?.descricao ?? '',
+    status: (gerente?.status ?? 'ativo') as 'ativo' | 'inativo',
+    avatarUrl: gerente?.avatarUrl as string | undefined,
+  })
   const [err, setErr] = useState('')
+  const [imgBusy, setImgBusy] = useState(false)
   const [saving, setSaving] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }))
+
+  const handlePhoto = async (file?: File) => {
+    if (!file) return
+    setErr(''); setImgBusy(true)
+    try { const res = await fileToDownscaledDataURL(file); set('avatarUrl', res.dataUrl) }
+    catch (e) { setErr(e instanceof Error ? e.message : 'Falha ao processar a imagem.') }
+    finally { setImgBusy(false); if (fileRef.current) fileRef.current.value = '' }
+  }
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -34,52 +76,125 @@ function NovoGerenteModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
     const email = form.email.trim().toLowerCase()
     if (!nome) { setErr('Informe o nome do gerente.'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('E-mail inválido.'); return }
-    if (form.senha.length < 4) { setErr('A senha deve ter ao menos 4 caracteres.'); return }
+    if (!editing && form.senha.length < 4) { setErr('A senha deve ter ao menos 4 caracteres.'); return }
     setSaving(true)
-    addGerente({ nome, email })
+    const payload = {
+      nome, email,
+      nomePublico: form.nomePublico, loja: form.loja, whatsapp: form.whatsapp,
+      descricao: form.descricao, status: form.status, avatarUrl: form.avatarUrl,
+    }
+    if (editing && gerente) updateGerente(gerente.id, payload)
+    else addGerente(payload)
     onSaved()
   }
 
   return (
-    <ModalShell onClose={onClose}>
-      <ModalHeader icon={ShieldCheck} eyebrow="Equipe" title="Novo gerente" onClose={onClose} />
-      <form onSubmit={submit} className="flex flex-col gap-4">
-        <div>
-          <label className="adm-label" htmlFor="ng-nome">Nome completo</label>
-          <div className="relative">
-            <User className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--text-muted)]" strokeWidth={1.8} />
-            <input id="ng-nome" className="adm-input" autoFocus placeholder="Ex.: João Mendes"
-              style={{ paddingLeft: 38 }}
-              value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} />
+    <ModalShell
+      onClose={onClose}
+      size="md"
+      header={<ModalHeader icon={editing ? Pencil : ShieldCheck} eyebrow="Equipe"
+        title={editing ? 'Editar gerente' : 'Novo gerente'} onClose={onClose} />}
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
+          <button type="submit" form="gerente-form" disabled={saving} className="adm-btn adm-btn--primary flex-[2]">
+            {saving ? 'Salvando…' : editing
+              ? <><Check className="h-[18px] w-[18px]" strokeWidth={2} /> Salvar alterações</>
+              : <><ShieldCheck className="h-[18px] w-[18px]" strokeWidth={2} /> Adicionar gerente</>}
+          </button>
+        </ModalFooter>
+      }
+    >
+      <form id="gerente-form" onSubmit={submit} className="flex flex-col gap-4">
+        {/* Identificação */}
+        <ModalSection title="Identificação" description="Como o gerente aparece para você e para a equipe." icon={IdCard} tone="orange">
+          <div className="flex flex-col gap-4">
+            {/* foto */}
+            <div className="flex items-center gap-3">
+              <div className="relative shrink-0">
+                <Avatar name={form.nome || 'Gerente'} size={56} src={form.avatarUrl} />
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={imgBusy}
+                  aria-label="Alterar foto"
+                  className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[var(--accent)] text-white shadow-sm transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-60">
+                  <Camera className="h-3 w-3" />
+                </button>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[0.82rem] font-semibold text-[var(--ink)]">Foto do gerente</p>
+                <p className="text-[0.72rem] text-[var(--text-muted)]">{imgBusy ? 'Processando…' : ALLOWED_LABEL}</p>
+                {form.avatarUrl && (
+                  <button type="button" onClick={() => set('avatarUrl', undefined)}
+                    className="mt-0.5 text-[0.72rem] font-semibold text-[var(--danger)] hover:underline">Remover foto</button>
+                )}
+              </div>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                onChange={(e) => handlePhoto(e.target.files?.[0])} />
+            </div>
+            <IconField id="ng-nome" label="Nome completo" icon={User}>
+              <input id="ng-nome" className="adm-input" autoFocus placeholder="Ex.: João Mendes" style={ICON_PAD}
+                value={form.nome} onChange={(e) => set('nome', e.target.value)} />
+            </IconField>
+            <IconField id="ng-pub" label="Nome público" icon={User} hint="Nome que os colaboradores veem. Em branco, usamos o primeiro nome.">
+              <input id="ng-pub" className="adm-input" placeholder="Ex.: João" style={ICON_PAD}
+                value={form.nomePublico} onChange={(e) => set('nomePublico', e.target.value)} />
+            </IconField>
           </div>
-        </div>
-        <div>
-          <label className="adm-label" htmlFor="ng-email">E-mail</label>
-          <div className="relative">
-            <Mail className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--text-muted)]" strokeWidth={1.8} />
-            <input id="ng-email" className="adm-input" type="email" placeholder="gerente@pralis.com.br"
-              style={{ paddingLeft: 38 }}
-              value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+        </ModalSection>
+
+        {/* Acesso */}
+        <ModalSection title="Acesso" description="Credenciais e situação da conta." icon={Lock} tone="gold">
+          <div className="flex flex-col gap-4">
+            <IconField id="ng-email" label="E-mail" icon={Mail}>
+              <input id="ng-email" className="adm-input" type="email" placeholder="gerente@pralis.com.br" style={ICON_PAD}
+                value={form.email} onChange={(e) => set('email', e.target.value)} />
+            </IconField>
+            {!editing && (
+              <IconField id="ng-senha" label="Senha de acesso" icon={Lock} hint="Mínimo 4 caracteres.">
+                <input id="ng-senha" className="adm-input" type="password" placeholder="Mínimo 4 caracteres" style={ICON_PAD}
+                  value={form.senha} onChange={(e) => set('senha', e.target.value)} />
+              </IconField>
+            )}
+            <div>
+              <span className="adm-label">Status</span>
+              <div className="grid grid-cols-2 gap-2">
+                {(['ativo', 'inativo'] as const).map((s) => (
+                  <button key={s} type="button" onClick={() => set('status', s)}
+                    className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[0.82rem] font-semibold capitalize transition-colors ${
+                      form.status === s
+                        ? s === 'ativo' ? 'border-[#cdebd9] bg-[#ecf7f0] text-[#1e7e4e]' : 'border-[var(--border-strong)] bg-[var(--bg-muted)] text-[var(--text-secondary)]'
+                        : 'border-[var(--border)] text-[var(--text-muted)] hover:bg-white'
+                    }`}>
+                    <span className="h-2 w-2 rounded-full" style={{ background: s === 'ativo' ? '#1e7e4e' : '#9a9a9a' }} />
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-        <div>
-          <label className="adm-label" htmlFor="ng-senha">Senha de acesso</label>
-          <div className="relative">
-            <Lock className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--text-muted)]" strokeWidth={1.8} />
-            <input id="ng-senha" className="adm-input" type="password" placeholder="Mínimo 4 caracteres"
-              style={{ paddingLeft: 38 }}
-              value={form.senha} onChange={(e) => setForm((f) => ({ ...f, senha: e.target.value }))} />
+        </ModalSection>
+
+        {/* Detalhes */}
+        <ModalSection title="Detalhes" description="Informações de apoio (opcionais)." icon={Store} tone="brown">
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <IconField id="ng-loja" label="Loja" icon={Store}>
+                <input id="ng-loja" className="adm-input" placeholder="Ex.: Vila Nova" style={ICON_PAD}
+                  value={form.loja} onChange={(e) => set('loja', e.target.value)} />
+              </IconField>
+              <IconField id="ng-wa" label="WhatsApp" icon={MessageCircle}>
+                <input id="ng-wa" className="adm-input" placeholder="(00) 00000-0000" style={ICON_PAD}
+                  value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} />
+              </IconField>
+            </div>
+            <div>
+              <label className="adm-label" htmlFor="ng-desc">Descrição curta</label>
+              <textarea id="ng-desc" className="adm-input" rows={2} placeholder="Ex.: Responsável pela operação da loja central."
+                value={form.descricao} onChange={(e) => set('descricao', e.target.value)} />
+            </div>
           </div>
-        </div>
+        </ModalSection>
 
         {err && <p className="text-[0.8125rem] font-medium text-[var(--danger)]">{err}</p>}
-
-        <div className="flex gap-3 pt-1">
-          <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
-          <button type="submit" disabled={saving} className="adm-btn adm-btn--primary flex-[2]">
-            {saving ? 'Adicionando…' : <><ShieldCheck className="h-[18px] w-[18px]" strokeWidth={2} /> Adicionar gerente</>}
-          </button>
-        </div>
       </form>
     </ModalShell>
   )
@@ -92,11 +207,22 @@ function RemoverGerenteModal({ gerente, count, onClose, onConfirm }: {
   const [removing, setRemoving] = useState(false)
   const remove = () => { setRemoving(true); onConfirm() }
   return (
-    <ModalShell onClose={onClose}>
-      <ModalHeader icon={Trash2} eyebrow="Remover gerente" title={gerente.nome} onClose={onClose} />
-
+    <ModalShell
+      onClose={onClose}
+      size="sm"
+      header={<ModalHeader icon={Trash2} eyebrow="Remover gerente" title={gerente.nome} onClose={onClose} tone="neutral" />}
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
+          <button type="button" onClick={remove} disabled={removing}
+            className="adm-btn flex-[2] border-[var(--danger)] bg-[var(--danger)] text-white hover:bg-[#a93226]">
+            {removing ? 'Removendo…' : <><Trash2 className="h-4 w-4" /> Sim, remover</>}
+          </button>
+        </ModalFooter>
+      }
+    >
       <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-3">
-        <Avatar name={gerente.nome} size={40} />
+        <Avatar name={gerente.nome} size={40} src={gerente.avatarUrl} />
         <div className="min-w-0">
           <p className="truncate text-[0.875rem] font-semibold text-[var(--ink)]">{gerente.nome}</p>
           <p className="truncate text-[0.8125rem] text-[var(--text-muted)]">{gerente.email}</p>
@@ -114,21 +240,13 @@ function RemoverGerenteModal({ gerente, count, onClose, onConfirm }: {
             : <>{gerente.nome.split(' ')[0]} não tem colaboradores vinculados. A remoção é segura.</>}
         </p>
       </div>
-
-      <div className="mt-4 flex gap-3">
-        <button type="button" onClick={onClose} className="adm-btn flex-1">Cancelar</button>
-        <button type="button" onClick={remove} disabled={removing}
-          className="adm-btn flex-[2] border-[var(--danger)] bg-[var(--danger)] text-white hover:bg-[#a93226]">
-          {removing ? 'Removendo…' : <><Trash2 className="h-4 w-4" /> Sim, remover</>}
-        </button>
-      </div>
     </ModalShell>
   )
 }
 
 // ── Linha da tabela (desktop) ────────────────────────────────────────────────
-function GerenteRow({ gerente, count, pendentes, onRemove, onOpen }: {
-  gerente: AdminUser; count: number; pendentes: number; onRemove: (g: AdminUser) => void; onOpen: (g: AdminUser) => void
+function GerenteRow({ gerente, count, pendentes, onRemove, onEdit, onOpen }: {
+  gerente: AdminUser; count: number; pendentes: number; onRemove: (g: AdminUser) => void; onEdit: (g: AdminUser) => void; onOpen: (g: AdminUser) => void
 }) {
   return (
     <tr className="group cursor-pointer" tabIndex={0} aria-label={`Ver equipe de ${gerente.nome}`}
@@ -136,10 +254,10 @@ function GerenteRow({ gerente, count, pendentes, onRemove, onOpen }: {
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(gerente) } }}>
       <td>
         <div className="flex items-center gap-3">
-          <Avatar name={gerente.nome} />
+          <Avatar name={gerente.nome} src={gerente.avatarUrl} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-[var(--ink)]">{gerente.nome}</p>
-            <p className="truncate text-[0.7rem] text-[var(--text-muted)]">{gerente.email}</p>
+            <p className="truncate text-[0.7rem] text-[var(--text-muted)]">{gerente.loja ? `${gerente.loja} · ` : ''}{gerente.email}</p>
           </div>
         </div>
       </td>
@@ -170,6 +288,10 @@ function GerenteRow({ gerente, count, pendentes, onRemove, onOpen }: {
           <span className="hidden items-center gap-1 text-[0.75rem] font-medium text-[var(--text-muted)] group-hover:flex">
             Ver equipe <ChevronRight className="h-3.5 w-3.5" />
           </span>
+          <button onClick={() => onEdit(gerente)} aria-label={`Editar ${gerente.nome}`} title="Editar gerente"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] opacity-0 transition-opacity hover:bg-[var(--bg-muted)] hover:text-[var(--ink)] group-hover:opacity-100 focus-within:opacity-100">
+            <Pencil className="h-4 w-4" />
+          </button>
           <button onClick={() => onRemove(gerente)} aria-label={`Remover ${gerente.nome}`} title="Remover gerente"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] opacity-0 transition-opacity hover:bg-[var(--danger-bg)] hover:text-[var(--danger)] group-hover:opacity-100 focus-within:opacity-100">
             <Trash2 className="h-4 w-4" />
@@ -181,16 +303,16 @@ function GerenteRow({ gerente, count, pendentes, onRemove, onOpen }: {
 }
 
 // ── Card (mobile) ────────────────────────────────────────────────────────────
-function GerenteCardMobile({ gerente, count, pendentes, onRemove, onOpen }: {
-  gerente: AdminUser; count: number; pendentes: number; onRemove: (g: AdminUser) => void; onOpen: (g: AdminUser) => void
+function GerenteCardMobile({ gerente, count, pendentes, onRemove, onEdit, onOpen }: {
+  gerente: AdminUser; count: number; pendentes: number; onRemove: (g: AdminUser) => void; onEdit: (g: AdminUser) => void; onOpen: (g: AdminUser) => void
 }) {
   return (
     <div className="rounded-xl border border-[var(--border)] bg-white p-4" onClick={() => onOpen(gerente)}>
       <div className="flex items-start gap-3">
-        <Avatar name={gerente.nome} size={40} />
+        <Avatar name={gerente.nome} size={40} src={gerente.avatarUrl} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-[var(--ink)]">{gerente.nome}</p>
-          <p className="truncate text-[0.8125rem] text-[var(--text-muted)]">{gerente.email}</p>
+          <p className="truncate text-[0.8125rem] text-[var(--text-muted)]">{gerente.loja ? `${gerente.loja} · ` : ''}{gerente.email}</p>
         </div>
         <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-muted)]" />
       </div>
@@ -208,6 +330,9 @@ function GerenteCardMobile({ gerente, count, pendentes, onRemove, onOpen }: {
       <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
         <button onClick={() => onOpen(gerente)} className="adm-btn adm-btn--primary h-9 flex-1">
           <Users className="h-4 w-4" /> Ver equipe
+        </button>
+        <button onClick={() => onEdit(gerente)} aria-label="Editar gerente" className="adm-btn h-9 w-9 shrink-0 px-0">
+          <Pencil className="h-4 w-4" />
         </button>
         <button onClick={() => onRemove(gerente)} aria-label="Remover gerente" className="adm-btn adm-btn--danger h-9 w-9 shrink-0 px-0">
           <Trash2 className="h-4 w-4" />
@@ -282,21 +407,28 @@ function GerenteDetailModal({ gerente, team, onClose, onOpenColab, onCopy, copie
   })
 
   return (
-    <ModalShell onClose={onClose}>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Avatar name={gerente.nome} size={48} />
-          <div className="min-w-0">
-            <h2 className="truncate text-[1.15rem] font-semibold text-[var(--ink)]">{gerente.nome}</h2>
-            <p className="truncate text-[0.8125rem] text-[var(--text-muted)]">{gerente.email}</p>
+    <ModalShell
+      onClose={onClose}
+      size="lg"
+      header={
+        <div className="flex items-start justify-between gap-3 pb-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar name={gerente.nome} size={48} src={gerente.avatarUrl} />
+            <div className="min-w-0">
+              <p className="adm-eyebrow">Gerente</p>
+              <h2 className="truncate text-[1.15rem] font-semibold text-[var(--ink)]">{gerente.nome}</h2>
+              <p className="truncate text-[0.8125rem] text-[var(--text-muted)]">
+                {gerente.loja ? `${gerente.loja} · ` : ''}{gerente.email}
+              </p>
+            </div>
           </div>
+          <button type="button" onClick={onClose} aria-label="Fechar"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
+            <X className="h-[18px] w-[18px]" />
+          </button>
         </div>
-        <button type="button" onClick={onClose} aria-label="Fechar"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
-          <X className="h-[18px] w-[18px]" />
-        </button>
-      </div>
-
+      }
+    >
       {/* status geral da equipe */}
       <div className="grid grid-cols-4 gap-2">
         <TeamStat value={total} label="Equipe" />
@@ -348,6 +480,7 @@ export default function AdminGerentes() {
   const [gerentes, setGerentes] = useState<AdminUser[] | null>(null)
   const [rows, setRows] = useState<EmployeeRow[]>([])
   const [openForm, setOpenForm] = useState(false)
+  const [editing, setEditing] = useState<AdminUser | null>(null)
   const [removing, setRemoving] = useState<AdminUser | null>(null)
   const [viewing, setViewing] = useState<AdminUser | null>(null)
   const [viewingColab, setViewingColab] = useState<EmployeeRow | null>(null)
@@ -432,7 +565,7 @@ export default function AdminGerentes() {
                 </thead>
                 <tbody>
                   {gerentes.map((g) => (
-                    <GerenteRow key={g.id} gerente={g} count={teamOf(g).length} pendentes={pendentesOf(g)} onRemove={setRemoving} onOpen={setViewing} />
+                    <GerenteRow key={g.id} gerente={g} count={teamOf(g).length} pendentes={pendentesOf(g)} onRemove={setRemoving} onEdit={setEditing} onOpen={setViewing} />
                   ))}
                 </tbody>
               </table>
@@ -445,7 +578,7 @@ export default function AdminGerentes() {
             className="flex flex-col gap-3 md:hidden">
             {gerentes.map((g) => (
               <motion.div key={g.id} variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
-                <GerenteCardMobile gerente={g} count={teamOf(g).length} pendentes={pendentesOf(g)} onRemove={setRemoving} onOpen={setViewing} />
+                <GerenteCardMobile gerente={g} count={teamOf(g).length} pendentes={pendentesOf(g)} onRemove={setRemoving} onEdit={setEditing} onOpen={setViewing} />
               </motion.div>
             ))}
           </motion.div>
@@ -455,9 +588,18 @@ export default function AdminGerentes() {
       {/* modais */}
       <AnimatePresence>
         {openForm && (
-          <NovoGerenteModal
+          <GerenteFormModal
             onClose={() => setOpenForm(false)}
             onSaved={() => { setOpenForm(false); reload() }}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {editing && (
+          <GerenteFormModal
+            gerente={editing}
+            onClose={() => setEditing(null)}
+            onSaved={() => { setEditing(null); reload() }}
           />
         )}
       </AnimatePresence>

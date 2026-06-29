@@ -115,6 +115,16 @@ export interface AdminUser {
   email: string
   nome: string
   role: UserRole
+  /** Nome que os colaboradores veem no app (default: primeiro nome) */
+  nomePublico?: string
+  /** Loja/unidade que o gerente conduz */
+  loja?: string
+  /** WhatsApp/celular de contato */
+  whatsapp?: string
+  /** Status do acesso */
+  status?: 'ativo' | 'inativo'
+  /** Descricao curta / bio do gerente */
+  descricao?: string
   /** Apenas para gerente: IDs dos colaboradores sob sua responsabilidade */
   colaboradoresIds?: string[]
   /** foto de perfil (data URL no modo localStorage; Storage/CDN na producao) */
