@@ -209,38 +209,86 @@ export function Avatar({ name, size = 36, src }: { name: string; size?: number; 
 }
 
 /* ---------- Modal (bottom-sheet no mobile, centralizado no desktop) ----------
-   Fecha com ESC e move o foco para dentro ao abrir (acessibilidade). */
-export function ModalShell({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+   Layout em coluna: cabeçalho fixo (opcional) → CORPO com scroll interno →
+   rodapé fixo (opcional). Assim o rodapé/os botões NUNCA somem nem saem da tela,
+   mesmo com muito conteúdo. Fecha com ESC, trava o scroll do body, move o foco
+   para dentro ao abrir e respeita safe-area (iOS) + prefers-reduced-motion.
+
+   Uso recomendado (padrão único do Admin):
+     <ModalShell
+       onClose={...}
+       size="md"
+       header={<ModalHeader icon={I} eyebrow="…" title="…" onClose={...} />}
+       footer={<ModalFooter>…botões…</ModalFooter>}
+     >
+       …corpo (em <ModalSection/> cards)…
+     </ModalShell>
+   Sem `header`/`footer`, o corpo recebe os filhos diretamente (modo legado). */
+
+const MODAL_WIDTH: Record<'sm' | 'md' | 'lg', number> = { sm: 420, md: 480, lg: 640 }
+
+export function ModalShell({
+  onClose, children, header, footer, size = 'md',
+}: {
+  onClose: () => void
+  children: ReactNode
+  header?: ReactNode
+  footer?: ReactNode
+  size?: 'sm' | 'md' | 'lg'
+}) {
   const ref = useRef<HTMLDivElement>(null)
-  // Foco move-se para o modal SO na montagem. (Antes ficava em [onClose]: como o
-  // onClose costuma ser uma arrow nova a cada render, o efeito re-rodava a cada
-  // tecla e roubava o foco do input — impedindo digitar mais de 1 caractere.)
-  useEffect(() => {
-    ref.current?.focus()
-  }, [])
-  // Listener de ESC separado: pode re-vincular sem mexer no foco.
+  const reduce = useReducedMotion()
+  // Foco move-se para o modal SO na montagem. (Antes em [onClose]: como onClose é
+  // uma arrow nova a cada render, o efeito re-rodava a cada tecla e roubava o foco
+  // do input — impedindo digitar mais de 1 caractere.)
+  useEffect(() => { ref.current?.focus() }, [])
+  // ESC + trava o scroll de fundo (sem mexer no foco).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
   }, [onClose])
 
   // Renderiza via PORTAL no <body> para escapar de qualquer contexto de
-  // empilhamento de ancestrais (ex.: o modal de perfil aberto pela sidebar
-  // ficava ATRAS da página — bug P15). z-index alto garante o topo.
+  // empilhamento de ancestrais (ex.: o modal de perfil ficava ATRAS — bug P15).
   if (typeof document === 'undefined') return null
+  const structured = Boolean(header || footer)
   return createPortal(
     <>
-      <motion.div className="fixed inset-0 z-[100] bg-[rgba(26,23,20,0.45)]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
+      <motion.div className="fixed inset-0 z-[100] bg-[rgba(26,23,20,0.48)] backdrop-blur-[2px]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={onClose} />
       <div className="fixed inset-0 z-[101] flex items-end justify-center sm:items-center sm:p-4" onClick={onClose}>
         <motion.div ref={ref} role="dialog" aria-modal="true" tabIndex={-1}
-          initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 28 }}
+          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28 }}
+          animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          exit={reduce ? { opacity: 0 } : { opacity: 0, y: 28 }}
           transition={{ type: 'spring', stiffness: 280, damping: 26 }}
           onClick={(e) => e.stopPropagation()}
-          className="max-h-[92dvh] w-full max-w-[460px] overflow-y-auto rounded-t-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-md)] outline-none sm:rounded-2xl"
+          style={{
+            maxWidth: MODAL_WIDTH[size],
+            maxHeight: 'calc(100dvh - 2 * max(env(safe-area-inset-top, 0px), 14px))',
+          }}
+          className="flex w-full flex-col overflow-hidden rounded-t-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-md)] outline-none sm:rounded-2xl"
         >
-          {children}
+          {header && (
+            <div className="flex-none border-b border-[var(--border)] px-6 pt-5">{header}</div>
+          )}
+          <div
+            className={`min-h-0 flex-1 overflow-y-auto ${structured ? 'px-6 py-5' : 'p-6'}`}
+            style={{ overscrollBehavior: 'contain' }}
+          >
+            {children}
+          </div>
+          {footer && (
+            <div
+              className="flex-none border-t border-[var(--border)] bg-white px-6 pt-4"
+              style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)' }}
+            >
+              {footer}
+            </div>
+          )}
         </motion.div>
       </div>
     </>,
@@ -248,22 +296,64 @@ export function ModalShell({ onClose, children }: { onClose: () => void; childre
   )
 }
 
-export function ModalHeader({ icon: Icon, eyebrow, title, onClose }: { icon: LucideIcon; eyebrow: string; title: string; onClose: () => void }) {
+/** Cabeçalho padrão do modal: ícone tonal + eyebrow + título + fechar. */
+export function ModalHeader({
+  icon: Icon, eyebrow, title, onClose, tone = 'orange',
+}: { icon: LucideIcon; eyebrow: string; title: string; onClose: () => void; tone?: Tone }) {
+  const t = TONES[tone]
   return (
-    <div className="mb-5 flex items-start justify-between gap-3">
+    <div className="flex items-start justify-between gap-3 pb-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--accent-tint)]">
-          <Icon className="h-5 w-5 text-[#f26b2a]" strokeWidth={1.9} />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]" style={{ background: t.bg }}>
+          <Icon className="h-5 w-5" style={{ color: t.fg }} strokeWidth={1.9} />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="adm-eyebrow">{eyebrow}</p>
-          <h2 className="mt-0.5 text-[1.15rem] font-semibold text-[var(--ink)]">{title}</h2>
+          <h2 className="mt-0.5 truncate text-[1.15rem] font-semibold text-[var(--ink)]">{title}</h2>
         </div>
       </div>
       <button type="button" onClick={onClose} aria-label="Fechar"
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]">
         <X className="h-[18px] w-[18px]" />
       </button>
     </div>
+  )
+}
+
+/** Rodapé padrão do modal — linha de botões. Ordem: [secundário flex-1] [primário flex-[2]]. */
+export function ModalFooter({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap items-center gap-3">{children}</div>
+}
+
+/** Bloco/card de seção dentro do corpo do modal: agrupa campos com título, ícone
+ *  tonal opcional e microdescrição — reduz a sensação de "formulário gigante". */
+export function ModalSection({
+  title, description, icon: Icon, tone = 'neutral', children, className = '',
+}: {
+  title?: string
+  description?: string
+  icon?: LucideIcon
+  tone?: Tone
+  children: ReactNode
+  className?: string
+}) {
+  const t = TONES[tone]
+  return (
+    <section className={`rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4 ${className}`}>
+      {title && (
+        <header className="mb-3 flex items-start gap-2.5">
+          {Icon && (
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: t.bg }}>
+              <Icon className="h-[15px] w-[15px]" style={{ color: t.fg }} strokeWidth={2} />
+            </span>
+          )}
+          <div className="min-w-0">
+            <h3 className="text-[0.85rem] font-semibold text-[var(--ink)]">{title}</h3>
+            {description && <p className="mt-0.5 text-[0.72rem] leading-snug text-[var(--text-muted)]">{description}</p>}
+          </div>
+        </header>
+      )}
+      {children}
+    </section>
   )
 }
