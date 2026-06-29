@@ -15,7 +15,7 @@ import {
   getProgress,
   saveProgress as persistProgress,
 } from '@/lib/storage'
-import { isDevMode, enableDevMode } from '@/lib/devMode'
+import { isDevMode, enableDevMode, isAdminPreview, disableAdminPreview } from '@/lib/devMode'
 
 const DEV_EMPLOYEE: Employee = {
   id: 'dev-0000',
@@ -63,8 +63,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     let active = true
     ;(async () => {
-      // DEV MODE — injeta colaborador fake e pula storage
-      if (isDevMode()) {
+      // DEV MODE — injeta colaborador fake e pula storage.
+      // Exceção: a pré-visualização do admin NÃO sobrescreve uma sessão real de
+      // colaborador já existente neste navegador (evita "vazar" o modo para ele).
+      const hasReal = Boolean(localStorage.getItem(CURRENT_KEY))
+      if (isDevMode() && (!isAdminPreview() || !hasReal)) {
         if (active) {
           setEmployee(DEV_EMPLOYEE)
           setLoading(false)
@@ -89,6 +92,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback<SessionValue['login']>(
     async (input) => {
+      disableAdminPreview() // colaborador real entrando: nunca em modo preview
       // se já existe colaborador com o token, reaproveita
       let emp: Employee | null = input.token ? await getEmployeeByToken(input.token) : null
       if (!emp) emp = await createEmployee(input)
@@ -102,6 +106,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const resumeByToken = useCallback<SessionValue['resumeByToken']>(
     async (token) => {
+      disableAdminPreview() // colaborador real entrando: nunca em modo preview
       const emp = await getEmployeeByToken(token)
       if (emp) {
         localStorage.setItem(CURRENT_KEY, emp.id)

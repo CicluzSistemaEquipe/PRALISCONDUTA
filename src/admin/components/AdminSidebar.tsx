@@ -20,6 +20,7 @@ import { PralisSymbol } from '@/app/components/PralisSymbol'
 import { adminLogout, getAdminSession } from '../auth'
 import { AdminProfileButton } from './AdminProfileButton'
 import { useInboxVersion, unreadInboxCount } from '@/lib/inbox'
+import { enableAdminPreview } from '@/lib/devMode'
 
 type NavEntry = { to: string; label: string; icon: typeof LayoutDashboard }
 type NavGroup = { label?: string; items: NavEntry[] }
@@ -175,6 +176,8 @@ export function AdminSidebar() {
           href="/feed"
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => enableAdminPreview()}
+          title="Abre o app com todo o treinamento liberado (apenas para Dono/Gerente)"
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-[0.875rem] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]"
         >
           <ExternalLink className="h-[18px] w-[18px]" strokeWidth={1.9} /> Ver o app

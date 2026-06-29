@@ -11,6 +11,10 @@
  *  - DevToolbar flutuante com links rápidos para todas as telas
  */
 const KEY = 'pralis_dev'
+// Modo de PRÉ-VISUALIZAÇÃO do admin: quando Dono/Gerente abre o app pelo painel
+// ("Ver o app"), todo o treinamento fica liberado — sem URL, sem parâmetros.
+// Nunca é ligado por colaboradores.
+const ADMIN_KEY = 'pralis:admin-mode'
 
 export function isDevMode(): boolean {
   if (typeof window === 'undefined') return false
@@ -18,7 +22,18 @@ export function isDevMode(): boolean {
     localStorage.setItem(KEY, '1')
     return true
   }
-  return localStorage.getItem(KEY) === '1'
+  return localStorage.getItem(KEY) === '1' || localStorage.getItem(ADMIN_KEY) === '1'
+}
+
+/** true quando a pré-visualização do admin está ativa. */
+export function isAdminPreview(): boolean {
+  return typeof window !== 'undefined' && localStorage.getItem(ADMIN_KEY) === '1'
+}
+export function enableAdminPreview(): void {
+  try { localStorage.setItem(ADMIN_KEY, '1') } catch { /* ignore */ }
+}
+export function disableAdminPreview(): void {
+  try { localStorage.removeItem(ADMIN_KEY) } catch { /* ignore */ }
 }
 
 export function enableDevMode(): void {

@@ -5,6 +5,7 @@
 // ============================================================
 
 import type { AdminUser } from '@/lib/types'
+import { disableAdminPreview } from '@/lib/devMode'
 
 const SESSION_KEY = 'pralis:admin-session'
 const USERS_KEY = 'pralis:admin-users'
@@ -155,6 +156,7 @@ export function adminLogin(emailOrPassword: string, password?: string): boolean 
 export function adminLogout(): void {
   try {
     sessionStorage.removeItem(SESSION_KEY)
+    disableAdminPreview()
   } catch {
     /* ignore */
   }
