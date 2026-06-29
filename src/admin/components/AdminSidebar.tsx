@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -9,6 +9,7 @@ import {
   ScrollText,
   BarChart3,
   Megaphone,
+  Inbox,
   LogOut,
   ExternalLink,
   Menu,
@@ -18,6 +19,7 @@ import { brand } from '@/lib/brand'
 import { PralisSymbol } from '@/app/components/PralisSymbol'
 import { adminLogout, getAdminSession } from '../auth'
 import { AdminProfileButton } from './AdminProfileButton'
+import { useInboxVersion, unreadInboxCount } from '@/lib/inbox'
 
 type NavEntry = { to: string; label: string; icon: typeof LayoutDashboard }
 type NavGroup = { label?: string; items: NavEntry[] }
@@ -39,14 +41,26 @@ const NAV_DONO: NavGroup[] = [
       { to: '/admin/termos', label: 'Termos', icon: ScrollText },
     ],
   },
-  { label: 'Comunicação', items: [{ to: '/admin/social', label: 'Social', icon: Megaphone }] },
+  {
+    label: 'Comunicação',
+    items: [
+      { to: '/admin/social', label: 'Social', icon: Megaphone },
+      { to: '/admin/mensagens', label: 'Mensagens', icon: Inbox },
+    ],
+  },
   { label: 'Análise', items: [{ to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 }] },
 ]
 
 const NAV_GERENTE: NavGroup[] = [
   { items: [{ to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard }] },
   { label: 'Pessoas', items: [{ to: '/admin/colaboradores', label: 'Minha equipe', icon: Users }] },
-  { label: 'Comunicação', items: [{ to: '/admin/social', label: 'Social', icon: Megaphone }] },
+  {
+    label: 'Comunicação',
+    items: [
+      { to: '/admin/social', label: 'Social', icon: Megaphone },
+      { to: '/admin/mensagens', label: 'Mensagens', icon: Inbox },
+    ],
+  },
   { label: 'Análise', items: [{ to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 }] },
 ]
 
@@ -77,7 +91,7 @@ function Brand() {
   )
 }
 
-function NavItems({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () => void }) {
+function NavItems({ groups, onNavigate, badges }: { groups: NavGroup[]; onNavigate?: () => void; badges?: Record<string, number> }) {
   return (
     <nav className="flex flex-1 flex-col gap-3">
       {groups.map((group, gi) => (
@@ -111,6 +125,11 @@ function NavItems({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () 
                   )}
                   <n.icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2.2 : 1.9} />
                   {n.label}
+                  {badges && badges[n.to] > 0 && (
+                    <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[0.65rem] font-bold text-white">
+                      {badges[n.to] > 9 ? '9+' : badges[n.to]}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>
@@ -130,6 +149,12 @@ export function AdminSidebar() {
   const items = isDono ? NAV_DONO : NAV_GERENTE
   const roleLabel = isDono ? 'Dono' : 'Gerente'
 
+  const inboxV = useInboxVersion()
+  const badges = useMemo<Record<string, number>>(
+    () => ({ '/admin/mensagens': isDono ? unreadInboxCount() : 0 }),
+    [inboxV, isDono],
+  )
+
   const logout = () => {
     adminLogout()
     navigate('/admin/login', { replace: true })
@@ -141,7 +166,7 @@ export function AdminSidebar() {
         <Brand />
       </div>
 
-      <NavItems groups={items} onNavigate={onNavigate} />
+      <NavItems groups={items} onNavigate={onNavigate} badges={badges} />
 
       <div className="mt-auto flex flex-col gap-1 border-t border-[var(--border)] pt-3">
         {session && <AdminProfileButton session={session} roleLabel={roleLabel} />}

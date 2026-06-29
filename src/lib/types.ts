@@ -172,6 +172,18 @@ export interface SocialPostRead {
   read_at: string
 }
 
+/** Mensagem privada Gerente -> Admin (caixa de entrada do dono). */
+export interface AdminMessage {
+  id: string
+  from_id: string
+  from_name: string
+  title: string
+  message: string
+  created_at: string
+  read: boolean
+  archived: boolean
+}
+
 // ---------- Conteúdo dos módulos ----------
 
 export type LisState =

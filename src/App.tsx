@@ -36,6 +36,7 @@ const AdminGerentes = lazyWithRetry(() => import('./admin/pages/AdminGerentes'))
 const AdminTermos = lazyWithRetry(() => import('./admin/pages/AdminTermos'))
 const AdminAcompanhamento = lazyWithRetry(() => import('./admin/pages/AdminAcompanhamento'))
 const AdminSocial = lazyWithRetry(() => import('./admin/pages/AdminSocial'))
+const AdminInbox = lazyWithRetry(() => import('./admin/pages/AdminInbox'))
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { employee, loading } = useSession()
@@ -128,6 +129,8 @@ function AnimatedRoutes() {
               <Route path="relatorios" element={<AdminAcompanhamento />} />
               {/* Social — Dono e Gerente podem gerenciar comunicados */}
               <Route path="social" element={<AdminSocial />} />
+              {/* Mensagens — Dono recebe; Gerente envia ao Admin */}
+              <Route path="mensagens" element={<AdminInbox />} />
               {/* Somente Dono */}
               <Route path="gerentes" element={<AdminGuard requireDono><AdminGerentes /></AdminGuard>} />
               <Route path="modulos" element={<AdminGuard requireDono><AdminModulos /></AdminGuard>} />
