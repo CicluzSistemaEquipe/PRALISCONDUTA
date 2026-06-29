@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Megaphone, RefreshCw } from 'lucide-react'
 import { useSession } from '../context/SessionContext'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { BottomNav, TAB_PATH } from '../components/BottomNav'
 import { SocialPostCard } from '../components/SocialPostCard'
+import { SocialPostModal } from '../components/SocialPostModal'
 import {
   postsForEmployee, markPostsViewed, recordAck, hasConfirmed, hasSeen, useSocialVersion,
 } from '@/lib/social'
@@ -16,11 +17,13 @@ export default function Social() {
   const { employee } = useSession()
   const version = useSocialVersion()
   const [tick, setTick] = useState(0)
+  const [openId, setOpenId] = useState<string | null>(null)
 
   const posts = useMemo(
     () => (employee ? postsForEmployee(employee) : []),
     [employee, version, tick],
   )
+  const openPost = openId ? posts.find((p) => p.id === openId) ?? null : null
 
   // Marca os comunicados visiveis como VISTOS (limpa o badge) e guarda quais
   // eram novos nesta sessao para destacar com a tag NOVO.
@@ -95,7 +98,7 @@ export default function Social() {
                     post={p}
                     isNew={newIds.has(p.id)}
                     confirmed={employee ? hasConfirmed(p.id, employee.id) : false}
-                    onAck={() => employee && recordAck(employee, p.id)}
+                    onOpen={() => setOpenId(p.id)}
                     authorAvatar={getAdminUserById(p.created_by)?.avatarUrl}
                   />
                 </motion.div>
@@ -104,6 +107,18 @@ export default function Social() {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {openPost && (
+          <SocialPostModal
+            post={openPost}
+            confirmed={employee ? hasConfirmed(openPost.id, employee.id) : false}
+            onAck={() => employee && recordAck(employee, openPost.id)}
+            onClose={() => setOpenId(null)}
+            authorAvatar={getAdminUserById(openPost.created_by)?.avatarUrl}
+          />
+        )}
+      </AnimatePresence>
 
       <BottomNav active="social" onChange={(t) => navigate(TAB_PATH[t])} />
     </div>
