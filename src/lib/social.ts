@@ -14,7 +14,7 @@ import type { Employee, SocialPost, SocialPostStatus, SocialAudience } from './t
 import { normalizeStore } from './normalize'
 
 const POSTS_KEY = 'pralis:social-posts'
-const READS_KEY = (employeeId: string) => `pralis:social-reads:${employeeId}`
+const ENGAGEMENT_KEY = 'pralis:social-engagement'
 
 // ------------------------------------------------------------
 // util
@@ -61,7 +61,7 @@ export function useSocialVersion(): number {
 // sincroniza entre abas
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {
-    if (e.key === POSTS_KEY || (e.key && e.key.startsWith('pralis:social-reads:'))) bump()
+    if (e.key === POSTS_KEY || e.key === ENGAGEMENT_KEY) bump()
   })
 }
 
@@ -209,43 +209,83 @@ export function deletePost(id: string) {
 }
 
 // ------------------------------------------------------------
-// Leituras (por colaborador)
+// Engajamento — visualizacoes (lido) + confirmacoes ("Li e estou ciente")
+// Registro GLOBAL (um por post+colaborador) que alimenta o relatorio do admin
+// e o badge do colaborador. Em producao: tabela no Supabase (ver proposta).
 // ------------------------------------------------------------
-export function getReadIds(employeeId: string): Set<string> {
-  return new Set(readLS<{ post_id: string }[]>(READS_KEY(employeeId), []).map((r) => r.post_id))
+export interface SocialEngagement {
+  post_id: string
+  employee_id: string
+  employee_name: string
+  viewed_at: string | null
+  confirmed_at: string | null
 }
 
-export function isRead(employeeId: string, postId: string): boolean {
-  return getReadIds(employeeId).has(postId)
+function readEngagement(): SocialEngagement[] {
+  return readLS<SocialEngagement[]>(ENGAGEMENT_KEY, [])
+}
+function findRec(list: SocialEngagement[], postId: string, empId: string) {
+  return list.find((r) => r.post_id === postId && r.employee_id === empId)
 }
 
-export function markRead(employeeId: string, postId: string) {
-  const all = readLS<{ post_id: string; read_at: string }[]>(READS_KEY(employeeId), [])
-  if (all.some((r) => r.post_id === postId)) return
-  all.push({ post_id: postId, read_at: new Date().toISOString() })
-  writeLS(READS_KEY(employeeId), all)
-  bump()
+export function hasSeen(postId: string, employeeId: string): boolean {
+  const r = findRec(readEngagement(), postId, employeeId)
+  return Boolean(r && (r.viewed_at || r.confirmed_at))
+}
+export function hasConfirmed(postId: string, employeeId: string): boolean {
+  const r = findRec(readEngagement(), postId, employeeId)
+  return Boolean(r && r.confirmed_at)
 }
 
-export function markAllRead(employeeId: string, postIds: string[]) {
-  const all = readLS<{ post_id: string; read_at: string }[]>(READS_KEY(employeeId), [])
-  const have = new Set(all.map((r) => r.post_id))
+/** Marca como visto (abrir o feed). Idempotente. */
+export function markPostsViewed(emp: Employee, postIds: string[]) {
+  const all = readEngagement()
   const now = new Date().toISOString()
   let changed = false
   for (const id of postIds) {
-    if (!have.has(id)) {
-      all.push({ post_id: id, read_at: now })
+    const r = findRec(all, id, emp.id)
+    if (r) {
+      if (!r.viewed_at) { r.viewed_at = now; r.employee_name = emp.name; changed = true }
+    } else {
+      all.push({ post_id: id, employee_id: emp.id, employee_name: emp.name, viewed_at: now, confirmed_at: null })
       changed = true
     }
   }
-  if (changed) {
-    writeLS(READS_KEY(employeeId), all)
-    bump()
-  }
+  if (changed) { writeLS(ENGAGEMENT_KEY, all); bump() }
 }
 
-/** Quantidade de posts visiveis ao colaborador ainda nao lidos. */
+/** Confirma "Li e estou ciente". Idempotente — nao duplica a confirmacao. */
+export function recordAck(emp: Employee, postId: string) {
+  const all = readEngagement()
+  const now = new Date().toISOString()
+  const r = findRec(all, postId, emp.id)
+  if (r) {
+    if (!r.confirmed_at) {
+      r.confirmed_at = now
+      if (!r.viewed_at) r.viewed_at = now
+      r.employee_name = emp.name
+      writeLS(ENGAGEMENT_KEY, all); bump()
+    }
+    return
+  }
+  all.push({ post_id: postId, employee_id: emp.id, employee_name: emp.name, viewed_at: now, confirmed_at: now })
+  writeLS(ENGAGEMENT_KEY, all); bump()
+}
+
+/** Quantidade de posts visiveis ao colaborador ainda nao vistos (badge). */
 export function unreadCountForEmployee(emp: Employee): number {
-  const read = getReadIds(emp.id)
-  return postsForEmployee(emp).filter((p) => !read.has(p.id)).length
+  const eng = readEngagement()
+  const seen = new Set(
+    eng.filter((r) => r.employee_id === emp.id && (r.viewed_at || r.confirmed_at)).map((r) => r.post_id),
+  )
+  return postsForEmployee(emp).filter((p) => !seen.has(p.id)).length
+}
+
+/** Relatorio por post (admin): quem viu e quem confirmou, com data/hora. */
+export function engagementForPost(postId: string): { views: SocialEngagement[]; confirms: SocialEngagement[] } {
+  const recs = readEngagement().filter((r) => r.post_id === postId)
+  return {
+    views: recs.filter((r) => r.viewed_at).sort((a, b) => (b.viewed_at ?? '').localeCompare(a.viewed_at ?? '')),
+    confirms: recs.filter((r) => r.confirmed_at).sort((a, b) => (b.confirmed_at ?? '').localeCompare(a.confirmed_at ?? '')),
+  }
 }

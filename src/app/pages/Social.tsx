@@ -1,32 +1,36 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Megaphone } from 'lucide-react'
+import { Megaphone, RefreshCw } from 'lucide-react'
 import { useSession } from '../context/SessionContext'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { BottomNav, TAB_PATH } from '../components/BottomNav'
 import { SocialPostCard } from '../components/SocialPostCard'
-import { postsForEmployee, getReadIds, markAllRead, useSocialVersion } from '@/lib/social'
+import {
+  postsForEmployee, markPostsViewed, recordAck, hasConfirmed, hasSeen, useSocialVersion,
+} from '@/lib/social'
 
 export default function Social() {
   const navigate = useNavigate()
   const { employee } = useSession()
   const version = useSocialVersion()
+  const [tick, setTick] = useState(0)
 
   const posts = useMemo(
     () => (employee ? postsForEmployee(employee) : []),
-    [employee, version],
+    [employee, version, tick],
   )
 
-  // Captura quais estavam "novos" ao abrir e marca tudo como lido (limpa o badge).
+  // Marca os comunicados visiveis como VISTOS (limpa o badge) e guarda quais
+  // eram novos nesta sessao para destacar com a tag NOVO.
   const [newIds, setNewIds] = useState<Set<string>>(new Set())
-  const marked = useRef(false)
   useEffect(() => {
-    if (!employee || marked.current || posts.length === 0) return
-    marked.current = true
-    const read = getReadIds(employee.id)
-    setNewIds(new Set(posts.filter((p) => !read.has(p.id)).map((p) => p.id)))
-    markAllRead(employee.id, posts.map((p) => p.id))
+    if (!employee) return
+    const unseen = posts.filter((p) => !hasSeen(p.id, employee.id)).map((p) => p.id)
+    if (unseen.length) {
+      setNewIds((prev) => { const n = new Set(prev); unseen.forEach((id) => n.add(id)); return n })
+      markPostsViewed(employee, unseen)
+    }
   }, [employee, posts])
 
   return (
@@ -38,26 +42,32 @@ export default function Social() {
         style={{ paddingTop: 'calc(var(--safe-top) + 22px)', paddingBottom: 104 }}
       >
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', padding: '0 18px' }}>
-          <header style={{ marginBottom: 18 }}>
-            <h1 className="font-display" style={{ fontSize: 28, color: 'var(--text-primary)', lineHeight: 1.1 }}>
-              Social
-            </h1>
-            <p className="font-body" style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 4 }}>
-              Comunicados e novidades da Pralis.
-            </p>
+          <header className="flex items-end justify-between gap-3" style={{ marginBottom: 18 }}>
+            <div>
+              <h1 className="font-display" style={{ fontSize: 28, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+                Social
+              </h1>
+              <p className="font-body" style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 4 }}>
+                Comunicados e novidades da Pralis.
+              </p>
+            </div>
+            <button
+              onClick={() => setTick((t) => t + 1)}
+              aria-label="Atualizar feed"
+              className="flex items-center gap-1.5"
+              style={{
+                flex: 'none', fontSize: 12.5, fontWeight: 700, color: 'var(--text-secondary)',
+                background: 'var(--glass-bg)', border: '1px solid var(--stroke)', borderRadius: 999,
+                padding: '8px 14px', cursor: 'pointer',
+              }}
+            >
+              <RefreshCw size={14} strokeWidth={2.2} /> Atualizar
+            </button>
           </header>
 
           {posts.length === 0 ? (
-            <div
-              className="flex flex-col items-center justify-center text-center"
-              style={{ padding: '60px 24px', color: 'var(--text-muted)' }}
-            >
-              <span
-                style={{
-                  width: 60, height: 60, borderRadius: 18, display: 'grid', placeItems: 'center',
-                  background: 'rgba(243,116,53,0.12)', border: '1px solid rgba(243,116,53,0.28)', marginBottom: 14,
-                }}
-              >
+            <div className="flex flex-col items-center justify-center text-center" style={{ padding: '60px 24px', color: 'var(--text-muted)' }}>
+              <span style={{ width: 60, height: 60, borderRadius: 18, display: 'grid', placeItems: 'center', background: 'rgba(243,116,53,0.12)', border: '1px solid rgba(243,116,53,0.28)', marginBottom: 14 }}>
                 <Megaphone size={26} color="#f37435" strokeWidth={1.8} />
               </span>
               <p className="font-body" style={{ fontSize: 15, color: 'var(--text-secondary)', fontWeight: 600 }}>
@@ -69,7 +79,7 @@ export default function Social() {
             </div>
           ) : (
             <motion.div
-              className="flex flex-col gap-3"
+              className="flex flex-col gap-4"
               initial="hidden"
               animate="show"
               variants={{ show: { transition: { staggerChildren: 0.05 } } }}
@@ -80,7 +90,12 @@ export default function Social() {
                   variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                   transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  <SocialPostCard post={p} isNew={newIds.has(p.id)} />
+                  <SocialPostCard
+                    post={p}
+                    isNew={newIds.has(p.id)}
+                    confirmed={employee ? hasConfirmed(p.id, employee.id) : false}
+                    onAck={() => employee && recordAck(employee, p.id)}
+                  />
                 </motion.div>
               ))}
             </motion.div>
