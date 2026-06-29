@@ -1,29 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { Megaphone, Plus, Pin, PinOff, Pencil, Send, Archive, Trash2, ImagePlus, X, Eye, CheckCheck } from 'lucide-react'
+import { Megaphone, Plus, Pin, PinOff, Pencil, Send, Archive, Trash2, ImagePlus, X, Eye, CheckCheck, Palette, AlertTriangle } from 'lucide-react'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { EmptyState, ModalShell, ModalHeader, Avatar } from '../components/ui'
-import { getAdminSession, getAdminUserById } from '../auth'
+import { getAdminSession, getAdminUserById, listGerentes } from '../auth'
 import { listEmployees } from '@/lib/storage'
-import { ROLES, type Employee, type Role, type SocialPost, type SocialPostType } from '@/lib/types'
+import { ROLES, type AdminUser, type Employee, type Role, type SocialPost, type SocialPostType } from '@/lib/types'
 import {
   getAllPosts, savePost, setPostStatus, togglePin, deletePost, useSocialVersion, engagementForPost,
 } from '@/lib/social'
-import { SAFE_CARD_COLORS, readableTextOn } from '@/lib/socialPresets'
+import { SAFE_CARD_COLORS, readableTextOn, contrastRatio, presetFor } from '@/lib/socialPresets'
 import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
 
 const TYPE_OPTIONS: { value: SocialPostType; label: string; color: string }[] = [
   { value: 'aviso', label: 'Aviso', color: '#b7791f' },
-  { value: 'gratidao', label: 'Gratidao', color: '#1e7e4e' },
-  { value: 'aniversariante', label: 'Aniversario', color: '#8e44ad' },
   { value: 'importante', label: 'Importante', color: '#c0392b' },
   { value: 'treinamento', label: 'Treinamento', color: '#c9501a' },
-  { value: 'motivacao', label: 'Motivacao', color: '#2f74a8' },
   { value: 'geral', label: 'Geral', color: '#8a837c' },
 ]
-const typeMeta = (t: SocialPostType) => TYPE_OPTIONS.find((o) => o.value === t) ?? TYPE_OPTIONS[5]
+const typeMeta = (t: SocialPostType) =>
+  TYPE_OPTIONS.find((o) => o.value === t) ?? TYPE_OPTIONS[TYPE_OPTIONS.length - 1]
 
-type AudienceKind = 'all' | 'store' | 'role' | 'employee'
+type AudienceKind = 'all' | 'store' | 'role' | 'employee' | 'manager'
 
 interface FormState {
   id?: string
@@ -34,6 +32,7 @@ interface FormState {
   store: string
   role: Role
   employeeId: string
+  managerId: string
   pinned: boolean
   image?: string
   cardColor?: string
@@ -41,7 +40,7 @@ interface FormState {
 }
 const EMPTY_FORM: FormState = {
   title: '', message: '', type: 'geral', audienceKind: 'all',
-  store: '', role: ROLES[0], employeeId: '', pinned: false,
+  store: '', role: ROLES[0], employeeId: '', managerId: '', pinned: false,
 }
 
 const STATUS_META: Record<SocialPost['status'], { label: string; cls: string }> = {
@@ -56,6 +55,7 @@ export default function AdminSocial() {
   const isDono = session?.role === 'dono'
   const posts = useMemo(() => getAllPosts(), [version])
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [managers, setManagers] = useState<AdminUser[]>([])
   const [modal, setModal] = useState<FormState | null>(null)
   const [imgErr, setImgErr] = useState('')
   const [imgBusy, setImgBusy] = useState(false)
@@ -64,6 +64,7 @@ export default function AdminSocial() {
 
   useEffect(() => {
     void listEmployees().then(setEmployees)
+    setManagers(listGerentes())
   }, [])
 
   const handleImage = async (file: File | undefined) => {
@@ -88,6 +89,8 @@ export default function AdminSocial() {
       case 'role': return `Cargo: ${a.value}`
       case 'employee':
         return `Colaborador: ${employees.find((e) => e.id === a.value)?.name ?? a.value}`
+      case 'manager':
+        return `Equipe de: ${managers.find((m) => m.id === a.value)?.nome ?? a.value}`
     }
   }
 
@@ -100,6 +103,7 @@ export default function AdminSocial() {
       store: p.audience.kind === 'store' ? p.audience.value : '',
       role: p.audience.kind === 'role' ? p.audience.value : ROLES[0],
       employeeId: p.audience.kind === 'employee' ? p.audience.value : '',
+      managerId: p.audience.kind === 'manager' ? p.audience.value : '',
       image: p.image, cardColor: p.cardColor, textColor: p.textColor,
     })
   }
@@ -110,10 +114,12 @@ export default function AdminSocial() {
     if (!f.title.trim() || !f.message.trim()) return
     if (f.audienceKind === 'store' && !f.store.trim()) return
     if (f.audienceKind === 'employee' && !f.employeeId) return
+    if (f.audienceKind === 'manager' && !f.managerId) return
     const audience =
       f.audienceKind === 'store' ? { kind: 'store' as const, value: f.store.trim() }
       : f.audienceKind === 'role' ? { kind: 'role' as const, value: f.role }
       : f.audienceKind === 'employee' ? { kind: 'employee' as const, value: f.employeeId }
+      : f.audienceKind === 'manager' ? { kind: 'manager' as const, value: f.managerId }
       : { kind: 'all' as const }
     savePost({
       id: f.id, title: f.title.trim(), message: f.message.trim(), type: f.type,
@@ -275,6 +281,7 @@ export default function AdminSocial() {
                   <option value="store">Loja especifica</option>
                   <option value="role">Cargo especifico</option>
                   <option value="employee">Colaborador especifico</option>
+                  <option value="manager">Equipe de um gerente</option>
                 </select>
               </div>
             </div>
@@ -305,26 +312,81 @@ export default function AdminSocial() {
                 </select>
               </div>
             )}
-
-            {/* Aparencia do card (preset ou cor segura; texto auto-legivel) */}
-            <div className="mb-4">
-              <span className="adm-label">Aparencia do card</span>
-              <div className="flex flex-wrap items-center gap-2">
-                <button type="button" onClick={() => setModal({ ...modal, cardColor: undefined, textColor: undefined })}
-                  className={`h-8 rounded-lg border px-2.5 text-[0.72rem] font-semibold transition-colors ${!modal.cardColor ? 'border-[var(--accent)] text-[var(--accent-text)]' : 'border-[var(--border-strong)] text-[var(--text-secondary)]'}`}>
-                  Preset do tipo
-                </button>
-                {SAFE_CARD_COLORS.map((c) => (
-                  <button key={c} type="button" aria-label={`Cor ${c}`}
-                    onClick={() => setModal({ ...modal, cardColor: c, textColor: readableTextOn(c) })}
-                    className={`h-8 w-8 rounded-lg border-2 transition-transform hover:scale-105 ${modal.cardColor === c ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
-                    style={{ background: c }} />
-                ))}
+            {modal.audienceKind === 'manager' && (
+              <div className="mb-3">
+                <label className="adm-label" htmlFor="sp-mgr">Gerente</label>
+                <select id="sp-mgr" className="adm-input" value={modal.managerId}
+                  onChange={(e) => setModal({ ...modal, managerId: e.target.value })}>
+                  <option value="">Selecione o gerente...</option>
+                  {managers.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+                </select>
+                <p className="mt-1 text-[0.72rem] text-[var(--text-muted)]">
+                  O comunicado chega a todos os colaboradores sob a responsabilidade deste gerente.
+                </p>
               </div>
-              <p className="mt-1.5 text-[0.72rem] text-[var(--text-muted)]">
-                Texto ajustado automaticamente para legibilidade (contraste AA).
-              </p>
-            </div>
+            )}
+
+            {/* Aparencia do card — cor de fundo e de fonte com validacao de contraste */}
+            {(() => {
+              const preset = presetFor(modal.type)
+              const bg = modal.cardColor ?? preset.card
+              const fg = modal.textColor ?? preset.text
+              const ratio = contrastRatio(bg, fg)
+              const aa = ratio >= 4.5
+              const custom = modal.cardColor !== undefined || modal.textColor !== undefined
+              return (
+                <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-3.5">
+                  <div className="mb-2.5 flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-[0.8rem] font-semibold text-[var(--ink)]">
+                      <Palette className="h-4 w-4 text-[var(--accent-text)]" /> Cores do card
+                    </span>
+                    <button type="button" onClick={() => setModal({ ...modal, cardColor: undefined, textColor: undefined })}
+                      className={`h-7 rounded-lg border px-2.5 text-[0.7rem] font-semibold transition-colors ${!custom ? 'border-[var(--accent)] text-[var(--accent-text)]' : 'border-[var(--border-strong)] text-[var(--text-secondary)] hover:bg-white'}`}>
+                      Preset do tipo
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <ColorField label="Fundo" value={bg}
+                      onChange={(v) => setModal({ ...modal, cardColor: v })} />
+                    <ColorField label="Fonte" value={fg}
+                      onChange={(v) => setModal({ ...modal, textColor: v })} />
+                  </div>
+
+                  {/* paleta segura — fundo + texto auto-legivel */}
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                    <span className="mr-1 text-[0.7rem] text-[var(--text-muted)]">Sugeridas:</span>
+                    {SAFE_CARD_COLORS.map((c) => (
+                      <button key={c} type="button" aria-label={`Fundo ${c}`}
+                        onClick={() => setModal({ ...modal, cardColor: c, textColor: readableTextOn(c) })}
+                        className={`h-7 w-7 rounded-lg border-2 transition-transform hover:scale-110 ${modal.cardColor === c ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
+                        style={{ background: c }} />
+                    ))}
+                  </div>
+
+                  {/* preview + contraste */}
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="flex-1 rounded-lg px-3 py-2.5" style={{ background: bg, color: fg }}>
+                      <p className="text-[0.8rem] font-semibold">{modal.title.trim() || 'Previa do comunicado'}</p>
+                      <p className="text-[0.72rem]" style={{ opacity: 0.8 }}>Texto de exemplo sobre o card.</p>
+                    </div>
+                    <div className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[0.72rem] font-semibold ${aa ? 'border-[#cdebd9] bg-[#ecf7f0] text-[#1e7e4e]' : 'border-[#f5d6c0] bg-[#fdf0e3] text-[#b4540f]'}`}>
+                      {aa ? <CheckCheck className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                      {ratio.toFixed(1)}:1 · {aa ? 'AA' : 'baixo'}
+                    </div>
+                  </div>
+                  {!aa && (
+                    <button type="button" onClick={() => setModal({ ...modal, textColor: readableTextOn(bg) })}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-strong)] px-2.5 py-1.5 text-[0.72rem] font-semibold text-[var(--ink)] transition-colors hover:bg-white">
+                      Corrigir contraste automaticamente
+                    </button>
+                  )}
+                  <p className="mt-2 text-[0.7rem] text-[var(--text-muted)]">
+                    Recomendado contraste ≥ 4.5:1 (AA) para o texto ficar legivel.
+                  </p>
+                </div>
+              )
+            })()}
 
             {/* Imagem opcional */}
             <div className="mb-4">
@@ -385,5 +447,22 @@ function ActionBtn({ icon: Icon, label, onClick, primary, danger }: {
       className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[0.78rem] font-semibold transition-colors ${cls}`}>
       <Icon className="h-[15px] w-[15px]" strokeWidth={2} /> {label}
     </button>
+  )
+}
+
+/** Campo de cor no padrao do editor de modulo: swatch nativo (RGB) + hex editavel. */
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const safe = /^#[0-9a-fA-F]{6}$/.test(value) ? value : '#000000'
+  return (
+    <div>
+      <label className="adm-label">{label}</label>
+      <div className="flex items-center gap-2 rounded-lg border border-[var(--border-strong)] bg-white px-2 py-1.5">
+        <input type="color" value={safe} onChange={(e) => onChange(e.target.value)} aria-label={`Cor (${label})`}
+          className="h-7 w-9 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0" />
+        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} spellCheck={false}
+          aria-label={`Hex (${label})`} placeholder="#000000"
+          className="w-full min-w-0 bg-transparent font-mono text-[0.78rem] uppercase text-[var(--ink)] outline-none" />
+      </div>
+    </div>
   )
 }

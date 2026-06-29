@@ -16,13 +16,10 @@ export interface SocialPreset {
 }
 
 export const SOCIAL_PRESETS: Record<SocialPostType, SocialPreset> = {
-  importante:     { label: 'Importante',  card: '#2a1416', text: '#ffe9e6', accent: '#ef4444' },
-  aviso:          { label: 'Aviso',        card: '#2a2410', text: '#fff3d6', accent: '#e3a92f' },
-  gratidao:       { label: 'Gratidao',     card: '#10241a', text: '#dcffe9', accent: '#5dd87a' },
-  aniversariante: { label: 'Aniversario',  card: '#231033', text: '#f1e3ff', accent: '#a855f7' },
-  treinamento:    { label: 'Treinamento',  card: '#2a1708', text: '#ffe6d2', accent: '#f37435' },
-  motivacao:      { label: 'Motivacao',    card: '#0e2230', text: '#dff1ff', accent: '#38bdf8' },
-  geral:          { label: 'Geral',        card: '#1c1610', text: '#f0e7dc', accent: '#b8860b' },
+  aviso:       { label: 'Aviso',        card: '#2a2410', text: '#fff3d6', accent: '#e3a92f' },
+  importante:  { label: 'Importante',   card: '#2a1416', text: '#ffe9e6', accent: '#ef4444' },
+  treinamento: { label: 'Treinamento',  card: '#2a1708', text: '#ffe6d2', accent: '#f37435' },
+  geral:       { label: 'Geral',        card: '#1c1610', text: '#f0e7dc', accent: '#b8860b' },
 }
 
 export function presetFor(type: SocialPostType): SocialPreset {

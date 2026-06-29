@@ -90,6 +90,9 @@ export function audienceMatches(audience: SocialAudience, emp: Employee): boolea
       return emp.role === audience.value
     case 'employee':
       return emp.id === audience.value
+    case 'manager':
+      // atinge todos os colaboradores cujo gerente responsavel e este AdminUser
+      return emp.gerenteId === audience.value
     default:
       return false
   }

@@ -125,19 +125,17 @@ export interface AdminUser {
 // ── Social / Comunicados / Notificacoes ────────────────────
 export type SocialPostType =
   | 'aviso'
-  | 'gratidao'
-  | 'aniversariante'
   | 'importante'
   | 'treinamento'
-  | 'motivacao'
   | 'geral'
 
-/** Publico-alvo do post. 'all' = todos; senao filtra por loja/cargo/colaborador. */
+/** Publico-alvo do post. 'all' = todos; senao filtra por loja/cargo/colaborador/equipe. */
 export type SocialAudience =
   | { kind: 'all' }
   | { kind: 'store'; value: string }
   | { kind: 'role'; value: Role }
-  | { kind: 'employee'; value: string } // employeeId
+  | { kind: 'employee'; value: string }  // employeeId
+  | { kind: 'manager'; value: string }   // AdminUser.id do gerente — atinge a equipe dele
 
 export type SocialPostStatus = 'draft' | 'published' | 'archived'
 
