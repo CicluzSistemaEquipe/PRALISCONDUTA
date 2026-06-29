@@ -1,12 +1,16 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { House, UserRound } from 'lucide-react'
+import { House, UserRound, Megaphone } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import { useSession } from '../context/SessionContext'
+import { useSocialVersion, unreadCountForEmployee } from '@/lib/social'
 
 // 'progress' e 'lis' permanecem no tipo por compatibilidade com rotas existentes
-export type Tab = 'feed' | 'progress' | 'lis' | 'profile'
+export type Tab = 'feed' | 'social' | 'progress' | 'lis' | 'profile'
 
 export const TAB_PATH: Record<Tab, string> = {
   feed:     '/feed',
+  social:   '/social',
   progress: '/progresso',
   lis:      '/perfil',   // redireciona para perfil
   profile:  '/perfil',
@@ -14,6 +18,7 @@ export const TAB_PATH: Record<Tab, string> = {
 
 const NAV_ITEMS: { id: Tab; icon: typeof House; label: string }[] = [
   { id: 'feed',    icon: House,      label: 'Início' },
+  { id: 'social',  icon: Megaphone,  label: 'Social' },
   { id: 'profile', icon: UserRound,  label: 'Perfil' },
 ]
 
@@ -21,11 +26,19 @@ const NAV_ITEMS: { id: Tab; icon: typeof House; label: string }[] = [
  * Rodapé com cor própria (marrom da marca) para se destacar do corpo quase-preto.
  * Ícones com destaque forte: ativo = pílula laranja preenchida com ícone branco;
  * inativo = bege da marca. Sem padrão de fundo nem loop infinito.
+ * A aba Social exibe um badge quando há comunicados não lidos.
  */
 export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const { theme } = useTheme()
+  const { employee } = useSession()
+  const version = useSocialVersion()
   const isLight = theme === 'light'
   const idle = isLight ? '#8a7a6b' : '#e8cfa0'
+
+  const socialUnread = useMemo(
+    () => (employee ? unreadCountForEmployee(employee) : 0),
+    [employee, version],
+  )
 
   return (
     <nav
@@ -42,15 +55,16 @@ export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab
       {NAV_ITEMS.map((item) => {
         const isActive = active === item.id
         const I = item.icon
+        const badge = item.id === 'social' ? socialUnread : 0
 
         return (
           <motion.button
             key={item.id}
             onClick={() => onChange(item.id)}
             whileTap={{ scale: 0.9 }}
-            aria-label={item.label}
+            aria-label={badge > 0 ? `${item.label} (${badge} novo${badge > 1 ? 's' : ''})` : item.label}
             aria-current={isActive ? 'page' : undefined}
-            className="relative flex min-w-[80px] flex-col items-center justify-center gap-1 pt-0.5"
+            className="relative flex min-w-[72px] flex-col items-center justify-center gap-1 pt-0.5"
             style={{ transition: 'color 0.2s ease' }}
           >
             <span className="relative flex h-10 w-12 items-center justify-center rounded-[14px]">
@@ -63,6 +77,20 @@ export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab
                 />
               )}
               <I size={21} strokeWidth={isActive ? 2.6 : 2.1} className="relative" color={isActive ? '#ffffff' : idle} />
+              {badge > 0 && (
+                <span
+                  aria-hidden
+                  className="absolute"
+                  style={{
+                    top: -2, right: 2, minWidth: 16, height: 16, padding: '0 4px',
+                    borderRadius: 999, background: '#ef4444', color: '#fff',
+                    fontSize: 10, fontWeight: 800, lineHeight: '16px', textAlign: 'center',
+                    border: '1.5px solid #331812',
+                  }}
+                >
+                  {badge > 9 ? '9+' : badge}
+                </span>
+              )}
             </span>
             <span
               className="font-body font-bold"

@@ -18,6 +18,7 @@ const Login = lazyWithRetry(() => import('./app/pages/Login'))
 const Acesso = lazyWithRetry(() => import('./app/pages/Acesso'))
 const EntrarColaborador = lazyWithRetry(() => import('./app/pages/EntrarColaborador'))
 const Feed = lazyWithRetry(() => import('./app/pages/Feed'))
+const Social = lazyWithRetry(() => import('./app/pages/Social'))
 const ProgressScreen = lazyWithRetry(() => import('./app/pages/Progress'))
 const Profile = lazyWithRetry(() => import('./app/pages/Profile'))
 const ModulePage = lazyWithRetry(() => import('./app/pages/Module'))
@@ -72,6 +73,14 @@ function AnimatedRoutes() {
               element={
                 <RequireAuth>
                   <Feed />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/social"
+              element={
+                <RequireAuth>
+                  <Social />
                 </RequireAuth>
               }
             />
