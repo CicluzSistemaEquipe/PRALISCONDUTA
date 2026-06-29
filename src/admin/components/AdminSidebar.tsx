@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   ScrollText,
   BarChart3,
+  Megaphone,
   LogOut,
   ExternalLink,
   Menu,
@@ -37,12 +38,14 @@ const NAV_DONO: NavGroup[] = [
       { to: '/admin/termos', label: 'Termos', icon: ScrollText },
     ],
   },
+  { label: 'Comunicação', items: [{ to: '/admin/social', label: 'Social', icon: Megaphone }] },
   { label: 'Análise', items: [{ to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 }] },
 ]
 
 const NAV_GERENTE: NavGroup[] = [
   { items: [{ to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard }] },
   { label: 'Pessoas', items: [{ to: '/admin/colaboradores', label: 'Minha equipe', icon: Users }] },
+  { label: 'Comunicação', items: [{ to: '/admin/social', label: 'Social', icon: Megaphone }] },
   { label: 'Análise', items: [{ to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 }] },
 ]
 
