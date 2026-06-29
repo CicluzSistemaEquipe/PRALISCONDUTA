@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Mail, Lock, ArrowRight } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { PralisSymbol } from '@/app/components/PralisSymbol'
 import { adminLogin, isAdminAuthed } from '../auth'
 import '../admin.css'
@@ -10,6 +10,7 @@ export default function AdminLogin() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState(false)
 
   useEffect(() => {
@@ -66,14 +67,23 @@ export default function AdminLogin() {
             <Lock className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--text-muted)]" strokeWidth={1.8} />
             <input
               id="adm-pass"
-              type="password"
+              type={showPass ? 'text' : 'password'}
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               className="adm-input"
-              style={{ paddingLeft: 38 }}
+              style={{ paddingLeft: 38, paddingRight: 42 }}
             />
+            <button
+              type="button"
+              onClick={() => setShowPass((v) => !v)}
+              aria-label={showPass ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPass}
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--ink)]"
+            >
+              {showPass ? <EyeOff className="h-[18px] w-[18px]" strokeWidth={1.8} /> : <Eye className="h-[18px] w-[18px]" strokeWidth={1.8} />}
+            </button>
           </div>
 
           <div className="min-h-[20px] pt-1.5" aria-live="polite">
