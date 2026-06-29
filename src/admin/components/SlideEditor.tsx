@@ -2,12 +2,23 @@ import { Trash2, ChevronUp, ChevronDown, FileText, MessageSquare, Sparkles, Info
 import type { Story } from '@/lib/types'
 import { setSlideKind, slideKind, type SlideKind } from '../lib/modules'
 
-// Tom neutro/marrom restrito por tipo de slide (sem cores arco-íris).
-const KINDS: { id: SlideKind; label: string; Icon: typeof FileText; hint: string }[] = [
-  { id: 'texto',    label: 'Texto',       Icon: FileText,      hint: 'Slide com título e parágrafos' },
-  { id: 'destaque', label: 'Destaque',    Icon: Sparkles,      hint: 'Texto com frase em destaque visual' },
-  { id: 'citacao',  label: 'Fala da Lis', Icon: MessageSquare, hint: 'A Lis narra este texto em voz' },
+// Tom discreto por tipo de slide (sem cores arco-iris): neutro / laranja / marrom.
+const KINDS: { id: SlideKind; label: string; Icon: typeof FileText; hint: string; color: string }[] = [
+  { id: 'texto',    label: 'Texto',       Icon: FileText,      hint: 'Slide com titulo e paragrafos',     color: '#8a837c' },
+  { id: 'destaque', label: 'Destaque',    Icon: Sparkles,      hint: 'Texto com frase em destaque visual', color: '#f26b2a' },
+  { id: 'citacao',  label: 'Fala da Lis', Icon: MessageSquare, hint: 'A Lis narra este texto em voz',       color: '#5e3731' },
 ]
+
+/** Rotulo de campo + texto auxiliar abaixo. */
+function Field({ label, hint, htmlFor, children }: { label: string; hint?: string; htmlFor?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="adm-label" htmlFor={htmlFor}>{label}</label>
+      {children}
+      {hint && <p className="mt-1 text-[0.72rem] text-[var(--text-muted)]">{hint}</p>}
+    </div>
+  )
+}
 
 export function SlideEditor({
   story,
@@ -27,19 +38,28 @@ export function SlideEditor({
   const kind        = slideKind(story)
   const currentKind = KINDS.find((k) => k.id === kind)!
   const KindIcon    = currentKind.Icon
+  const color       = currentKind.color
 
   return (
     <div className="bg-white">
 
+      {/* faixa fina com a cor do tipo */}
+      <div style={{ height: 3, background: color }} aria-hidden />
+
       {/* ── header ── */}
       <div className="flex items-center gap-2.5 border-b border-[var(--border)] px-4 py-3">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-tint)] text-[var(--accent-text)]">
-          <KindIcon size={14} />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: `${color}1f`, color }}>
+          <KindIcon size={15} />
         </div>
 
         <div className="flex flex-1 items-center gap-2">
           <span className="adm-eyebrow">Slide {index + 1}</span>
-          <span className="adm-badge adm-badge--muted">{currentKind.label}</span>
+          <span
+            className="rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-[0.04em]"
+            style={{ color, background: `${color}1a`, border: `1px solid ${color}40` }}
+          >
+            {currentKind.label}
+          </span>
         </div>
 
         {/* ações */}
@@ -76,8 +96,8 @@ export function SlideEditor({
       <div className="px-5 pb-5 pt-4">
 
         {/* ── seletor de tipo (segmented control claro) ── */}
-        <div className="mb-5 grid grid-cols-3 gap-2">
-          {KINDS.map(({ id, label, Icon, hint }) => {
+        <div className="mb-1.5 grid grid-cols-3 gap-2">
+          {KINDS.map(({ id, label, Icon, hint, color: c }) => {
             const active = kind === id
             return (
               <button
@@ -86,40 +106,38 @@ export function SlideEditor({
                 title={hint}
                 onClick={() => onChange(setSlideKind(story, id))}
                 aria-pressed={active}
-                className={`flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[0.8125rem] font-semibold transition-colors ${
+                className="flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[0.8125rem] font-semibold transition-colors"
+                style={
                   active
-                    ? 'border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent-text)]'
-                    : 'border-[var(--border-strong)] bg-white text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
-                }`}
+                    ? { borderColor: c, background: `${c}14`, color: c }
+                    : undefined
+                }
               >
-                <Icon size={14} />
-                {label}
+                <span className={active ? '' : 'text-[var(--text-secondary)]'}>
+                  <Icon size={14} />
+                </span>
+                <span className={active ? '' : 'text-[var(--text-secondary)]'}>{label}</span>
               </button>
             )
           })}
         </div>
+        <p className="mb-5 text-[0.72rem] text-[var(--text-muted)]">{currentKind.hint}.</p>
 
         {/* ── TIPO: TEXTO ── */}
         {story.type === 'text' && story.highlight === undefined && (
           <div className="flex flex-col gap-4">
             <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
-              <div>
-                <label className="adm-label" htmlFor="se-tag">Etiqueta</label>
+              <Field label="Etiqueta" hint="Aparece acima do título." htmlFor="se-tag">
                 <input id="se-tag" className="adm-input" value={story.tag}
                   onChange={(e) => onChange({ ...story, tag: e.target.value })}
                   placeholder="Ex.: Deveres" />
-              </div>
-              <div>
-                <label className="adm-label" htmlFor="se-title">Título do slide</label>
+              </Field>
+              <Field label="Título do slide" htmlFor="se-title">
                 <input id="se-title" className="adm-input" value={story.title}
                   onChange={(e) => onChange({ ...story, title: e.target.value })} />
-              </div>
+              </Field>
             </div>
-            <div>
-              <label className="adm-label" htmlFor="se-content">Conteúdo</label>
-              <p className="mb-2 text-[0.75rem] text-[var(--text-muted)]">
-                Separe cada parágrafo com uma linha em branco.
-              </p>
+            <Field label="Conteúdo" hint="Separe cada parágrafo com uma linha em branco." htmlFor="se-content">
               <textarea
                 id="se-content"
                 rows={5}
@@ -127,7 +145,7 @@ export function SlideEditor({
                 value={story.paragraphs.join('\n\n')}
                 onChange={(e) => onChange({ ...story, paragraphs: e.target.value.split(/\n{2,}/) })}
               />
-            </div>
+            </Field>
           </div>
         )}
 
@@ -135,20 +153,17 @@ export function SlideEditor({
         {story.type === 'text' && story.highlight !== undefined && (
           <div className="flex flex-col gap-4">
             <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
-              <div>
-                <label className="adm-label" htmlFor="se-htag">Etiqueta</label>
+              <Field label="Etiqueta" hint="Aparece acima do título." htmlFor="se-htag">
                 <input id="se-htag" className="adm-input" value={story.tag}
                   onChange={(e) => onChange({ ...story, tag: e.target.value })}
                   placeholder="Ex.: Atenção" />
-              </div>
-              <div>
-                <label className="adm-label" htmlFor="se-htitle">Título</label>
+              </Field>
+              <Field label="Título" htmlFor="se-htitle">
                 <input id="se-htitle" className="adm-input" value={story.title}
                   onChange={(e) => onChange({ ...story, title: e.target.value })} />
-              </div>
+              </Field>
             </div>
-            <div>
-              <label className="adm-label" htmlFor="se-hcontent">Conteúdo</label>
+            <Field label="Conteúdo" hint="Texto de apoio do slide." htmlFor="se-hcontent">
               <textarea
                 id="se-hcontent"
                 rows={3}
@@ -156,35 +171,33 @@ export function SlideEditor({
                 value={story.paragraphs.join('\n\n')}
                 onChange={(e) => onChange({ ...story, paragraphs: e.target.value.split(/\n{2,}/) })}
               />
-            </div>
-            <div>
-              <label className="adm-label" htmlFor="se-highlight">Frase em destaque</label>
+            </Field>
+            <Field label="Frase em destaque" hint="Exibida com destaque visual ao final do slide." htmlFor="se-highlight">
               <div className="relative">
-                <Sparkles size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--accent)]" />
+                <Sparkles size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color }} />
                 <input
                   id="se-highlight"
                   className="adm-input"
                   style={{ paddingLeft: 36 }}
                   value={story.highlight}
                   onChange={(e) => onChange({ ...story, highlight: e.target.value })}
-                  placeholder="Frase exibida em destaque visual ao final do slide"
+                  placeholder="Frase exibida em destaque"
                 />
               </div>
-            </div>
+            </Field>
           </div>
         )}
 
         {/* ── TIPO: FALA DA LIS ── */}
         {story.type === 'lis' && (
           <div className="flex flex-col gap-3">
-            <div className="flex items-start gap-2.5 rounded-lg border border-[var(--border)] bg-[var(--accent-tint)] px-3.5 py-3">
-              <Info size={14} className="mt-0.5 shrink-0 text-[var(--accent-text)]" />
+            <div className="flex items-start gap-2.5 rounded-lg border px-3.5 py-3" style={{ borderColor: `${color}33`, background: `${color}0f` }}>
+              <Info size={14} className="mt-0.5 shrink-0" style={{ color }} />
               <p className="text-[0.8125rem] leading-relaxed text-[var(--text-secondary)]">
                 A Lis vai narrar este texto em voz. Escreva de forma natural, como ela falaria — sem listas ou formatação especial.
               </p>
             </div>
-            <div>
-              <label className="adm-label" htmlFor="se-lis">Fala da Lis</label>
+            <Field label="Fala da Lis" htmlFor="se-lis">
               <textarea
                 id="se-lis"
                 rows={5}
@@ -193,7 +206,7 @@ export function SlideEditor({
                 onChange={(e) => onChange({ ...story, text: e.target.value })}
                 placeholder="Olá! Hoje vamos falar sobre..."
               />
-            </div>
+            </Field>
           </div>
         )}
       </div>
