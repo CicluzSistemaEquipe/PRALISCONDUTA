@@ -53,6 +53,7 @@ const STATUS_META: Record<SocialPost['status'], { label: string; cls: string }> 
 export default function AdminSocial() {
   const version = useSocialVersion()
   const session = getAdminSession()
+  const isDono = session?.role === 'dono'
   const posts = useMemo(() => getAllPosts(), [version])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [modal, setModal] = useState<FormState | null>(null)
@@ -159,6 +160,7 @@ export default function AdminSocial() {
             const sm = STATUS_META[p.status]
             const eng = engagementForPost(p.id)
             const open = reportId === p.id
+            const canManage = isDono || p.created_by === session?.id
             return (
               <div key={p.id} className="rounded-xl border border-[var(--border)] bg-white p-4">
                 <div className="flex flex-wrap items-center gap-2">
@@ -185,12 +187,18 @@ export default function AdminSocial() {
                   </span>
                   <div className="ml-auto flex flex-wrap items-center gap-1.5">
                     <ActionBtn icon={Eye} label={open ? 'Fechar' : 'Leituras'} onClick={() => setReportId(open ? null : p.id)} />
-                    <ActionBtn icon={Pencil} label="Editar" onClick={() => openEdit(p)} />
-                    {p.status !== 'published'
-                      ? <ActionBtn icon={Send} label="Publicar" onClick={() => setPostStatus(p.id, 'published')} primary />
-                      : <ActionBtn icon={Archive} label="Arquivar" onClick={() => setPostStatus(p.id, 'archived')} />}
-                    <ActionBtn icon={p.pinned ? PinOff : Pin} label={p.pinned ? 'Desafixar' : 'Fixar'} onClick={() => togglePin(p.id)} />
-                    <ActionBtn icon={Trash2} label="Excluir" onClick={() => remove(p)} danger />
+                    {canManage ? (
+                      <>
+                        <ActionBtn icon={Pencil} label="Editar" onClick={() => openEdit(p)} />
+                        {p.status !== 'published'
+                          ? <ActionBtn icon={Send} label="Publicar" onClick={() => setPostStatus(p.id, 'published')} primary />
+                          : <ActionBtn icon={Archive} label="Arquivar" onClick={() => setPostStatus(p.id, 'archived')} />}
+                        <ActionBtn icon={p.pinned ? PinOff : Pin} label={p.pinned ? 'Desafixar' : 'Fixar'} onClick={() => togglePin(p.id)} />
+                        <ActionBtn icon={Trash2} label="Excluir" onClick={() => remove(p)} danger />
+                      </>
+                    ) : (
+                      <span className="px-1 text-[0.72rem] italic text-[var(--text-muted)]">Somente leitura (post de outro gestor)</span>
+                    )}
                   </div>
                 </div>
 
