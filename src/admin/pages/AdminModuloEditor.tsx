@@ -269,7 +269,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── título + subtítulo ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Tag size={14} />} label="Identificação" hint="Nome, etiqueta e tempo do módulo." />
+                      <SectionHead icon={<Tag size={15} />} label="Identificação" hint="Nome, etiqueta e tempo do módulo." tone="orange" />
                       <div className="flex flex-col gap-3">
                         <div>
                           <label className="adm-label" htmlFor="mi-title">Título</label>
@@ -304,7 +304,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── aparência ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Palette size={14} />} label="Aparência" hint="Cor e símbolo que identificam o módulo no app." />
+                      <SectionHead icon={<Palette size={15} />} label="Aparência" hint="Cor e símbolo que identificam o módulo no app." tone="brown" />
 
                       {/* ── cor do módulo ── */}
                       <label className="adm-label">Cor do módulo</label>
@@ -410,7 +410,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── cargos ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Users size={14} />} label="Quem vê este módulo" hint="Todos os cargos ou cargos específicos." />
+                      <SectionHead icon={<Users size={15} />} label="Quem vê este módulo" hint="Todos os cargos ou cargos específicos." tone="gold" />
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
@@ -447,7 +447,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── visibilidade ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Eye size={14} />} label="Visibilidade" hint="Mostrar ou ocultar o módulo no app." />
+                      <SectionHead icon={<Eye size={15} />} label="Visibilidade" hint="Mostrar ou ocultar o módulo no app." tone="green" />
                       <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-subtle)] px-3.5 py-3">
                         <div>
                           <p className="text-[0.8125rem] font-semibold text-[var(--ink)]">Módulo ativo no app</p>
@@ -481,7 +481,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── seção no app ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Layers size={14} />} label="Seção no app" hint="Onde o módulo aparece na trilha do colaborador." />
+                      <SectionHead icon={<Layers size={15} />} label="Seção no app" hint="Onde o módulo aparece na trilha do colaborador." tone="brown" />
                       <div className="flex flex-col gap-2">
                         {(['geral', 'cargo', 'final'] as const).map((sec) => {
                           const labels = { geral: 'Para todos', cargo: 'Por cargo', final: 'Para concluir' }
@@ -730,7 +730,13 @@ function VideoBlockEditor({ story, index, total, onChange, onDelete, onMove }: {
     <div className="p-4">
       <BlockHeader icon={<Film size={15} />} label="Vídeo" index={index} total={total} onDelete={onDelete} onMove={onMove} />
       <p className="mb-3 text-[0.78rem] text-[var(--text-muted)]">Vídeo curto narrado pela Lis. A posição é a do bloco na timeline (arraste para mover).</p>
-      <VideoUpload currentSrc={story.src ?? ''} onFile={(f) => set({ src: `/videos/${f}` })} onClear={() => set({ src: '' })} />
+      <VideoUpload
+        currentSrc={story.src ?? ''}
+        duration={story.duration}
+        onFile={(f) => set({ src: `/videos/${f}` })}
+        onClear={() => set({ src: '' })}
+        onMeta={(m) => { if (m.duration) set({ duration: m.duration }) }}
+      />
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="adm-label">Título do vídeo</span>
@@ -740,11 +746,23 @@ function VideoBlockEditor({ story, index, total, onChange, onDelete, onMove }: {
         <label className="block">
           <span className="adm-label">Duração</span>
           <input className="adm-input" placeholder="2:10" value={story.duration ?? ''} onChange={(e) => set({ duration: e.target.value })} />
-          <span className="mt-1 block text-[0.72rem] text-[var(--text-muted)]">Ex.: 1:30 — detecção automática chega na próxima fase.</span>
+          <span className="mt-1 block text-[0.72rem] text-[var(--text-muted)]">Detectada automaticamente ao selecionar — pode ajustar.</span>
         </label>
       </div>
     </div>
   )
+}
+
+// formata bytes em algo legível (sem cara técnica)
+function fmtBytes(b: number): string {
+  if (!b || b < 0) return ''
+  if (b < 1024 * 1024) return `${Math.max(1, Math.round(b / 1024))} KB`
+  return `${(b / (1024 * 1024)).toFixed(b < 10 * 1024 * 1024 ? 1 : 0)} MB`
+}
+function fmtDur(sec: number): string {
+  if (!isFinite(sec) || sec <= 0) return ''
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 function QuizBlockEditor({ story, index, total, onChange, onDelete, onMove }: {
@@ -761,51 +779,87 @@ function QuizBlockEditor({ story, index, total, onChange, onDelete, onMove }: {
 }
 
 // ── upload de vídeo ──────────────────────────────────────────────────────────
-function VideoUpload({ currentSrc, onFile, onClear }: {
+function VideoMetaChip({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-[var(--border)] bg-white px-2.5 py-1.5">
+      <p className="text-[0.62rem] font-semibold uppercase tracking-[0.04em] text-[var(--text-muted)]">{label}</p>
+      <p className="text-[0.8rem] font-semibold text-[var(--ink)]">{value || '—'}</p>
+    </div>
+  )
+}
+
+function VideoUpload({ currentSrc, duration, onFile, onClear, onMeta }: {
   currentSrc: string
+  duration?: string
   onFile: (filename: string) => void
   onClear: () => void
+  onMeta?: (m: { duration?: string; size?: string }) => void
 }) {
   const filename = currentSrc.replace('/videos/', '')
   const [dragging, setDragging] = useState(false)
+  const [reading, setReading] = useState(false)
+  const [meta, setMeta] = useState<{ size?: string; format?: string }>({})
+
+  const formatOf = (file: File) => {
+    const ext = file.name.split('.').pop()?.toUpperCase()
+    return ext && ext.length <= 4 ? ext : (file.type.split('/')[1]?.toUpperCase() ?? 'VÍDEO')
+  }
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith('video/')) return
+    const sizeLabel = fmtBytes(file.size)
+    setMeta({ size: sizeLabel, format: formatOf(file) })
     onFile(file.name)
+    // detecção de duração via metadata (não envia o arquivo, só lê)
+    setReading(true)
+    try {
+      const url = URL.createObjectURL(file)
+      const v = document.createElement('video')
+      v.preload = 'metadata'
+      v.onloadedmetadata = () => {
+        URL.revokeObjectURL(url)
+        const d = fmtDur(v.duration)
+        setReading(false)
+        onMeta?.({ duration: d || undefined, size: sizeLabel })
+      }
+      v.onerror = () => { URL.revokeObjectURL(url); setReading(false); onMeta?.({ size: sizeLabel }) }
+      v.src = url
+    } catch { setReading(false); onMeta?.({ size: sizeLabel }) }
   }
 
   const onDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragging(false)
-    const file = e.dataTransfer.files[0]
-    if (file) handleFile(file)
+    e.preventDefault(); setDragging(false)
+    const file = e.dataTransfer.files[0]; if (file) handleFile(file)
   }
-
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) handleFile(file)
+    const file = e.target.files?.[0]; if (file) handleFile(file)
   }
+  const clear = () => { setMeta({}); onClear() }
 
   if (filename) {
+    const format = meta.format ?? (filename.split('.').pop()?.toUpperCase() || '—')
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-subtle)] px-4 py-3.5">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brown-tint)] text-[var(--brand-brown)]">
-          <FileVideo size={18} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[0.8125rem] font-semibold text-[var(--ink)]">{filename}</p>
-          <p className="text-xs text-[var(--text-muted)]">
-            Coloque em <code className="rounded bg-[var(--bg-muted)] px-1 font-mono text-[var(--text-secondary)]">/public/videos/</code>
-          </p>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-3.5">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brown-tint)] text-[var(--brand-brown)]">
+            <FileVideo size={18} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[0.8125rem] font-semibold text-[var(--ink)]">{filename}</p>
+            <p className="flex items-center gap-1.5 text-xs font-medium text-[#1e7e4e]">
+              <Check size={13} strokeWidth={2.4} /> {reading ? 'Lendo informações…' : 'Pronto para o app'}
+            </p>
+          </div>
+          <button type="button" onClick={clear} aria-label="Remover arquivo de vídeo"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--danger)] transition-colors hover:bg-[var(--danger-bg)]">
+            <XIcon size={14} />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onClear}
-          aria-label="Remover arquivo de vídeo"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--danger)] transition-colors hover:bg-[var(--danger-bg)]"
-        >
-          <XIcon size={14} />
-        </button>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <VideoMetaChip label="Formato" value={format} />
+          <VideoMetaChip label="Peso" value={meta.size} />
+          <VideoMetaChip label="Duração" value={reading ? '…' : duration} />
+        </div>
       </div>
     )
   }
@@ -822,13 +876,8 @@ function VideoUpload({ currentSrc, onFile, onClear }: {
       }}
     >
       <input type="file" accept="video/*" className="hidden" onChange={onInputChange} />
-      <span
-        className="flex items-center justify-center rounded-xl"
-        style={{
-          width: 52, height: 52,
-          background: dragging ? 'var(--accent-tint)' : 'var(--bg-muted)',
-        }}
-      >
+      <span className="flex items-center justify-center rounded-xl"
+        style={{ width: 52, height: 52, background: dragging ? 'var(--accent-tint)' : 'var(--bg-muted)' }}>
         <UploadCloud size={22} color={dragging ? 'var(--accent)' : 'var(--text-muted)'} />
       </span>
       <div>
@@ -836,24 +885,35 @@ function VideoUpload({ currentSrc, onFile, onClear }: {
         <p className="mb-2 text-xs text-[var(--text-muted)]">ou clique para selecionar um arquivo</p>
         <span className="adm-badge adm-badge--muted">MP4 · WebM · MOV</span>
       </div>
-      <p className="text-xs text-[var(--text-muted)]">
-        Por enquanto, copie o arquivo para <code className="font-mono text-[var(--text-secondary)]">/public/videos/</code> · upload direto chega na próxima fase.
-      </p>
+      <p className="text-xs text-[var(--text-muted)]">Detectamos a duração automaticamente. O arquivo fica em <code className="font-mono text-[var(--text-secondary)]">/public/videos/</code>.</p>
     </label>
   )
 }
 
 // ── auxiliares ────────────────────────────────────────────────────────────────
-function SectionHead({ icon, label, hint }: { icon: React.ReactNode; label: string; hint?: string }) {
+type SHTone = 'orange' | 'brown' | 'gold' | 'green' | 'neutral'
+const SH_TONES: Record<SHTone, { bg: string; fg: string }> = {
+  orange:  { bg: 'var(--accent-tint)', fg: '#f26b2a' },
+  brown:   { bg: 'var(--brown-tint)', fg: 'var(--brand-brown)' },
+  gold:    { bg: 'rgba(184,134,11,0.12)', fg: '#b8860b' },
+  green:   { bg: '#ecf7f0', fg: '#1e7e4e' },
+  neutral: { bg: 'var(--bg-muted)', fg: 'var(--text-secondary)' },
+}
+
+/** Cabeçalho de grupo estilo Notion: ícone tonal + título + descrição. */
+function SectionHead({ icon, label, hint, tone = 'orange' }: {
+  icon: React.ReactNode; label: string; hint?: string; tone?: SHTone
+}) {
+  const t = SH_TONES[tone]
   return (
-    <div className="mb-4">
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-tint)] text-[var(--accent-text)]">
-          {icon}
-        </span>
-        <span className="adm-eyebrow">{label}</span>
+    <div className="mb-4 flex items-start gap-2.5">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: t.bg, color: t.fg }}>
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-[0.95rem] font-semibold leading-tight text-[var(--ink)]">{label}</h3>
+        {hint && <p className="mt-0.5 text-[0.75rem] leading-snug text-[var(--text-muted)]">{hint}</p>}
       </div>
-      {hint && <p className="mt-1.5 text-[0.75rem] text-[var(--text-muted)]">{hint}</p>}
     </div>
   )
 }
