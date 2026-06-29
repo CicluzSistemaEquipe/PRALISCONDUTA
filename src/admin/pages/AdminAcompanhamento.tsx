@@ -8,6 +8,7 @@ import { listGerentes } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf, type EmpStatus } from '../components/StatusBadge'
 import { EmptyState, Skeleton, Avatar } from '../components/ui'
+import { StorePerformance } from '../components/StorePerformance'
 import { ColaboradorDetailModal } from './AdminColaboradores'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -270,6 +271,13 @@ export default function AdminAcompanhamento() {
             <SummaryCard icon={TrendingUp} value={`${summary.avg}%`} label="Progresso médio" />
             <SummaryCard icon={Clock} value={summary.pendentes} label="Pendentes" tone="#9a6b15" />
           </div>
+
+          {/* desempenho por loja — visão executiva sobre o conjunto filtrado */}
+          {filtered.length > 0 && (
+            <div className="mb-4">
+              <StorePerformance rows={filtered} title="Desempenho por loja (filtro atual)" />
+            </div>
+          )}
 
           {/* visões rápidas (status) */}
           <div className="adm-no-scrollbar mb-3 flex gap-2 overflow-x-auto">

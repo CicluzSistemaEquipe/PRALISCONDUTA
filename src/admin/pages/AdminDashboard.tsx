@@ -11,6 +11,7 @@ import { getAdminSession, isDono } from '../auth'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
 import { StatCard, SectionCard, EmptyState, AnimatedNumber, Skeleton } from '../components/ui'
+import { StorePerformance } from '../components/StorePerformance'
 
 // cores das etapas (identidade Pralís)
 const SEG = { neutral: '#c9c3bc', orange: '#f26b2a', gold: '#b8860b', green: '#1e7e4e' }
@@ -188,6 +189,13 @@ function DonoDashboard() {
             )}
           </SectionCard>
         </motion.div>
+
+        {/* Desempenho por loja — visão adicional sobre os mesmos dados */}
+        {!loading && total > 0 && (
+          <motion.div variants={block} className="mb-4">
+            <StorePerformance rows={rows ?? []} />
+          </motion.div>
+        )}
 
         {/* Ação (herói) + Saúde (contexto, quieto) */}
         <motion.div variants={block} className="grid items-start gap-4 lg:grid-cols-[1fr_340px]">
