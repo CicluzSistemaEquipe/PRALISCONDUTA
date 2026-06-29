@@ -58,6 +58,9 @@ public/*.jpeg
 public/*.webm
 public/*.mp4
 !public/videocirculo-dashboard.mp4
+# TEMPORARIO (teste online): lis-conduta1.mp4 e referenciado em content.ts.
+# Versionado so para o deploy de teste; mover para Storage/CDN na producao.
+!public/lis-conduta1.mp4
 !public/video-final-lis-feliz-alpha.webm
 !public/intro2-lis-tour-alpha.webm
 !public/intro-lis-tchau-alpha.webm
