@@ -29,10 +29,11 @@ export function DevToolbar() {
     <div
       style={{
         position: 'fixed',
-        bottom: 80,
-        left: 12,
+        // acima da BottomNav e da safe-area, p/ não cobrir conteúdo/menu
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 92px)',
+        left: 10,
         zIndex: 9999,
-        maxWidth: 280,
+        maxWidth: 'min(280px, calc(100vw - 20px))',
       }}
     >
       <AnimatePresence>
@@ -140,28 +141,33 @@ export function DevToolbar() {
         )}
       </AnimatePresence>
 
-      {/* botão toggle */}
+      {/* botão toggle — discreto: translúcido quando fechado, sólido ao abrir/hover */}
       <motion.button
         onClick={() => setOpen((o) => !o)}
+        aria-label="Modo desenvolvedor"
         whileTap={{ scale: 0.9 }}
+        whileHover={{ opacity: 1 }}
+        animate={{ opacity: open ? 1 : 0.5 }}
         style={{
-          background: open ? '#b8860b' : 'rgba(26,14,0,0.92)',
-          border: '1px solid rgba(184,134,11,0.55)',
-          borderRadius: 12,
-          padding: '7px 12px',
-          display: 'flex',
+          background: open ? '#b8860b' : 'rgba(26,14,0,0.7)',
+          border: '1px solid rgba(184,134,11,0.45)',
+          borderRadius: 999,
+          padding: '5px 9px',
+          display: 'inline-flex',
           alignItems: 'center',
-          gap: 6,
+          gap: 5,
           cursor: 'pointer',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.7)',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
           color: open ? '#fff' : '#d4a017',
           fontFamily: 'Montserrat, sans-serif',
           fontWeight: 700,
-          fontSize: 11,
-          letterSpacing: '0.08em',
+          fontSize: 10,
+          letterSpacing: '0.06em',
+          backdropFilter: 'blur(4px)',
+          WebkitBackdropFilter: 'blur(4px)',
         }}
       >
-        ⚙ DEV
+        ⚙ <span>DEV</span>
       </motion.button>
     </div>
   )

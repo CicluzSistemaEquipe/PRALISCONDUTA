@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import {
   Volume2, VolumeX, Award, BookOpen,
   ArrowRight, FileSignature, LockKeyhole,
-  PlayCircle, Sparkles, Check, RotateCcw,
+  PlayCircle, Sparkles, Check, RotateCcw, Settings,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { modulesForRole } from '@/lib/content'
 import { useAdminStore } from '@/lib/adminStore'
 import type { Module, ModuleProgress } from '@/lib/types'
+import { getAdminSession } from '@/admin/auth'
 import { useSession } from '../context/SessionContext'
 import { getSignature } from '@/lib/storage'
 import { AnimatedBackground } from '../components/AnimatedBackground'
@@ -64,6 +65,11 @@ export default function Profile() {
 
   if (!employee) return null
 
+  // Admin/Gerente já logado na sua área: oferece voltar ao painel (igual ao
+  // "Ver o app" do admin, no sentido inverso). Colaborador comum não vê.
+  const adminSession = getAdminSession()
+  const canBackToAdmin = adminSession?.role === 'dono' || adminSession?.role === 'gerente'
+
   const firstName    = employee.name.trim().split(/\s+/)[0] || 'colaborador'
   const intro        = INTRO_TABS.find((t) => t.id === introTab) ?? INTRO_TABS[0]
   const IntroIcon    = intro.icon
@@ -90,6 +96,33 @@ export default function Profile() {
       <AnimatedBackground accent="#b8860b" />
 
       <main className="no-scrollbar relative z-10 flex-1 overflow-y-auto px-4 pb-28 pt-6">
+
+        {/* engrenagem: voltar ao Admin (só p/ admin/gerente já logado) */}
+        {canBackToAdmin && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            onClick={() => navigate('/admin')}
+            aria-label="Voltar para o painel administrativo"
+            className="absolute right-4 z-20 flex items-center gap-1.5"
+            style={{
+              top: 'calc(var(--safe-top, 0px) + 6px)',
+              background: 'rgba(184,134,11,0.16)',
+              border: '1px solid rgba(184,134,11,0.42)',
+              color: '#e8cfa0',
+              borderRadius: 999,
+              padding: '6px 11px',
+              fontFamily: 'Montserrat, sans-serif',
+              fontWeight: 700,
+              fontSize: 11.5,
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
+            }}
+          >
+            <Settings size={14} /> Painel
+          </motion.button>
+        )}
 
         {/* ════ HERO ════ */}
         <div className="mb-5 flex flex-col items-center gap-3 text-center">
