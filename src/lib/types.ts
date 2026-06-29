@@ -127,6 +127,7 @@ export type SocialPostType =
   | 'aniversariante'
   | 'importante'
   | 'treinamento'
+  | 'motivacao'
   | 'geral'
 
 /** Publico-alvo do post. 'all' = todos; senao filtra por loja/cargo/colaborador. */
@@ -151,6 +152,14 @@ export interface SocialPost {
   /** AdminUser.id do autor */
   created_by: string
   created_by_name?: string
+  /** papel do autor (para avatar/permissoes no feed) */
+  created_by_role?: UserRole
+  /** imagem opcional (data URL base64 no modo localStorage; Storage/CDN na producao) */
+  image?: string
+  /** cor do card (override do preset do tipo); undefined = usa preset */
+  cardColor?: string
+  /** cor do texto sobre o card (validada por contraste) */
+  textColor?: string
   created_at: string
   updated_at: string
 }

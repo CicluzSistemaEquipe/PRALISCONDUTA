@@ -7,6 +7,7 @@ const TYPE_META: Record<SocialPostType, { label: string; color: string }> = {
   aniversariante: { label: 'Aniversario', color: '#a855f7' },
   importante:     { label: 'Importante',  color: '#ef4444' },
   treinamento:    { label: 'Treinamento', color: '#f37435' },
+  motivacao:      { label: 'Motivacao',   color: '#38bdf8' },
   geral:          { label: 'Geral',       color: '#b8860b' },
 }
 
