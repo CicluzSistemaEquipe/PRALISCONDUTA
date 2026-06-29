@@ -25,6 +25,10 @@ export interface SplashConfig {
   mission: string
   vision: string
   values: string[]
+  /** Descrição institucional de cada seção da Home (substitui o marquee fixo). */
+  homeIntros: { geral: string; cargo: string; final: string }
+  /** Frases que rotacionam acima do rodapé da Home. */
+  footerPhrases: string[]
 }
 
 export interface AdminData {
@@ -57,6 +61,18 @@ export function defaultAdminData(): AdminData {
       vision:
         'Ser referência em panificação artesanal, reconhecida pela excelência e pelo carinho com as pessoas.',
       values: ['Comprometimento', 'Humildade', 'Respeito', 'Qualidade', 'Cuidado com as pessoas'],
+      homeIntros: {
+        geral: 'Treinamentos essenciais da Pralís',
+        cargo: 'Treinamentos do seu cargo',
+        final: 'Para concluir sua jornada',
+      },
+      footerPhrases: [
+        'é provar e ser feliz',
+        'cada módulo te deixa mais preparado',
+        'seu cuidado faz a Pralís melhor',
+        'conhecimento que vira confiança',
+        'um passo hoje, orgulho amanhã',
+      ],
     },
     lastUpdated: new Date().toISOString(),
   }

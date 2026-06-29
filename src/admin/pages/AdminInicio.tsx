@@ -13,6 +13,8 @@ export default function AdminInicio() {
 
   const set = (patch: Partial<SplashConfig>) => setDraft((d) => ({ ...d, ...patch }))
   const setValue = (i: number, v: string) => set({ values: draft.values.map((x, idx) => (idx === i ? v : x)) })
+  const setIntro = (k: 'geral' | 'cargo' | 'final', v: string) => set({ homeIntros: { ...draft.homeIntros, [k]: v } })
+  const setPhrase = (i: number, v: string) => set({ footerPhrases: draft.footerPhrases.map((x, idx) => (idx === i ? v : x)) })
   const save = () => {
     setSplash(draft)
     setToast(true)
@@ -58,6 +60,46 @@ export default function AdminInicio() {
                 </div>
               ))}
               {draft.values.length === 0 && <p className="text-sm text-[var(--cream-muted)]">Nenhum valor cadastrado.</p>}
+            </div>
+          </div>
+
+          <div className="adm-card p-5">
+            <label className="adm-label mb-0">Descrição das seções da Home</label>
+            <p className="mb-3 mt-1 text-[0.8rem] text-[var(--text-muted)]">Texto curto que aparece em cada grupo do treinamento (Para todos · Para o seu cargo · Para concluir).</p>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="adm-label">Para todos</label>
+                <input className="adm-input" value={draft.homeIntros.geral} onChange={(e) => setIntro('geral', e.target.value)} />
+              </div>
+              <div>
+                <label className="adm-label">Para o seu cargo</label>
+                <input className="adm-input" value={draft.homeIntros.cargo} onChange={(e) => setIntro('cargo', e.target.value)} />
+              </div>
+              <div>
+                <label className="adm-label">Para concluir</label>
+                <input className="adm-input" value={draft.homeIntros.final} onChange={(e) => setIntro('final', e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          <div className="adm-card p-5">
+            <div className="mb-1 flex items-center justify-between">
+              <label className="adm-label mb-0">Frases do rodapé</label>
+              <button className="adm-btn px-3 py-1.5" onClick={() => set({ footerPhrases: [...draft.footerPhrases, 'Nova frase'] })}>
+                <Plus className="h-4 w-4" /> Adicionar
+              </button>
+            </div>
+            <p className="mb-3 text-[0.8rem] text-[var(--text-muted)]">Mensagens que se alternam acima do rodapé da Home.</p>
+            <div className="flex flex-col gap-2">
+              {draft.footerPhrases.map((v, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input className="adm-input" value={v} onChange={(e) => setPhrase(i, e.target.value)} />
+                  <button className="adm-btn px-2 py-2" disabled={i === 0} onClick={() => set({ footerPhrases: moveItem(draft.footerPhrases, i, i - 1) })}><ChevronUp className="h-4 w-4" /></button>
+                  <button className="adm-btn px-2 py-2" disabled={i === draft.footerPhrases.length - 1} onClick={() => set({ footerPhrases: moveItem(draft.footerPhrases, i, i + 1) })}><ChevronDown className="h-4 w-4" /></button>
+                  <button className="adm-btn adm-btn--danger px-2 py-2" onClick={() => set({ footerPhrases: draft.footerPhrases.filter((_, idx) => idx !== i) })}><Trash2 className="h-4 w-4" /></button>
+                </div>
+              ))}
+              {draft.footerPhrases.length === 0 && <p className="text-sm text-[var(--cream-muted)]">Nenhuma frase.</p>}
             </div>
           </div>
         </div>
