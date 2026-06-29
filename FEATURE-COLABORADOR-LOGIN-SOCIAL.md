@@ -155,5 +155,93 @@ Evidências: `test-results/fase3-social/*.png` (locais/gitignored).
 
 ---
 
-*Implementado em 6 commits pequenos na branch `feature/colaborador-login-social`.
+---
+
+# Evolução v2 — Social moderno + UX (mesma branch)
+
+> 11 blocos adicionais, em commits pequenos, **sem push/merge/deploy/Supabase**.
+> Uma queda de conexão interrompeu o último bloco; ver "Recuperação" abaixo.
+
+## Mudanças feitas (por bloco)
+1. **Bug de digitação corrigido** — `ModalShell` (admin) roubava o foco a cada
+   tecla (efeito dependia de `onClose`, recriado a cada render). Agora foca **só na
+   montagem** + ESC em efeito separado. Conserta todos os modais do admin.
+2. **Modelo + presets** — `SocialPost` ganhou `image`, `cardColor`, `textColor`,
+   `created_by_role`; novo tipo **Motivação**. `socialPresets.ts` com presets seguros
+   por tipo e **validação de contraste (WCAG)**.
+3. **Upload de imagem + personalização** — `lib/image.ts` (valida JPG/PNG/WebP,
+   redimensiona ≤1280px e comprime ~700KB → data URL). No admin: cor do card (preset
+   ou cor segura, **texto auto-legível**) + imagem (upload, preview, remover).
+4. **Feed moderno** — `SocialPostCard` estilo rede social: avatar do autor, nome,
+   cargo/perfil, **data e hora**, chip de tipo, título, mensagem, **imagem
+   `object-contain`** (sem cortar/distorcer, fundo neutro), tag **NOVO** e botão
+   **"Li e estou ciente"**.
+5. **Confirmação + relatório** — engajamento global (visualizações + confirmações,
+   idempotente). No admin, por post: contadores + **quem visualizou e quem confirmou**
+   com data/hora.
+6. **Badge tipo e-mail + Atualizar** — aba Social mostra nº de não lidos; botão
+   **"Atualizar feed"**; tag NOVO destaca o que é novo.
+7. **"Início" → "Treinamento"** — ícone de formatura + **pulso 1x ao ativar** (sem
+   loop), respeitando `prefers-reduced-motion`.
+8. **Mostrar senha** — olho (mostrar/ocultar) no AdminLogin, acessível.
+9. **Avatar do Dono/Gerente** — `AdminUser.avatarUrl` + upload na sidebar; aparece na
+   sidebar, no **autor dos posts** (feed) e na **lista de posts** (admin); fallback de
+   iniciais.
+10. **Permissões do Social** — Dono gerencia tudo; Gerente cria e só edita/arquiva/
+    exclui **os próprios**; vê os dos outros como **"somente leitura"**.
+11. **Mensagens Gerente → Admin** — `lib/inbox.ts` + página **/admin/mensagens**:
+    Gerente compõe e vê enviadas (Enviado/Lido); Dono recebe (caixa de entrada),
+    marca como lida e arquiva; **badge de não lidas** no item "Mensagens" da sidebar.
+
+## Como testar (resumo)
+Admin → **Social**: criar comunicado (digitação ok), escolher tipo/cor, **anexar
+imagem**, publicar. App → aba **Social**: ver o feed, **"Li e estou ciente"** (badge
+some). Admin → **Leituras** no post: ver quem confirmou. Entrar como **Gerente**:
+posts de outros = "somente leitura"; **/admin/mensagens** envia ao Dono. Voltar como
+**Dono**: caixa de entrada + badge. Perfil: trocar **foto** na sidebar.
+
+## Validação (Fase 3)
+`tsc -b` ✅ · `npm run build` ✅ (PWA precache ~1,77MB) · **E2E 16 itens funcionando,
+0 erros de console** (1 falha do *script* foi falso negativo por acento, recurso
+confirmado por print + relatório).
+
+## Limites do localStorage
+- Imagens viram **base64** → consomem quota (~5MB). Mitigado com downscale + teto
+  ~700KB/imagem; ainda assim, **muitas imagens podem encher** (documentado).
+- Engajamento, mensagens, avatares e posts são **por dispositivo** (não compartilhados
+  entre aparelhos até o Supabase).
+
+## Preparação para Supabase Storage
+- Imagens de post e **avatares** devem ir para **Storage/CDN** (hoje data URL).
+  Ver `docs/SOCIAL_SUPABASE_PROPOSAL.md` (tabelas + engajamento + mensagens).
+
+## Preparação para push notification
+- O badge/indicador e o registro de engajamento já existem; `notification_events`
+  (proposto) vira a fonte do push. **Sem push real agora.**
+
+## Riscos restantes
+- Quota do localStorage com imagens (acima).
+- Resolução de avatar do autor lê `pralis:admin-users` no app do colaborador
+  (mesmo dispositivo) — em produção virá do backend.
+- Concorrência multi-admin (último a salvar vence).
+
+## Próximos passos
+- Ligar Supabase (Opção B): mover imagens/avatares p/ Storage; tabelas de social +
+  engajamento + mensagens; RLS por RPC.
+- Refino de permissões por loja/equipe; push real.
+
+## Recuperação da queda de conexão
+- **Já estava pronto/commitado:** blocos **1–10** (10 commits).
+- **Retomado:** o bloco **11** estava parcial e **não commitado** — `types.AdminMessage`,
+  `lib/inbox.ts` e `AdminInbox.tsx` já existiam e **íntegros**; faltava só a integração
+  (item na sidebar + badge + rota). `tsc -b` estava **verde** no estado pós-queda
+  (sem corrupção).
+- **Implementado agora:** integração do bloco 11 (sidebar/badge/rota) → commit
+  `feat(admin): mensagens privadas Gerente -> Admin`.
+- **Correções por causa da queda:** **nenhuma** — nada precisou ser corrigido;
+  apenas continuei do último ponto consistente, sem duplicar nem recriar arquivos.
+
+---
+
+*Implementado em commits pequenos na branch `feature/colaborador-login-social`.
 Sem merge na main, sem deploy, sem Supabase — aguardando sua decisão.*
