@@ -7,6 +7,7 @@
 // ============================================================
 
 import { supabase, hasSupabase } from './supabase'
+import { normalizeCPF, normalizeName, normalizeStore } from './normalize'
 import type {
   Employee,
   ModuleProgress,
@@ -223,6 +224,38 @@ export async function listEmployees(): Promise<Employee[]> {
   return read<Employee[]>(LS.employees, []).sort((a, b) =>
     b.created_at.localeCompare(a.created_at),
   )
+}
+
+/**
+ * Login alternativo do colaborador: busca por nome + CPF, com a loja servindo
+ * de confirmacao APENAS quando o cadastro tiver loja (decisao do produto).
+ * O CPF e armazenado no campo `phone` (apenas digitos). Retorna o colaborador
+ * encontrado ou null. Nao expoe nem registra o CPF.
+ */
+export async function findEmployeeByCredentials(input: {
+  name: string
+  cpf: string
+  store?: string
+}): Promise<Employee | null> {
+  const cpf = normalizeCPF(input.cpf)
+  const name = normalizeName(input.name)
+  const store = normalizeStore(input.store)
+  if (cpf.length !== 11 || !name) return null
+
+  const matches = (e: Employee): boolean => {
+    if (normalizeCPF(e.phone) !== cpf) return false
+    if (normalizeName(e.name) !== name) return false
+    // loja confere SO se o colaborador tiver loja cadastrada e o usuario informou uma
+    const es = normalizeStore(e.store)
+    if (store && es && es !== store) return false
+    return true
+  }
+
+  if (hasSupabase && supabase) {
+    const { data } = await supabase.from('employees').select('*').eq('phone', cpf)
+    return ((data as Employee[]) ?? []).find(matches) ?? null
+  }
+  return read<Employee[]>(LS.employees, []).find(matches) ?? null
 }
 
 // ------------------------------------------------------------
