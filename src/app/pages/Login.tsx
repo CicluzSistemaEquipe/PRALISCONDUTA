@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { LogIn } from 'lucide-react'
 import { useSession } from '../context/SessionContext'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { Loading } from '../components/Loading'
@@ -113,6 +114,26 @@ export default function Login() {
         >
           {isNoToken ? 'Nenhum código de acesso detectado.' : 'Código inválido ou expirado.'}
         </motion.p>
+
+        {/* Login alternativo: colaborador entra com os próprios dados (sem link) */}
+        <motion.button
+          type="button"
+          onClick={() => navigate('/entrar')}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          whileTap={{ scale: 0.98 }}
+          className="font-body"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            marginTop: 24, padding: '13px 22px', borderRadius: 999, fontSize: 14, fontWeight: 700,
+            color: '#fff', border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(110deg, #f37435 0%, #f37435 40%, #b8860b 55%, #f37435 70%)',
+            boxShadow: '0 8px 24px rgba(243,116,53,0.35)',
+          }}
+        >
+          <LogIn size={17} strokeWidth={2.2} /> Já sou colaborador
+        </motion.button>
       </motion.div>
     </div>
   )

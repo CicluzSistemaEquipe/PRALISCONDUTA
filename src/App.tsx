@@ -16,6 +16,7 @@ const Splash = lazyWithRetry(() => import('./app/pages/Splash'))
 const Onboarding = lazyWithRetry(() => import('./app/pages/Onboarding'))
 const Login = lazyWithRetry(() => import('./app/pages/Login'))
 const Acesso = lazyWithRetry(() => import('./app/pages/Acesso'))
+const EntrarColaborador = lazyWithRetry(() => import('./app/pages/EntrarColaborador'))
 const Feed = lazyWithRetry(() => import('./app/pages/Feed'))
 const ProgressScreen = lazyWithRetry(() => import('./app/pages/Progress'))
 const Profile = lazyWithRetry(() => import('./app/pages/Profile'))
@@ -65,6 +66,7 @@ function AnimatedRoutes() {
             <Route path="/conheca" element={<Onboarding />} />
             <Route path="/login" element={<Login />} />
             <Route path="/acesso" element={<Acesso />} />
+            <Route path="/entrar" element={<EntrarColaborador />} />
             <Route
               path="/feed"
               element={
