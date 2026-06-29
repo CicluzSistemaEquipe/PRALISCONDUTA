@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { Megaphone, Plus, Pin, PinOff, Pencil, Send, Archive, Trash2, ImagePlus, X } from 'lucide-react'
+import { Megaphone, Plus, Pin, PinOff, Pencil, Send, Archive, Trash2, ImagePlus, X, Eye, CheckCheck } from 'lucide-react'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { EmptyState, ModalShell, ModalHeader } from '../components/ui'
 import { getAdminSession } from '../auth'
 import { listEmployees } from '@/lib/storage'
 import { ROLES, type Employee, type Role, type SocialPost, type SocialPostType } from '@/lib/types'
 import {
-  getAllPosts, savePost, setPostStatus, togglePin, deletePost, useSocialVersion,
+  getAllPosts, savePost, setPostStatus, togglePin, deletePost, useSocialVersion, engagementForPost,
 } from '@/lib/social'
 import { SAFE_CARD_COLORS, readableTextOn } from '@/lib/socialPresets'
 import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
@@ -58,6 +58,7 @@ export default function AdminSocial() {
   const [modal, setModal] = useState<FormState | null>(null)
   const [imgErr, setImgErr] = useState('')
   const [imgBusy, setImgBusy] = useState(false)
+  const [reportId, setReportId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -156,6 +157,8 @@ export default function AdminSocial() {
           {posts.map((p) => {
             const tm = typeMeta(p.type)
             const sm = STATUS_META[p.status]
+            const eng = engagementForPost(p.id)
+            const open = reportId === p.id
             return (
               <div key={p.id} className="rounded-xl border border-[var(--border)] bg-white p-4">
                 <div className="flex flex-wrap items-center gap-2">
@@ -175,7 +178,12 @@ export default function AdminSocial() {
                   <span className="text-[0.72rem] text-[var(--text-muted)]">
                     {p.created_by_name ?? 'Pralis'} {p.published_at ? `· publicado ${new Date(p.published_at).toLocaleDateString('pt-BR')}` : '· rascunho'}
                   </span>
+                  <span className="flex items-center gap-3 text-[0.72rem] text-[var(--text-muted)]">
+                    <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {eng.views.length}</span>
+                    <span className="inline-flex items-center gap-1"><CheckCheck className="h-3.5 w-3.5" /> {eng.confirms.length}</span>
+                  </span>
                   <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                    <ActionBtn icon={Eye} label={open ? 'Fechar' : 'Leituras'} onClick={() => setReportId(open ? null : p.id)} />
                     <ActionBtn icon={Pencil} label="Editar" onClick={() => openEdit(p)} />
                     {p.status !== 'published'
                       ? <ActionBtn icon={Send} label="Publicar" onClick={() => setPostStatus(p.id, 'published')} primary />
@@ -184,6 +192,45 @@ export default function AdminSocial() {
                     <ActionBtn icon={Trash2} label="Excluir" onClick={() => remove(p)} danger />
                   </div>
                 </div>
+
+                {open && (
+                  <div className="mt-3 grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-subtle)] p-3 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                        Confirmaram ({eng.confirms.length})
+                      </p>
+                      {eng.confirms.length === 0 ? (
+                        <p className="text-[0.78rem] text-[var(--text-muted)]">Ninguem confirmou ainda.</p>
+                      ) : (
+                        <ul className="flex flex-col gap-1">
+                          {eng.confirms.map((r) => (
+                            <li key={r.employee_id} className="flex items-center justify-between gap-2 text-[0.8rem]">
+                              <span className="font-medium text-[var(--ink)]">{r.employee_name}</span>
+                              <span className="text-[var(--text-muted)]">{r.confirmed_at ? new Date(r.confirmed_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                        Visualizaram ({eng.views.length})
+                      </p>
+                      {eng.views.length === 0 ? (
+                        <p className="text-[0.78rem] text-[var(--text-muted)]">Nenhuma visualizacao ainda.</p>
+                      ) : (
+                        <ul className="flex flex-col gap-1">
+                          {eng.views.map((r) => (
+                            <li key={r.employee_id} className="flex items-center justify-between gap-2 text-[0.8rem]">
+                              <span className="font-medium text-[var(--ink)]">{r.employee_name}</span>
+                              <span className="text-[var(--text-muted)]">{r.viewed_at ? new Date(r.viewed_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}
