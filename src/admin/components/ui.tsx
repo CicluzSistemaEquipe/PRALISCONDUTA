@@ -255,8 +255,12 @@ export function ModalShell({
   // empilhamento de ancestrais (ex.: o modal de perfil ficava ATRAS — bug P15).
   if (typeof document === 'undefined') return null
   const structured = Boolean(header || footer)
+  // IMPORTANTE: o portal monta no <body>, FORA do `.adm-root` onde os tokens do
+  // Admin (--ink, --border, --bg-subtle…) são definidos. Sem reaplicar o escopo,
+  // `var(--ink)` cai para o fallback do app (texto branco) e os títulos somem
+  // sobre o fundo branco. O wrapper `.adm-root` resolve todos os tokens no modal.
   return createPortal(
-    <>
+    <div className="adm-root">
       <motion.div className="fixed inset-0 z-[100] bg-[rgba(26,23,20,0.48)] backdrop-blur-[2px]"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={onClose} />
       <div className="fixed inset-0 z-[101] flex items-end justify-center sm:items-center sm:p-4" onClick={onClose}>
@@ -291,7 +295,7 @@ export function ModalShell({
           )}
         </motion.div>
       </div>
-    </>,
+    </div>,
     document.body,
   )
 }
