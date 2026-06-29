@@ -9,6 +9,7 @@ import { SocialPostCard } from '../components/SocialPostCard'
 import {
   postsForEmployee, markPostsViewed, recordAck, hasConfirmed, hasSeen, useSocialVersion,
 } from '@/lib/social'
+import { getAdminUserById } from '@/admin/auth'
 
 export default function Social() {
   const navigate = useNavigate()
@@ -95,6 +96,7 @@ export default function Social() {
                     isNew={newIds.has(p.id)}
                     confirmed={employee ? hasConfirmed(p.id, employee.id) : false}
                     onAck={() => employee && recordAck(employee, p.id)}
+                    authorAvatar={getAdminUserById(p.created_by)?.avatarUrl}
                   />
                 </motion.div>
               ))}

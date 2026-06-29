@@ -97,6 +97,26 @@ export function isAdminAuthed(): boolean {
   return getAdminSession() !== null
 }
 
+/** Busca um AdminUser por id (ex.: resolver avatar do autor de um post). */
+export function getAdminUserById(id: string): AdminUser | null {
+  return getAdminUsers().find((u) => u.id === id) ?? null
+}
+
+/** Define/remove a foto de perfil do admin logado (data URL ou null). */
+export function setAdminAvatar(avatarUrl: string | null): AdminUser | null {
+  const session = getAdminSession()
+  if (!session) return null
+  const users = getAdminUsers()
+  const idx = users.findIndex((u) => u.id === session.id)
+  const base = idx >= 0 ? users[idx] : session
+  const updated: AdminUser = { ...base, avatarUrl: avatarUrl ?? undefined }
+  if (idx >= 0) users[idx] = updated
+  else users.push(updated)
+  saveAdminUsers(users)
+  setSession(updated)
+  return updated
+}
+
 function setSession(user: AdminUser) {
   try {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(user))

@@ -117,6 +117,8 @@ export interface AdminUser {
   role: UserRole
   /** Apenas para gerente: IDs dos colaboradores sob sua responsabilidade */
   colaboradoresIds?: string[]
+  /** foto de perfil (data URL no modo localStorage; Storage/CDN na producao) */
+  avatarUrl?: string
   createdAt: string
 }
 

@@ -17,6 +17,7 @@ import {
 import { brand } from '@/lib/brand'
 import { PralisSymbol } from '@/app/components/PralisSymbol'
 import { adminLogout, getAdminSession } from '../auth'
+import { AdminProfileButton } from './AdminProfileButton'
 
 type NavEntry = { to: string; label: string; icon: typeof LayoutDashboard }
 type NavGroup = { label?: string; items: NavEntry[] }
@@ -48,11 +49,6 @@ const NAV_GERENTE: NavGroup[] = [
   { label: 'Comunicação', items: [{ to: '/admin/social', label: 'Social', icon: Megaphone }] },
   { label: 'Análise', items: [{ to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 }] },
 ]
-
-function initials(name: string) {
-  const p = name.trim().split(/\s+/)
-  return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
-}
 
 function Brand() {
   return (
@@ -148,20 +144,7 @@ export function AdminSidebar() {
       <NavItems groups={items} onNavigate={onNavigate} />
 
       <div className="mt-auto flex flex-col gap-1 border-t border-[var(--border)] pt-3">
-        {session && (
-          <div className="mb-1 flex items-center gap-3 rounded-lg px-2 py-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] text-[0.78rem] font-bold text-white">
-              {initials(session.nome)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[0.8rem] font-semibold text-[var(--ink)]">{session.nome}</p>
-              <p className="flex items-center gap-1.5 text-[0.7rem] font-medium text-[var(--text-muted)]">
-                {roleLabel}
-                <span className="adm-dot-live inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)]" /> Online
-              </p>
-            </div>
-          </div>
-        )}
+        {session && <AdminProfileButton session={session} roleLabel={roleLabel} />}
 
         <a
           href="/feed"

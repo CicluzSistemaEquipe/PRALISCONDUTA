@@ -186,7 +186,17 @@ export function initials(name: string) {
   return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
 }
 
-export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
+export function Avatar({ name, size = 36, src }: { name: string; size?: number; src?: string }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        className="shrink-0 rounded-lg object-cover"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
   return (
     <div
       className="flex shrink-0 items-center justify-center rounded-lg bg-[var(--brand-brown)] font-bold text-white"

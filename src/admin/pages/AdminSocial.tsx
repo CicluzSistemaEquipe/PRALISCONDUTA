@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { Megaphone, Plus, Pin, PinOff, Pencil, Send, Archive, Trash2, ImagePlus, X, Eye, CheckCheck } from 'lucide-react'
 import { AdminPageHeader } from '../components/AdminPageHeader'
-import { EmptyState, ModalShell, ModalHeader } from '../components/ui'
-import { getAdminSession } from '../auth'
+import { EmptyState, ModalShell, ModalHeader, Avatar } from '../components/ui'
+import { getAdminSession, getAdminUserById } from '../auth'
 import { listEmployees } from '@/lib/storage'
 import { ROLES, type Employee, type Role, type SocialPost, type SocialPostType } from '@/lib/types'
 import {
@@ -175,7 +175,8 @@ export default function AdminSocial() {
                 <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-[0.85rem] text-[var(--text-secondary)]">{p.message}</p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-3">
-                  <span className="text-[0.72rem] text-[var(--text-muted)]">
+                  <span className="flex items-center gap-1.5 text-[0.72rem] text-[var(--text-muted)]">
+                    <Avatar name={p.created_by_name ?? 'Pralis'} src={getAdminUserById(p.created_by)?.avatarUrl} size={20} />
                     {p.created_by_name ?? 'Pralis'} {p.published_at ? `· publicado ${new Date(p.published_at).toLocaleDateString('pt-BR')}` : '· rascunho'}
                   </span>
                   <span className="flex items-center gap-3 text-[0.72rem] text-[var(--text-muted)]">
