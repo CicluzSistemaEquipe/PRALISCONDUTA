@@ -269,7 +269,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── título + subtítulo ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Tag size={14} />} label="Identificação" />
+                      <SectionHead icon={<Tag size={14} />} label="Identificação" hint="Nome, etiqueta e tempo do módulo." />
                       <div className="flex flex-col gap-3">
                         <div>
                           <label className="adm-label" htmlFor="mi-title">Título</label>
@@ -304,7 +304,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── aparência ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Palette size={14} />} label="Aparência" />
+                      <SectionHead icon={<Palette size={14} />} label="Aparência" hint="Cor e símbolo que identificam o módulo no app." />
 
                       {/* ── cor do módulo ── */}
                       <label className="adm-label">Cor do módulo</label>
@@ -410,7 +410,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── cargos ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Users size={14} />} label="Quem vê este módulo" />
+                      <SectionHead icon={<Users size={14} />} label="Quem vê este módulo" hint="Todos os cargos ou cargos específicos." />
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
@@ -447,7 +447,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── visibilidade ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Eye size={14} />} label="Visibilidade" />
+                      <SectionHead icon={<Eye size={14} />} label="Visibilidade" hint="Mostrar ou ocultar o módulo no app." />
                       <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-subtle)] px-3.5 py-3">
                         <div>
                           <p className="text-[0.8125rem] font-semibold text-[var(--ink)]">Módulo ativo no app</p>
@@ -481,7 +481,7 @@ export default function AdminModuloEditor() {
 
                     {/* ── seção no app ── */}
                     <div className="adm-card p-5">
-                      <SectionHead icon={<Layers size={14} />} label="Seção no app" />
+                      <SectionHead icon={<Layers size={14} />} label="Seção no app" hint="Onde o módulo aparece na trilha do colaborador." />
                       <div className="flex flex-col gap-2">
                         {(['geral', 'cargo', 'final'] as const).map((sec) => {
                           const labels = { geral: 'Para todos', cargo: 'Por cargo', final: 'Para concluir' }
@@ -729,14 +729,20 @@ function VideoBlockEditor({ story, index, total, onChange, onDelete, onMove }: {
   return (
     <div className="p-4">
       <BlockHeader icon={<Film size={15} />} label="Vídeo" index={index} total={total} onDelete={onDelete} onMove={onMove} />
+      <p className="mb-3 text-[0.78rem] text-[var(--text-muted)]">Vídeo curto narrado pela Lis. A posição é a do bloco na timeline (arraste para mover).</p>
       <VideoUpload currentSrc={story.src ?? ''} onFile={(f) => set({ src: `/videos/${f}` })} onClear={() => set({ src: '' })} />
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="block"><span className="adm-label">Título do vídeo</span>
-          <input className="adm-input" value={story.title} onChange={(e) => set({ title: e.target.value })} /></label>
-        <label className="block"><span className="adm-label">Duração</span>
-          <input className="adm-input" placeholder="2:10" value={story.duration ?? ''} onChange={(e) => set({ duration: e.target.value })} /></label>
+        <label className="block">
+          <span className="adm-label">Título do vídeo</span>
+          <input className="adm-input" value={story.title} onChange={(e) => set({ title: e.target.value })} />
+          <span className="mt-1 block text-[0.72rem] text-[var(--text-muted)]">Aparece no player do app.</span>
+        </label>
+        <label className="block">
+          <span className="adm-label">Duração</span>
+          <input className="adm-input" placeholder="2:10" value={story.duration ?? ''} onChange={(e) => set({ duration: e.target.value })} />
+          <span className="mt-1 block text-[0.72rem] text-[var(--text-muted)]">Ex.: 1:30 — detecção automática chega na próxima fase.</span>
+        </label>
       </div>
-      <p className="mt-2 text-xs text-[var(--text-muted)]">A posição no módulo é a posição do bloco na timeline (arraste para mover).</p>
     </div>
   )
 }
@@ -831,20 +837,23 @@ function VideoUpload({ currentSrc, onFile, onClear }: {
         <span className="adm-badge adm-badge--muted">MP4 · WebM · MOV</span>
       </div>
       <p className="text-xs text-[var(--text-muted)]">
-        Após selecionar, copie o arquivo para <code className="font-mono text-[var(--text-secondary)]">/public/videos/</code>
+        Por enquanto, copie o arquivo para <code className="font-mono text-[var(--text-secondary)]">/public/videos/</code> · upload direto chega na próxima fase.
       </p>
     </label>
   )
 }
 
 // ── auxiliares ────────────────────────────────────────────────────────────────
-function SectionHead({ icon, label }: { icon: React.ReactNode; label: string }) {
+function SectionHead({ icon, label, hint }: { icon: React.ReactNode; label: string; hint?: string }) {
   return (
-    <div className="mb-4 flex items-center gap-2.5">
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-tint)] text-[var(--accent-text)]">
-        {icon}
-      </span>
-      <span className="adm-eyebrow">{label}</span>
+    <div className="mb-4">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-tint)] text-[var(--accent-text)]">
+          {icon}
+        </span>
+        <span className="adm-eyebrow">{label}</span>
+      </div>
+      {hint && <p className="mt-1.5 text-[0.75rem] text-[var(--text-muted)]">{hint}</p>}
     </div>
   )
 }
