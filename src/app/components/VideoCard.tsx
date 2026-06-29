@@ -22,6 +22,14 @@ interface VideoCardProps {
 const WATCH_THRESHOLD = 1.0
 const SIM_SECONDS = 14
 
+/** mm:ss a partir de segundos (duração real do vídeo). */
+function fmtTime(sec: number): string {
+  if (!isFinite(sec) || sec <= 0) return ''
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
 export function VideoCard({
   title,
   description,
@@ -43,6 +51,7 @@ export function VideoCard({
   const [muted,   setMuted]   = useState(false)
   const [fraction, setFraction] = useState(watched ? 1 : 0)
   const [marked,   setMarked]   = useState(watched)
+  const [metaDuration, setMetaDuration] = useState('')
 
   const notify = useCallback((p: boolean) => {
     setPlaying(p)
@@ -70,17 +79,27 @@ export function VideoCard({
     }
   }, [notify, onProgress, onWatched, onAutoAdvance])
 
-  // player real
+  // player real — tempo, fim, duração real (metadata) e play/pause sincronizados
   useEffect(() => {
     const v = videoRef.current
     if (!v || !src) return
     const onTime = () => update(v.duration ? v.currentTime / v.duration : 0)
     const onEnd  = () => notify(false)
+    const onMeta = () => setMetaDuration(fmtTime(v.duration))
+    const onPlayEv = () => notify(true)
+    const onPauseEv = () => notify(false)
     v.addEventListener('timeupdate', onTime)
     v.addEventListener('ended', onEnd)
+    v.addEventListener('loadedmetadata', onMeta)
+    v.addEventListener('play', onPlayEv)
+    v.addEventListener('pause', onPauseEv)
+    if (v.readyState >= 1) setMetaDuration(fmtTime(v.duration))
     return () => {
       v.removeEventListener('timeupdate', onTime)
       v.removeEventListener('ended', onEnd)
+      v.removeEventListener('loadedmetadata', onMeta)
+      v.removeEventListener('play', onPlayEv)
+      v.removeEventListener('pause', onPauseEv)
     }
   }, [src, update, notify])
 
@@ -127,6 +146,15 @@ export function VideoCard({
     notify(true)
   }
 
+  // toque na tela: tocando -> pausa; pausado -> toca
+  const togglePlay = () => {
+    const v = videoRef.current
+    if (src && v && !v.paused) { v.pause(); return }
+    startPlayback()
+  }
+
+  const displayDuration = metaDuration || duration || '—'
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
 
@@ -156,29 +184,28 @@ export function VideoCard({
         </div>
       )}
 
-      {/* botão play — aparece quando não está tocando */}
-      <AnimatePresence>
-        {!playing && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={startPlayback}
-            className="absolute inset-0 flex items-center justify-center"
-            aria-label={marked ? 'Rever vídeo' : 'Reproduzir'}
-          >
-            <span
+      {/* área de toque: tela inteira faz play/pause; botão grande só quando pausado */}
+      <button
+        onClick={togglePlay}
+        className="absolute inset-0 z-[5] flex items-center justify-center"
+        aria-label={playing ? 'Pausar' : marked ? 'Rever vídeo' : 'Reproduzir'}
+      >
+        <AnimatePresence>
+          {!playing && (
+            <motion.span
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
               className="flex h-[72px] w-[72px] items-center justify-center rounded-full"
               style={{ background: marked ? 'rgba(0,0,0,0.55)' : '#f37435', boxShadow: marked ? 'none' : '0 8px 32px rgba(243,116,53,0.5)' }}
             >
               {marked
                 ? <RotateCcw size={28} color="rgba(232,207,160,0.85)" />
-                : <Play size={32} color="#fff" fill="#fff" style={{ marginLeft: 4 }} />
-              }
-            </span>
-          </motion.button>
-        )}
-      </AnimatePresence>
+                : <Play size={32} color="#fff" fill="#fff" style={{ marginLeft: 4 }} />}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </button>
 
       {/* mute (só com vídeo real) */}
       {src && (
@@ -216,10 +243,14 @@ export function VideoCard({
         </button>
       )}
 
-      {/* gradiente inferior + info do vídeo */}
+      {/* info do vídeo — some durante a reprodução (vídeo assume a tela) */}
       <div
         className="absolute inset-x-0 bottom-0 px-5 pb-9 pt-16 pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)' }}
+        style={{
+          background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+          opacity: playing ? 0 : 1,
+          transition: 'opacity 0.3s ease',
+        }}
       >
         {/* barra de progresso */}
         <div className="mb-3 h-[3px] w-full overflow-hidden rounded-full bg-white/25">
@@ -228,7 +259,7 @@ export function VideoCard({
 
         <p className="font-display text-2xl text-white">{title}</p>
         <p className="font-body text-[13px] text-white/60">
-          {duration ?? '—'} · narrado pela Lis{description ? ` · ${description}` : ''}
+          {displayDuration} · narrado pela Lis{description ? ` · ${description}` : ''}
         </p>
 
         {/* indicador de assistido — substitui o botão */}
@@ -249,6 +280,13 @@ export function VideoCard({
           )}
         </AnimatePresence>
       </div>
+
+      {/* barra fina de progresso — sempre visível, inclusive durante o play */}
+      {(started || marked || fraction > 0) && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-[3px] bg-white/15">
+          <div className="h-full transition-all" style={{ width: `${fraction * 100}%`, background: '#f37435' }} />
+        </div>
+      )}
     </div>
   )
 }
