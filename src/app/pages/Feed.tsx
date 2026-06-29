@@ -14,6 +14,7 @@ import { SkeletonCard } from '../components/SkeletonCard'
 import { brand, FILTER_WHITE } from '@/lib/brand'
 import { useTheme } from '../context/ThemeContext'
 import { isDevMode } from '@/lib/devMode'
+import { getAdminData } from '@/lib/adminStore'
 
 /** Primeiro nome legível; nunca exibe um e-mail. */
 function firstName(name: string): string {
@@ -30,15 +31,6 @@ function welcomeFor(name: string): string {
   const female = MASC_NAMES.has(f) ? false : FEM_NAMES.has(f) ? true : f.endsWith('a')
   return female ? 'Seja bem-vinda' : 'Seja bem-vindo'
 }
-
-// Mensagens boas que passam acima do rodapé (futuramente editáveis no admin geral).
-const TAGLINES = [
-  'é provar e ser feliz',
-  'cada módulo te deixa mais preparado',
-  'seu cuidado faz a Pralís melhor',
-  'conhecimento que vira confiança',
-  'um passo hoje, orgulho amanhã',
-]
 
 /** Anel de progresso global (gradiente ouro→laranja). Desenha uma vez na entrada. */
 function ProgressRing({ progress, size = 92, reduce }: { progress: number; size?: number; reduce?: boolean }) {
@@ -85,21 +77,13 @@ const SECTION_ACCENT: Record<NonNullable<Module['section']>, string> = {
   final: '#e8cfa0',
 }
 
-// Introdução de cada grupo — combinada com os subtítulos dos módulos para
-// formar um texto que passa (marquee), dando uma ideia do que vem sem revelar
-// o módulo bloqueado em si.
-const SECTION_INTRO: Record<NonNullable<Module['section']>, string> = {
-  geral: 'Treinamentos essenciais da Pralís',
-  cargo: 'Treinamentos do seu cargo',
-  final: 'Para concluir sua jornada',
-}
-
 export default function Feed() {
   const navigate = useNavigate()
   const { theme } = useTheme()
   const isLight = theme === 'light'
   const reduce = useReducedMotion() ?? false
   const { employee, progress } = useSession()
+  const splash = getAdminData().splashConfig
   const [signed, setSigned] = useState(false)
   const [ready, setReady] = useState(false)
   const [now, setNow] = useState(() => new Date())
@@ -377,7 +361,7 @@ export default function Feed() {
             {groups.map(([section, mods], gi) => {
               const doneInSection = mods.filter(isModuleDone).length
               const lockedLabel = section === 'cargo' ? 'Treinamento bloqueado' : 'Módulo bloqueado'
-              const teaser = [SECTION_INTRO[section], ...mods.map((m) => m.subtitle)].join('     ·     ')
+              const teaser = splash.homeIntros[section]
               return (
                 <section key={section} style={{ marginTop: gi === 0 ? 0 : 22 }} className="mb-2">
                   <SectionHeader label={SECTION_LABEL[section]} accent={SECTION_ACCENT[section]} done={doneInSection} total={mods.length} teaser={teaser} reduce={reduce} />
@@ -408,7 +392,7 @@ export default function Feed() {
         )}
 
         {/* frase rotativa com motion, acima do rodapé */}
-        <RotatingTagline isLight={isLight} reduce={reduce} />
+        <RotatingTagline isLight={isLight} reduce={reduce} phrases={splash.footerPhrases} />
       </main>
 
       <BottomNav active="feed" onChange={(t) => navigate(TAB_PATH[t])} />
@@ -445,7 +429,7 @@ function SectionHeader({ label, accent, done, total, teaser, reduce }: { label: 
         </span>
       </div>
 
-      <Marquee text={teaser} color={color} reduce={reduce} />
+      <SectionIntro text={teaser} color={color} />
 
       <div className="relative mt-2 overflow-hidden rounded-full" style={{ height: 3, background: 'rgba(255,255,255,0.10)' }}>
         <motion.div
@@ -460,53 +444,48 @@ function SectionHeader({ label, accent, done, total, teaser, reduce }: { label: 
   )
 }
 
-/** Texto que passa (marquee) com bordas esmaecidas; estático se reduced-motion. */
-function Marquee({ text, color, reduce }: { text: string; color: string; reduce: boolean }) {
-  const fade = { WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent)', maskImage: 'linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent)' }
-  if (reduce) {
-    return (
-      <p className="mt-1.5 truncate font-body" style={{ fontSize: 10, color, opacity: 0.8 }}>
-        {text}
-      </p>
-    )
-  }
-  const duration = Math.max(12, text.length * 0.22)
+/** Descrição institucional da seção — uma linha legível, editável no admin.
+ *  Sem marquee/loop infinito (regra de performance do app). */
+function SectionIntro({ text, color }: { text: string; color: string }) {
+  if (!text) return null
   return (
-    <div className="relative mt-1.5 overflow-hidden" style={fade}>
-      <motion.div
-        className="flex whitespace-nowrap font-body"
-        style={{ fontSize: 10, color, opacity: 0.85, willChange: 'transform' }}
-        animate={{ x: ['0%', '-50%'] }}
-        transition={{ duration, repeat: Infinity, ease: 'linear' }}
-      >
-        <span style={{ paddingRight: 40 }}>{text}</span>
-        <span style={{ paddingRight: 40 }} aria-hidden="true">{text}</span>
-      </motion.div>
-    </div>
+    <p className="mt-1.5 truncate font-body" style={{ fontSize: 10.5, color, opacity: 0.85 }} title={text}>
+      {text}
+    </p>
   )
 }
 
-function RotatingTagline({ isLight, reduce }: { isLight: boolean; reduce: boolean }) {
+/** Frases institucionais que se alternam acima do rodapé (editáveis no admin). */
+function RotatingTagline({ isLight, reduce, phrases }: { isLight: boolean; reduce: boolean; phrases: string[] }) {
+  const list = phrases.length ? phrases : ['é provar e ser feliz']
   const [i, setI] = useState(0)
   useEffect(() => {
-    const id = window.setInterval(() => setI((v) => (v + 1) % TAGLINES.length), 4800)
+    if (list.length <= 1) return
+    const id = window.setInterval(() => setI((v) => (v + 1) % list.length), 4800)
     return () => window.clearInterval(id)
-  }, [])
+  }, [list.length])
+  const idx = i % list.length
   return (
-    <div className="flex flex-col items-center gap-2.5 pb-2 pt-6">
-      <Leaf size={18} color="#f37435" strokeWidth={2} style={{ opacity: isLight ? 0.7 : 0.85 }} aria-hidden="true" />
+    <div className="flex flex-col items-center gap-3 pb-2 pt-7">
+      <span
+        aria-hidden="true"
+        className="flex items-center justify-center"
+        style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(243,116,53,0.12)', border: '1px solid rgba(243,116,53,0.28)' }}
+      >
+        <Leaf size={15} color="#f37435" strokeWidth={2.1} style={{ opacity: isLight ? 0.85 : 1 }} />
+      </span>
       <div className="relative flex h-5 w-full items-center justify-center">
         <AnimatePresence mode="wait">
           <motion.p
-            key={i}
+            key={idx}
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 7 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -7 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute text-center font-body"
-            style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--text-secondary)' }}
+            className="absolute px-6 text-center font-body"
+            style={{ fontSize: 12.5, fontStyle: 'italic', color: 'var(--text-secondary)', letterSpacing: '0.01em' }}
           >
-            {TAGLINES[i]}
+            {list[idx]}
           </motion.p>
         </AnimatePresence>
       </div>
