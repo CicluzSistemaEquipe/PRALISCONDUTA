@@ -29,68 +29,50 @@ export function ModuleCard({ module, status, progress, onOpen, highlight = false
   const pct = Math.round(progress * 100)
   const recommended = highlight && !locked && !done
 
-  // ── BLOQUEADO: glass no botão inteiro — o conteúdo real fica nítido por baixo
-  //    e a camada de vidro (backdrop-blur) frosta tudo; cadeado + rótulo em
-  //    destaque por cima. Não revela o módulo; só abre ao desbloquear.
+  // ── BLOQUEADO: mostra o módulo real (nome + descrição) esmaecido, com cadeado
+  //    e estado claro. SEM backdrop-blur (regra de performance do app).
   if (locked) {
-    const label = lockedLabel ?? 'Módulo bloqueado'
-    const labelColor = isLight ? '#5e3731' : '#fff6ea'
-    const hintColor = isLight ? 'rgba(94,55,49,0.8)' : 'rgba(255,246,234,0.82)'
+    const titleColor = isLight ? '#5e3731' : '#fff6ea'
+    const subColor = isLight ? 'rgba(94,55,49,0.72)' : 'rgba(255,246,234,0.66)'
+    const stateLabel = lockedLabel ?? 'Módulo bloqueado'
     return (
       <div
-        className="relative flex w-full items-center overflow-hidden"
+        className="relative flex w-full items-center gap-3.5 overflow-hidden"
         style={{
           minHeight: 84,
           borderRadius: CARD_RADIUS,
+          padding: 16,
           background: 'var(--bg-card)',
-          border: `1.5px solid ${isLight ? 'rgba(94,55,49,0.16)' : 'rgba(255,255,255,0.12)'}`,
+          border: `1.5px solid ${isLight ? 'rgba(94,55,49,0.14)' : 'rgba(255,255,255,0.10)'}`,
+          opacity: 0.92,
         }}
       >
-        {/* conteúdo real (mostra mais por baixo do vidro) */}
-        <div className="flex items-center gap-3.5 px-4" style={{ opacity: 0.7, pointerEvents: 'none', userSelect: 'none' }}>
-          <span style={{ width: 42, height: 42, borderRadius: 12, background: `color-mix(in srgb, ${module.accent} 18%, transparent)`, border: `1px solid ${module.accent}`, flexShrink: 0 }} />
-          <span>
-            <span className="block font-display" style={{ fontSize: 16, color: 'var(--text-primary)' }}>{module.title}</span>
-            <span className="mt-1 block font-body" style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{module.subtitle}</span>
-          </span>
-        </div>
+        <span aria-hidden="true" className="absolute left-0" style={{ top: 12, bottom: 12, width: 4, borderRadius: 999, background: module.accent, opacity: 0.4 }} />
 
-        {/* camada de VIDRO sobre o botão todo (frost) */}
-        <div
-          className="absolute inset-0"
-          aria-hidden="true"
-          style={{
-            backdropFilter: 'blur(7px) saturate(1.1)',
-            WebkitBackdropFilter: 'blur(7px) saturate(1.1)',
-            background: isLight
-              ? 'linear-gradient(135deg, rgba(255,255,255,0.55), rgba(255,255,255,0.32))'
-              : 'linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.20)',
-            borderRadius: CARD_RADIUS,
-          }}
-        />
-
-        {/* frente nítida: cadeado + rótulo em destaque */}
-        <div className="absolute inset-0 flex items-center gap-3 px-4">
+        <span
+          className="relative flex shrink-0 items-center justify-center"
+          style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-surface-2)', border: `1px solid ${isLight ? 'rgba(94,55,49,0.18)' : 'rgba(255,255,255,0.12)'}` }}
+        >
+          <span style={{ opacity: 0.5, display: 'flex' }}><Icon name={module.icon} size={20} color={module.accent} /></span>
           <span
-            className="flex shrink-0 items-center justify-center"
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              background: isLight ? 'rgba(94,55,49,0.12)' : 'rgba(255,255,255,0.16)',
-              border: `1.5px solid ${isLight ? 'rgba(94,55,49,0.26)' : 'rgba(255,255,255,0.32)'}`,
-            }}
+            className="absolute flex items-center justify-center"
+            style={{ right: -4, bottom: -4, width: 20, height: 20, borderRadius: '50%', background: isLight ? '#efe7df' : '#2a1c17', border: `1px solid ${isLight ? 'rgba(94,55,49,0.2)' : 'rgba(255,255,255,0.18)'}` }}
           >
-            <Lock size={21} color={labelColor} strokeWidth={2.4} />
+            <Lock size={11} color={titleColor} strokeWidth={2.6} />
           </span>
-          <span className="min-w-0">
-            <span className="block font-display" style={{ fontSize: 15.5, fontWeight: 700, color: labelColor, letterSpacing: '0.01em' }}>{label}</span>
-            <span className="mt-0.5 block font-body" style={{ fontSize: 11, color: hintColor }}>
-              Conclua o módulo anterior para abrir
-            </span>
+        </span>
+
+        <span className="min-w-0 flex-1">
+          <span className="block font-display" style={{ fontSize: 'clamp(15px, 4.4vw, 17px)', lineHeight: 1.18, color: titleColor }}>
+            {module.title}
           </span>
-        </div>
+          <span className="mt-1 block truncate font-body" style={{ fontSize: 'clamp(11px, 3.2vw, 12.5px)', color: subColor }}>
+            {module.subtitle}
+          </span>
+          <span className="mt-1.5 inline-flex items-center gap-1 font-body font-bold" style={{ fontSize: 10, color: subColor, letterSpacing: '0.02em' }}>
+            <Lock size={10} strokeWidth={2.6} /> {stateLabel} · conclua o anterior
+          </span>
+        </span>
       </div>
     )
   }
