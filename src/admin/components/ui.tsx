@@ -71,7 +71,7 @@ export function StatCard({
   const t = TONES[tone]
   const animatable = typeof value === 'string' || typeof value === 'number'
   const base =
-    'group relative w-full rounded-xl border border-[var(--border)] bg-white p-5 text-left transition-all duration-200 hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-sm)]'
+    'group relative w-full rounded-xl border border-[var(--border)] bg-white p-5 text-left shadow-[var(--shadow-xs)] transition-all duration-200 hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-sm)]'
   const inner = (
     <>
       {onClick && (
@@ -135,7 +135,7 @@ export function SectionCard({
   bodyClassName?: string
 }) {
   return (
-    <section className={`rounded-xl border border-[var(--border)] bg-white p-5 ${className}`}>
+    <section className={`rounded-xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-xs)] ${className}`}>
       <header className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span className="h-4 w-[3px] rounded-full bg-[var(--accent)]" />
@@ -260,7 +260,7 @@ export function ModalShell({
   // `var(--ink)` cai para o fallback do app (texto branco) e os títulos somem
   // sobre o fundo branco. O wrapper `.adm-root` resolve todos os tokens no modal.
   return createPortal(
-    <div className="adm-root">
+    <div className="adm-root" style={{ minHeight: 0, background: 'transparent' }}>
       <motion.div className="fixed inset-0 z-[100] bg-[rgba(26,23,20,0.48)] backdrop-blur-[2px]"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={onClose} />
       <div className="fixed inset-0 z-[101] flex items-end justify-center sm:items-center sm:p-4" onClick={onClose}>

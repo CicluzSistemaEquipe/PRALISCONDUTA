@@ -9,6 +9,7 @@
 .adm-root {
   /* ---------- Tokens do Design System ---------- */
   --bg-app: #ffffff;
+  --bg-canvas: #f4f2ee;   /* fundo da área de conteúdo (cards brancos ganham relevo) */
   --bg-subtle: #faf9f8;   /* seções, header de tabela, hover de linha */
   --bg-muted: #f5f4f2;    /* hover ghost, fills sutis */
   --bg-inset: #f2f0ed;    /* divisórias, trilhos */
@@ -68,7 +69,7 @@
   --border-white: var(--border);
 
   min-height: 100dvh;
-  background: var(--bg-app);
+  background: var(--bg-canvas);
   color: var(--ink);
   font-family: 'Montserrat', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -83,7 +84,7 @@
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: none;
+  box-shadow: var(--shadow-xs);
 }
 .adm-card--gold { /* legado: agora é apenas um card de leve destaque */
   border-color: var(--border-strong);
