@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { Megaphone, Plus, Pin, PinOff, Pencil, Send, Archive, Trash2 } from 'lucide-react'
+import { Megaphone, Plus, Pin, PinOff, Pencil, Send, Archive, Trash2, ImagePlus, X } from 'lucide-react'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { EmptyState, ModalShell, ModalHeader } from '../components/ui'
 import { getAdminSession } from '../auth'
@@ -9,6 +9,8 @@ import { ROLES, type Employee, type Role, type SocialPost, type SocialPostType }
 import {
   getAllPosts, savePost, setPostStatus, togglePin, deletePost, useSocialVersion,
 } from '@/lib/social'
+import { SAFE_CARD_COLORS, readableTextOn } from '@/lib/socialPresets'
+import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
 
 const TYPE_OPTIONS: { value: SocialPostType; label: string; color: string }[] = [
   { value: 'aviso', label: 'Aviso', color: '#b7791f' },
@@ -16,6 +18,7 @@ const TYPE_OPTIONS: { value: SocialPostType; label: string; color: string }[] = 
   { value: 'aniversariante', label: 'Aniversario', color: '#8e44ad' },
   { value: 'importante', label: 'Importante', color: '#c0392b' },
   { value: 'treinamento', label: 'Treinamento', color: '#c9501a' },
+  { value: 'motivacao', label: 'Motivacao', color: '#2f74a8' },
   { value: 'geral', label: 'Geral', color: '#8a837c' },
 ]
 const typeMeta = (t: SocialPostType) => TYPE_OPTIONS.find((o) => o.value === t) ?? TYPE_OPTIONS[5]
@@ -32,6 +35,9 @@ interface FormState {
   role: Role
   employeeId: string
   pinned: boolean
+  image?: string
+  cardColor?: string
+  textColor?: string
 }
 const EMPTY_FORM: FormState = {
   title: '', message: '', type: 'geral', audienceKind: 'all',
@@ -50,10 +56,27 @@ export default function AdminSocial() {
   const posts = useMemo(() => getAllPosts(), [version])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [modal, setModal] = useState<FormState | null>(null)
+  const [imgErr, setImgErr] = useState('')
+  const [imgBusy, setImgBusy] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     void listEmployees().then(setEmployees)
   }, [])
+
+  const handleImage = async (file: File | undefined) => {
+    if (!file) return
+    setImgErr(''); setImgBusy(true)
+    try {
+      const res = await fileToDownscaledDataURL(file)
+      setModal((m) => (m ? { ...m, image: res.dataUrl } : m))
+    } catch (e) {
+      setImgErr(e instanceof Error ? e.message : 'Falha ao processar a imagem.')
+    } finally {
+      setImgBusy(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
 
   const audienceLabel = (p: SocialPost): string => {
     const a = p.audience
@@ -66,15 +89,18 @@ export default function AdminSocial() {
     }
   }
 
-  const openNew = () => setModal({ ...EMPTY_FORM })
-  const openEdit = (p: SocialPost) =>
+  const openNew = () => { setImgErr(''); setModal({ ...EMPTY_FORM }) }
+  const openEdit = (p: SocialPost) => {
+    setImgErr('')
     setModal({
       id: p.id, title: p.title, message: p.message, type: p.type, pinned: p.pinned,
       audienceKind: p.audience.kind,
       store: p.audience.kind === 'store' ? p.audience.value : '',
       role: p.audience.kind === 'role' ? p.audience.value : ROLES[0],
       employeeId: p.audience.kind === 'employee' ? p.audience.value : '',
+      image: p.image, cardColor: p.cardColor, textColor: p.textColor,
     })
+  }
 
   const save = (status: 'draft' | 'published') => {
     if (!modal || !session) return
@@ -91,6 +117,8 @@ export default function AdminSocial() {
       id: f.id, title: f.title.trim(), message: f.message.trim(), type: f.type,
       audience, pinned: f.pinned, status,
       created_by: session.id, created_by_name: session.nome,
+      created_by_role: session.role,
+      image: f.image, cardColor: f.cardColor, textColor: f.textColor,
     })
     setModal(null)
   }
@@ -221,6 +249,52 @@ export default function AdminSocial() {
                 </select>
               </div>
             )}
+
+            {/* Aparencia do card (preset ou cor segura; texto auto-legivel) */}
+            <div className="mb-4">
+              <span className="adm-label">Aparencia do card</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => setModal({ ...modal, cardColor: undefined, textColor: undefined })}
+                  className={`h-8 rounded-lg border px-2.5 text-[0.72rem] font-semibold transition-colors ${!modal.cardColor ? 'border-[var(--accent)] text-[var(--accent-text)]' : 'border-[var(--border-strong)] text-[var(--text-secondary)]'}`}>
+                  Preset do tipo
+                </button>
+                {SAFE_CARD_COLORS.map((c) => (
+                  <button key={c} type="button" aria-label={`Cor ${c}`}
+                    onClick={() => setModal({ ...modal, cardColor: c, textColor: readableTextOn(c) })}
+                    className={`h-8 w-8 rounded-lg border-2 transition-transform hover:scale-105 ${modal.cardColor === c ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
+                    style={{ background: c }} />
+                ))}
+              </div>
+              <p className="mt-1.5 text-[0.72rem] text-[var(--text-muted)]">
+                Texto ajustado automaticamente para legibilidade (contraste AA).
+              </p>
+            </div>
+
+            {/* Imagem opcional */}
+            <div className="mb-4">
+              <span className="adm-label">Imagem (opcional)</span>
+              {modal.image ? (
+                <div className="relative overflow-hidden rounded-xl border border-[var(--border)]" style={{ background: '#14140f' }}>
+                  <img src={modal.image} alt="Pre-visualizacao" style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block' }} />
+                  <button type="button" onClick={() => setModal({ ...modal, image: undefined })}
+                    aria-label="Remover imagem"
+                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/55 text-white transition-colors hover:bg-black/75">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={imgBusy}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--border-strong)] px-4 py-5 text-[0.85rem] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-subtle)] disabled:opacity-60">
+                  <ImagePlus className="h-[18px] w-[18px]" /> {imgBusy ? 'Processando...' : 'Adicionar imagem'}
+                </button>
+              )}
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                onChange={(e) => handleImage(e.target.files?.[0])} />
+              <p className="mt-1.5 text-[0.72rem] text-[var(--text-muted)]">
+                {ALLOWED_LABEL} - redimensionada automaticamente. Em producao: Supabase Storage/CDN.
+              </p>
+              {imgErr && <p className="mt-1 text-[0.75rem] font-medium text-[var(--danger)]">{imgErr}</p>}
+            </div>
 
             <label className="mb-5 mt-1 flex cursor-pointer items-center gap-2.5 text-[0.85rem] text-[var(--ink)]">
               <input type="checkbox" checked={modal.pinned} onChange={(e) => setModal({ ...modal, pinned: e.target.checked })} />
