@@ -120,6 +120,47 @@ export interface AdminUser {
   createdAt: string
 }
 
+// ── Social / Comunicados / Notificacoes ────────────────────
+export type SocialPostType =
+  | 'aviso'
+  | 'gratidao'
+  | 'aniversariante'
+  | 'importante'
+  | 'treinamento'
+  | 'geral'
+
+/** Publico-alvo do post. 'all' = todos; senao filtra por loja/cargo/colaborador. */
+export type SocialAudience =
+  | { kind: 'all' }
+  | { kind: 'store'; value: string }
+  | { kind: 'role'; value: Role }
+  | { kind: 'employee'; value: string } // employeeId
+
+export type SocialPostStatus = 'draft' | 'published' | 'archived'
+
+export interface SocialPost {
+  id: string
+  title: string
+  message: string
+  type: SocialPostType
+  audience: SocialAudience
+  pinned: boolean
+  status: SocialPostStatus
+  /** ISO quando publicado (null em rascunho/arquivado nunca publicado) */
+  published_at: string | null
+  /** AdminUser.id do autor */
+  created_by: string
+  created_by_name?: string
+  created_at: string
+  updated_at: string
+}
+
+/** Leitura de um post por um colaborador (persistida por colaborador). */
+export interface SocialPostRead {
+  post_id: string
+  read_at: string
+}
+
 // ---------- Conteúdo dos módulos ----------
 
 export type LisState =
