@@ -41,6 +41,9 @@ playwright-report/
 *.log
 .vite/
 
+# deploy (artefatos locais do Vercel CLI)
+.vercel
+
 # ============================================================
 # MIDIA: o app usa apenas .webm (alpha), .mp3 e um .mp4 leves.
 # Os .mov/.gif/.sfk/.jpeg e pastas de frames sao FONTES BRUTAS
