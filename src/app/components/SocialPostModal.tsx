@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { X, Pin, Check, CheckCheck } from 'lucide-react'
 import type { SocialPost } from '@/lib/types'
-import { presetFor } from '@/lib/socialPresets'
+import { presetFor, readableTextOn, isReadable } from '@/lib/socialPresets'
 import { initials, roleLabel, formatDateTime } from '@/lib/socialFormat'
 
 /**
@@ -22,10 +22,13 @@ export function SocialPostModal({
   const reduce = useReducedMotion()
   const closeRef = useRef<HTMLButtonElement>(null)
   const preset = presetFor(post.type)
-  const cardBg = post.cardColor ?? preset.card
-  const textColor = post.textColor ?? preset.text
   const accent = preset.accent
-  const muted = textColor + 'b3'
+  // Fundo = cor escolhida; texto/ícones/chip = foreground legível automático.
+  const cardBg = post.cardColor ?? preset.card
+  const textColor = post.textColor && isReadable(cardBg, post.textColor) ? post.textColor : readableTextOn(cardBg)
+  const muted = textColor + 'b8'
+  const soft = textColor + '1f'
+  const line = textColor + '40'
 
   // ESC fecha + trava o scroll do body + foco inicial
   useEffect(() => {
@@ -71,8 +74,8 @@ export function SocialPostModal({
         <div className="flex items-center gap-3" style={{ padding: '16px 18px 10px' }}>
           <div style={{
             width: 44, height: 44, borderRadius: '50%', flex: 'none', overflow: 'hidden',
-            display: 'grid', placeItems: 'center', background: accent + '33',
-            border: `1.5px solid ${accent}66`, color: textColor, fontWeight: 800, fontSize: 15,
+            display: 'grid', placeItems: 'center', background: soft,
+            border: `1.5px solid ${line}`, color: textColor, fontWeight: 800, fontSize: 15,
           }}>
             {authorAvatar
               ? <img src={authorAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -99,8 +102,8 @@ export function SocialPostModal({
         <div className="flex items-center gap-2" style={{ padding: '0 18px 10px' }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700,
-            letterSpacing: '0.04em', textTransform: 'uppercase', color: accent,
-            background: accent + '22', border: `1px solid ${accent}55`, borderRadius: 999, padding: '3px 10px',
+            letterSpacing: '0.04em', textTransform: 'uppercase', color: textColor,
+            background: soft, border: `1px solid ${line}`, borderRadius: 999, padding: '3px 10px',
           }}>
             <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: accent }} />
             {preset.label}
@@ -132,7 +135,7 @@ export function SocialPostModal({
         <div style={{ padding: '14px 18px calc(16px + var(--safe-bottom, 0px))', marginTop: 'auto' }}>
           {confirmed ? (
             <div className="flex items-center justify-center gap-2"
-              style={{ fontSize: 14, fontWeight: 700, color: accent, background: accent + '1f', borderRadius: 14, padding: '13px' }}>
+              style={{ fontSize: 14, fontWeight: 700, color: textColor, background: soft, border: `1px solid ${line}`, borderRadius: 14, padding: '13px' }}>
               <CheckCheck size={18} strokeWidth={2.4} /> Você confirmou a leitura
             </div>
           ) : (
