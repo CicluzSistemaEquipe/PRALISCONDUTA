@@ -68,7 +68,7 @@ export function StoryPlayer({
   const stories = module.stories
   const [index, setIndex] = useState(Math.min(startIndex, stories.length - 1))
   const [dir, setDir] = useState(1)
-  const [, setVideoPlaying] = useState(false)
+  const [videoPlaying, setVideoPlaying] = useState(false)
   const [fraction, setFraction] = useState(0)
   const nextRef = useRef<() => void>(() => {})
   const [quizCorrect, setQuizCorrect] = useState(0)
@@ -83,7 +83,9 @@ export function StoryPlayer({
       if (target < 0) return
       const current = stories[index]
       const waitingForNarration =
-        current?.type === 'text' && Boolean(current.audioSrc) && direction > 0 && target > index
+        ((current?.type === 'text' && Boolean(current.audioSrc)) ||
+          (current?.type === 'lis' && Boolean(current.audioSrc))) &&
+        direction > 0 && target > index
       if (!force && !preview && waitingForNarration && fraction < 0.995) return
       // bloqueia avanço em slide de vídeo enquanto não assistido
       const waitingForVideo =
@@ -130,7 +132,7 @@ export function StoryPlayer({
     if (preview) return // no preview o slide fica parado para inspeção
     const s = stories[index]
     let duration = 0
-    if (s.type === 'lis' && !s.videoSrc) {
+    if (s.type === 'lis' && !s.videoSrc && !s.audioSrc) {
       duration = s.text.length * 22 + 2000 // typewriter + 2s de leitura
     } else if (s.type === 'text' && !s.audioSrc) {
       const allText = [s.title, ...s.paragraphs, s.highlight ?? ''].join(' ')
@@ -310,8 +312,11 @@ export function StoryPlayer({
         </AnimatePresence>
       </div>
 
-      {/* setas de navegação — sempre visíveis */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex items-center justify-between px-5">
+      {/* setas de navegação — escondidas durante a reprodução do vídeo (tela cheia) */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex items-center justify-between px-5"
+        style={{ opacity: videoPlaying ? 0 : 1, transition: 'opacity 0.25s ease', visibility: videoPlaying ? 'hidden' : 'visible' }}
+      >
         {index > 0 ? (
           <motion.button
             onClick={prev}
@@ -414,8 +419,10 @@ function StoryContent({
           onNext={onNext}
           isLast={isLast}
           videoSrc={story.videoSrc}
-          onProgress={story.videoSrc ? onProgress : undefined}
+          audioSrc={story.audioSrc}
+          onProgress={story.videoSrc || story.audioSrc ? onProgress : undefined}
           onVideoEnd={story.videoSrc ? onNext : undefined}
+          onAudioEnd={story.audioSrc ? onNextAfterRequiredMedia : undefined}
         />
       )
     case 'text':

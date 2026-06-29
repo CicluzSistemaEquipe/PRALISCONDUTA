@@ -228,7 +228,7 @@ export interface QuizConfig {
 }
 
 export type Story =
-  | { type: 'lis'; text: string; state?: LisState; videoSrc?: string }
+  | { type: 'lis'; text: string; state?: LisState; videoSrc?: string; audioSrc?: string }
   | {
       type: 'text'
       title: string

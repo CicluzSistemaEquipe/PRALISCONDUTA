@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import type { LisState } from '@/lib/types'
@@ -11,15 +11,21 @@ interface LisCardProps {
   onNext: () => void
   isLast?: boolean
   videoSrc?: string
+  /** MP3 da Lis; quando presente a legenda sincroniza com o tempo do áudio. */
+  audioSrc?: string
   onProgress?: (f: number) => void
   onVideoEnd?: () => void
+  onAudioEnd?: () => void
 }
 
-export function LisCard({ text, state = 'talking', onNext, isLast, videoSrc, onProgress, onVideoEnd }: LisCardProps) {
+export function LisCard({ text, state = 'talking', onNext, isLast, videoSrc, audioSrc, onProgress, onVideoEnd, onAudioEnd }: LisCardProps) {
   const [shown, setShown] = useState('')
   const [done, setDone] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  // typewriter — só quando NÃO há áudio (o áudio sincroniza a legenda).
   useEffect(() => {
+    if (audioSrc) return
     setShown('')
     setDone(false)
     let i = 0
@@ -32,7 +38,21 @@ export function LisCard({ text, state = 'talking', onNext, isLast, videoSrc, onP
       }
     }, 22)
     return () => clearInterval(id)
-  }, [text])
+  }, [text, audioSrc])
+
+  // áudio (MP3) — reproduz e sincroniza a legenda. Se o autoplay for bloqueado,
+  // revela o texto completo e libera o avanço (sem travar o colaborador).
+  useEffect(() => {
+    if (!audioSrc) return
+    setShown('')
+    setDone(false)
+    onProgress?.(0)
+    const a = audioRef.current
+    if (!a) return
+    a.currentTime = 0
+    a.play().catch(() => { setShown(text); setDone(true); onProgress?.(1) })
+    return () => { a.pause() }
+  }, [audioSrc, text, onProgress])
 
   // --- layout com vídeo grande (hero) ---
   if (videoSrc) {
@@ -113,6 +133,23 @@ export function LisCard({ text, state = 'talking', onNext, isLast, videoSrc, onP
   // --- layout padrão (avatar animado) ---
   return (
     <div className="relative flex h-full flex-col items-center justify-center gap-4 px-5 pb-24 pt-8 text-center">
+      {audioSrc && (
+        <audio
+          ref={audioRef}
+          src={audioSrc}
+          preload="auto"
+          style={{ display: 'none' }}
+          onTimeUpdate={(e) => {
+            const a = e.currentTarget
+            if (!a.duration) return
+            const f = a.currentTime / a.duration
+            setShown(text.slice(0, Math.max(1, Math.floor(text.length * f))))
+            onProgress?.(f)
+          }}
+          onEnded={() => { setShown(text); setDone(true); onProgress?.(1); onAudioEnd?.() }}
+          onError={() => { setShown(text); setDone(true); onProgress?.(1) }}
+        />
+      )}
       <motion.img
         src={brand.simboloEspiga}
         alt=""
