@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Reorder, AnimatePresence } from 'framer-motion'
 import {
@@ -14,6 +14,105 @@ import { makeBlankModule } from '../lib/modules'
 import type { Employee, Module, Treinamento } from '@/lib/types'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { EmptyState, ModalShell, ModalHeader, ModalFooter } from '../components/ui'
+import { ModuleCard } from '@/app/components/ModuleCard'
+import { ThemeContext } from '@/app/context/ThemeContext'
+
+const noop = () => {}
+// Tokens DARK do app (pralis.css :root) replicados para reusar o ModuleCard real
+// dentro do Admin claro — assim a prévia/construtor ficam idênticos à Home.
+const DARK_VARS = {
+  '--bg-base': '#0d0800', '--bg-deep': '#050200', '--glass-bg': '#1c1008',
+  '--bg-card': '#1c1008', '--bg-surface': '#1c1008', '--bg-surface-2': '#261508',
+  '--stroke': 'rgba(184,134,11,0.22)', '--stroke-soft': 'rgba(255,255,255,0.08)',
+  '--text-primary': '#ffffff', '--text-secondary': '#e8cfa0',
+  '--text-muted': 'rgba(232,207,160,0.65)', '--text-locked': 'rgba(255,255,255,0.46)',
+} as CSSProperties
+
+/** Canvas com o TEMA DARK do app (vars + ThemeContext forçado) — permite reusar o
+ *  ModuleCard real do colaborador dentro do Admin claro, fiel à Home. */
+function HomeCanvas({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+  return (
+    <ThemeContext.Provider value={{ theme: 'dark', toggleTheme: noop, setTheme: noop }}>
+      <div style={{ background: '#0d0800', borderRadius: 16, ...DARK_VARS, ...style }}>{children}</div>
+    </ThemeContext.Provider>
+  )
+}
+
+/** Ação discreta sobre o canvas escuro. */
+function DarkAction({ onClick, active, title, children }: { onClick: () => void; active?: boolean; title: string; children: ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} onPointerDown={(e) => e.stopPropagation()} title={title} aria-label={title}
+      className="inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition-colors"
+      style={{
+        background: active ? 'rgba(243,116,53,0.22)' : 'rgba(255,255,255,0.06)',
+        border: `1px solid ${active ? 'rgba(243,116,53,0.5)' : 'rgba(255,255,255,0.12)'}`,
+        color: active ? '#f8936a' : 'rgba(232,207,160,0.92)',
+      }}>
+      {children}
+    </button>
+  )
+}
+
+/** Linha do construtor: alça (Mover) + ModuleCard REAL + ações (Ocultar/Editar). */
+function BuilderCard({ m, kind, hidden, onEdit, onToggleHidden }: {
+  m: Module; kind: 'global' | 'especifico'; hidden?: boolean; onEdit: () => void; onToggleHidden?: () => void
+}) {
+  return (
+    <Reorder.Item value={m} className="list-none">
+      <div className="flex flex-col gap-1.5" style={hidden ? { opacity: 0.5 } : undefined}>
+        <div className="flex items-stretch gap-2">
+          <span className="flex shrink-0 cursor-grab items-center text-[rgba(232,207,160,0.45)]" aria-hidden><GripVertical size={16} /></span>
+          <div className="min-w-0 flex-1">
+            <ModuleCard module={m} status="active" progress={0} onOpen={onEdit} />
+          </div>
+          <div className="flex w-[88px] shrink-0 flex-col justify-center gap-1.5" onPointerDown={(e) => e.stopPropagation()}>
+            {onToggleHidden && (
+              <DarkAction onClick={onToggleHidden} active={hidden} title={hidden ? 'Mostrar neste treinamento' : 'Ocultar neste treinamento'}>
+                {hidden ? <><Eye className="h-[13px] w-[13px]" /> Mostrar</> : <><EyeOff className="h-[13px] w-[13px]" /> Ocultar</>}
+              </DarkAction>
+            )}
+            <DarkAction onClick={onEdit} title="Editar módulo"><Pencil className="h-[13px] w-[13px]" /> Editar</DarkAction>
+          </div>
+        </div>
+        {kind === 'global' && hidden && (
+          <span className="ml-6 inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[0.65rem] font-bold" style={{ background: 'rgba(239,68,68,0.18)', color: '#fca5a5' }}>
+            <EyeOff size={11} /> Oculto neste treinamento
+          </span>
+        )}
+      </div>
+    </Reorder.Item>
+  )
+}
+
+/** Prévia FIEL: o celular renderiza a Home real (banner + ModuleCard) — ocultos
+ *  já removidos, ordem própria aplicada. Sem diferença entre Preview e Home. */
+function HomePreviewPhone({ nome, homeText, accent, Icon, modules }: {
+  nome: string; homeText?: string; accent: string; Icon: LucideIcon; modules: Module[]
+}) {
+  const W = 294, H = 600, S = 0.82
+  return (
+    <div className="mx-auto overflow-hidden" style={{ width: W * S + 14, height: H * S + 14, borderRadius: 34, border: '7px solid #2b2620', boxShadow: '0 26px 70px rgba(0,0,0,0.5)' }}>
+      <div style={{ width: W, height: H, transform: `scale(${S})`, transformOrigin: 'top left' }}>
+        <HomeCanvas style={{ width: W, height: H, borderRadius: 0, overflowY: 'auto', padding: '16px 14px' }}>
+          <div className="mb-3 flex items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: `${accent}1f`, border: `1px solid ${accent}4d` }}>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `${accent}26`, color: accent }}><Icon size={18} /></span>
+            <div className="min-w-0">
+              <p className="font-display" style={{ fontSize: 14, color: '#fff6ea', lineHeight: 1.12, overflowWrap: 'anywhere' }}>{nome}</p>
+              {homeText && <p className="font-body" style={{ fontSize: 10.5, color: '#e8cfa0', marginTop: 1, overflowWrap: 'anywhere' }}>{homeText}</p>}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {modules.length === 0
+              ? <p style={{ fontSize: 11, color: 'rgba(232,207,160,0.6)' }}>Sem módulos visíveis.</p>
+              : modules.map((m, i) => (
+                <ModuleCard key={m.id} module={m} status={i === 0 ? 'active' : 'locked'} progress={0} onOpen={noop} highlight={i === 0} />
+              ))}
+          </div>
+        </HomeCanvas>
+      </div>
+    </div>
+  )
+}
 
 const PALETTE = ['#f37435', '#b8860b', '#5e3731', '#5dd87a', '#2980b9', '#8e44ad', '#c0392b', '#27ae60']
 const ICON_OPTIONS: { key: string; Icon: LucideIcon }[] = [
@@ -34,40 +133,6 @@ function SectionHead({ icon: Icon, label, hint, tone }: { icon: LucideIcon; labe
         {hint && <p className="mt-0.5 text-[0.75rem] leading-snug text-[var(--text-muted)]">{hint}</p>}
       </div>
     </div>
-  )
-}
-
-function ModuleRow({ m, kind, accent, onEdit, hidden, onToggleHidden }: {
-  m: Module; kind: 'global' | 'especifico'; accent: string; onEdit: () => void
-  hidden?: boolean; onToggleHidden?: () => void
-}) {
-  return (
-    <Reorder.Item value={m} className="list-none">
-      <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 transition-colors hover:border-[var(--border-strong)]"
-        style={hidden ? { opacity: 0.55 } : undefined}>
-        <span className="flex shrink-0 cursor-grab items-center text-[var(--text-disabled)]" aria-hidden><GripVertical size={16} /></span>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[0.7rem] font-bold text-white" style={{ background: m.accent ?? accent }}>{m.number}</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className={`adm-badge ${kind === 'global' ? 'adm-badge--gold' : 'adm-badge--muted'}`}>{kind === 'global' ? 'Global' : 'Específico'}</span>
-            {m.status === 'draft' && <span className="adm-badge adm-badge--muted">Rascunho</span>}
-            {hidden && <span className="adm-badge adm-badge--red">Oculto neste treinamento</span>}
-          </div>
-          <p className="mt-0.5 truncate text-[0.875rem] font-semibold text-[var(--ink)]">{m.title}</p>
-        </div>
-        {onToggleHidden && (
-          <button type="button" onClick={onToggleHidden} onPointerDown={(e) => e.stopPropagation()}
-            title={hidden ? 'Mostrar neste treinamento' : 'Ocultar neste treinamento'}
-            aria-label={hidden ? 'Mostrar neste treinamento' : 'Ocultar neste treinamento'}
-            className={`adm-btn h-8 shrink-0 ${hidden ? 'border-[var(--accent)] text-[var(--accent-text)]' : ''}`}>
-            {hidden ? <><Eye className="h-[14px] w-[14px]" /> Mostrar</> : <><EyeOff className="h-[14px] w-[14px]" /> Ocultar</>}
-          </button>
-        )}
-        <button type="button" onClick={onEdit} onPointerDown={(e) => e.stopPropagation()} className="adm-btn h-8 shrink-0">
-          <Pencil className="h-[14px] w-[14px]" /> Editar
-        </button>
-      </div>
-    </Reorder.Item>
   )
 }
 
@@ -259,65 +324,64 @@ export default function AdminTreinamentoEditor() {
           </div>
         </div>
 
-        {/* 3) MÓDULOS GLOBAIS HERDADOS */}
-        <div className="adm-card p-5">
-          <SectionHead icon={Globe} label="Módulos globais herdados" hint="“Para todos”. Reordene aqui; editar afeta todos os treinamentos." tone="#b8860b" />
-          {herdados.length === 0 ? (
-            <p className="text-[0.82rem] text-[var(--text-muted)]">Nenhum módulo global.</p>
-          ) : (
-            <Reorder.Group axis="y" values={herdados} onReorder={reorderHerdados} className="m-0 flex list-none flex-col gap-2 p-0">
-              {herdados.map((m) => (
-                <ModuleRow key={m.id} m={m} kind="global" accent={accent} onEdit={() => setWarnModule(m)}
-                  hidden={hiddenIds.includes(m.id)} onToggleHidden={() => toggleHidden(m.id)} />
-              ))}
-            </Reorder.Group>
-          )}
-        </div>
-
-        {/* 4) MÓDULOS ESPECÍFICOS */}
-        <div className="adm-card p-5">
-          <SectionHead icon={Layers} label="Módulos específicos" hint={geral ? 'O treinamento Geral não tem módulos específicos.' : `Exclusivos de ${cargoNome}. Aparecem só aqui.`} tone={accent} />
-          {geral ? (
-            <p className="text-[0.82rem] text-[var(--text-muted)]">Crie módulos específicos dentro de cada treinamento de cargo.</p>
-          ) : (
-            <>
-              {especificos.length === 0 ? (
-                <p className="mb-3 text-[0.82rem] text-[var(--text-muted)]">Nenhum módulo específico de {cargoNome} ainda.</p>
-              ) : (
-                <Reorder.Group axis="y" values={especificos} onReorder={reorderEspecificos} className="m-0 mb-3 flex list-none flex-col gap-2 p-0">
-                  {especificos.map((m) => (
-                    <ModuleRow key={m.id} m={m} kind="especifico" accent={accent} onEdit={() => navigate(`/admin/modulos/${m.id}`)} />
-                  ))}
-                </Reorder.Group>
-              )}
-              <button type="button" onClick={criarEspecifico} className="adm-btn adm-btn--primary w-full">
-                <Plus className="h-4 w-4" /> Criar módulo específico de {cargoNome}
-              </button>
-            </>
-          )}
-        </div>
       </div>
 
-      {/* 5) PREVIEW */}
-      <div className="adm-card mt-4 p-5">
-        <SectionHead icon={Eye} label="Prévia do treinamento" hint="Como o colaborador deste cargo verá os módulos (a Home real é aplicada no Bloco E)." tone="var(--accent)" />
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4">
-          <div className="mb-3 flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: `${accent}1f`, color: accent }}><IconCur className="h-5 w-5" /></span>
-            <div>
-              <p className="text-[0.95rem] font-semibold text-[var(--ink)]">{t.nome}</p>
-              {tHome && <p className="text-[0.78rem] text-[var(--text-muted)]">{tHome}</p>}
-            </div>
+      {/* ── CONSTRUTOR (estilo Home, em canvas escuro) + PRÉVIA FIEL ───────────── */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="flex flex-col gap-4">
+
+          {/* TREINAMENTOS ESSENCIAIS (Globais) */}
+          <div className="adm-card p-5">
+            <SectionHead icon={Globe} label="Treinamentos essenciais (Globais)" hint="Iguais ao que o colaborador vê. Mover, ocultar ou editar (editar afeta todos os treinamentos)." tone="#b8860b" />
+            {herdados.length === 0 ? (
+              <p className="text-[0.82rem] text-[var(--text-muted)]">Nenhum módulo global.</p>
+            ) : (
+              <HomeCanvas style={{ padding: 12 }}>
+                <Reorder.Group axis="y" values={herdados} onReorder={reorderHerdados} className="m-0 flex list-none flex-col gap-2.5 p-0">
+                  {herdados.map((m) => (
+                    <BuilderCard key={m.id} m={m} kind="global" hidden={hiddenIds.includes(m.id)}
+                      onEdit={() => setWarnModule(m)} onToggleHidden={() => toggleHidden(m.id)} />
+                  ))}
+                </Reorder.Group>
+              </HomeCanvas>
+            )}
           </div>
-          <ol className="flex flex-col gap-1.5">
-            {[...herdados.filter((m) => !hiddenIds.includes(m.id)), ...especificos].map((m, i) => (
-              <li key={m.id} className="flex items-center gap-2.5 rounded-lg border border-[var(--border)] bg-white px-3 py-2">
-                <span className="text-[0.72rem] font-bold text-[var(--text-muted)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{String(i + 1).padStart(2, '0')}</span>
-                <span className="min-w-0 flex-1 truncate text-[0.82rem] font-medium text-[var(--ink)]">{m.title}</span>
-                <span className={`adm-badge ${m.roles === 'all' ? 'adm-badge--gold' : 'adm-badge--muted'}`}>{m.roles === 'all' ? 'Global' : 'Específico'}</span>
-              </li>
-            ))}
-          </ol>
+
+          {/* TREINAMENTO ESPECÍFICO DO CARGO */}
+          <div className="adm-card p-5">
+            <SectionHead icon={Layers} label="Treinamento específico do cargo" hint={geral ? 'O treinamento Geral não tem módulos específicos.' : `Exclusivos de ${cargoNome}. Aparecem só aqui.`} tone={accent} />
+            {geral ? (
+              <p className="text-[0.82rem] text-[var(--text-muted)]">Crie módulos específicos dentro de cada treinamento de cargo.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {especificos.length > 0 ? (
+                  <HomeCanvas style={{ padding: 12 }}>
+                    <Reorder.Group axis="y" values={especificos} onReorder={reorderEspecificos} className="m-0 flex list-none flex-col gap-2.5 p-0">
+                      {especificos.map((m) => (
+                        <BuilderCard key={m.id} m={m} kind="especifico" onEdit={() => navigate(`/admin/modulos/${m.id}`)} />
+                      ))}
+                    </Reorder.Group>
+                  </HomeCanvas>
+                ) : (
+                  <p className="text-[0.82rem] text-[var(--text-muted)]">Nenhum módulo específico de {cargoNome} ainda.</p>
+                )}
+                <button type="button" onClick={criarEspecifico} className="adm-btn adm-btn--primary w-full">
+                  <Plus className="h-4 w-4" /> Criar módulo específico de {cargoNome}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* PRÉVIA DA HOME — fiel (mesmo ModuleCard do colaborador), sticky no desktop */}
+        <div className="lg:sticky lg:top-5 lg:self-start">
+          <div className="adm-card p-5">
+            <SectionHead icon={Eye} label="Prévia da Home" hint="Exatamente como o colaborador deste cargo verá." tone="var(--accent)" />
+            <HomePreviewPhone
+              nome={(tNome || t.nome)} homeText={tHome || undefined} accent={accent} Icon={IconCur}
+              modules={[...herdados.filter((m) => !hiddenIds.includes(m.id)), ...especificos].filter((m) => m.status !== 'draft' && m.active !== false)}
+            />
+          </div>
         </div>
       </div>
 

@@ -10,7 +10,9 @@ interface ThemeValue {
   setTheme: (t: Theme) => void
 }
 
-const ThemeContext = createContext<ThemeValue | null>(null)
+// Exportado para permitir forçar um tema em uma subárvore (ex.: prévia da Home
+// dentro do Admin, que é claro). Uso aditivo — não altera o app do colaborador.
+export const ThemeContext = createContext<ThemeValue | null>(null)
 
 function applyTheme(t: Theme) {
   if (t === 'light') {
