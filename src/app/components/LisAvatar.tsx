@@ -1,6 +1,4 @@
-import { useEffect } from 'react'
 import { motion, type TargetAndTransition } from 'framer-motion'
-import { useRive, useStateMachineInput } from '@rive-app/react-canvas'
 import type { LisState } from '@/lib/types'
 import lisFull from '@/assets/lis/lis-full.png'
 import lisBust from '@/assets/lis/lis-bust.png'
@@ -9,18 +7,6 @@ interface LisAvatarProps {
   state?: LisState
   size?: number
   className?: string
-}
-
-// mapeamento dos estados → valor numérico da State Machine do Rive
-const LIS_STATES: Record<LisState, number> = {
-  neutral: 0,
-  idle: 0,
-  talking: 1,
-  celebrating: 2,
-  thinking: 3,
-  correct: 4,
-  wrong: 5,
-  alert: 5,
 }
 
 const RING: Record<LisState, string> = {
@@ -35,37 +21,15 @@ const RING: Record<LisState, string> = {
 }
 
 /**
- * Lis — mascote da Pralís.
- * Tenta carregar a animação Rive (`/lis.riv`); enquanto o arquivo não
- * existir, cai no fallback animado com Framer Motion (símbolo de trigo
- * em disco dourado). Mesma API para todo o app.
+ * Lis — mascote da Pralís. Renderiza o avatar animado (Framer Motion + PNG).
+ *
+ * NOTA (perf RC1): a animação Rive foi desativada enquanto `/lis.riv` não
+ * existe. Antes, o runtime do Rive (@rive-app, ~171KB) era carregado e caía
+ * SEMPRE neste fallback, sem renderizar nada — peso morto puro. O resultado
+ * visual é idêntico ao de hoje. Para reativar quando o asset chegar, restaurar
+ * o uso de `useRive`/`useStateMachineInput` (ver histórico do git).
  */
 export function LisAvatar({ state = 'idle', size = 56, className }: LisAvatarProps) {
-  const { rive, RiveComponent } = useRive({
-    src: '/lis.riv',
-    stateMachines: 'LisStates',
-    autoplay: true,
-    onLoadError: () => {
-      /* arquivo .riv ainda não existe — usa fallback */
-    },
-  })
-  const stateInput = useStateMachineInput(rive, 'LisStates', 'state')
-
-  useEffect(() => {
-    if (stateInput) stateInput.value = LIS_STATES[state]
-  }, [state, stateInput])
-
-  if (rive) {
-    return (
-      <div
-        className={`shrink-0 overflow-hidden rounded-full ${className ?? ''}`}
-        style={{ width: size, height: size }}
-      >
-        <RiveComponent />
-      </div>
-    )
-  }
-
   return <LisFallback state={state} size={size} className={className} />
 }
 

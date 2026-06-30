@@ -414,10 +414,16 @@ export default function AdminTermos() {
                 Nenhum termo para exibir.
               </div>
             ) : (
-              <div
-                className="adm-terms-preview adm-no-scrollbar max-h-[480px] overflow-y-auto px-6 py-5"
-                dangerouslySetInnerHTML={{ __html: serialized }}
-              />
+              <div className="adm-terms-preview adm-no-scrollbar max-h-[480px] overflow-y-auto px-6 py-5">
+                {/* render estrutural (React escapa título/corpo) — sem dangerouslySetInnerHTML;
+                    o conteúdo é texto puro do admin, então não há HTML a interpretar. */}
+                {terms.map((t) => (
+                  <div key={t.id}>
+                    <h3>{t.title}</h3>
+                    <p>{t.body}</p>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 

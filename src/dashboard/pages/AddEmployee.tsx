@@ -21,9 +21,14 @@ export default function AddEmployee() {
     }
     setError('')
     setBusy(true)
-    const emp = await preRegisterEmployee({ name: name.trim(), phone: phone.trim(), role: role as Role })
-    setCreated(emp)
-    setBusy(false)
+    try {
+      const emp = await preRegisterEmployee({ name: name.trim(), phone: phone.trim(), role: role as Role })
+      setCreated(emp)
+    } catch {
+      setError('Não foi possível cadastrar agora. Tente novamente.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const reset = () => {

@@ -19,6 +19,14 @@ export function AdminTopbar() {
     return () => clearInterval(id)
   }, [])
 
+  // a11y: ESC fecha o dropdown de notificações
+  useEffect(() => {
+    if (!bellOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setBellOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [bellOpen])
+
   const firstName = (getAdminSession()?.nome ?? 'Administrador').trim().split(/\s+/)[0]
   const hi = greetingFor(now.getHours())
   const dateStr = now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })

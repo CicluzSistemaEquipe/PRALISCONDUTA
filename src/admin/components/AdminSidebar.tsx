@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -147,6 +147,14 @@ export function AdminSidebar() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
 
+  // a11y: ESC fecha o drawer mobile (mesma garantia dos modais via ModalShell)
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
+
   const session = getAdminSession()
   const isDono = session?.role === 'dono'
   const items = isDono ? NAV_DONO : NAV_GERENTE
@@ -225,6 +233,7 @@ export function AdminSidebar() {
               onClick={() => setOpen(false)}
             />
             <motion.aside
+              role="dialog" aria-modal="true" aria-label="Menu de navegação"
               className="fixed left-0 top-0 z-50 h-full w-[264px] border-r border-[var(--border)] bg-white md:hidden"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}

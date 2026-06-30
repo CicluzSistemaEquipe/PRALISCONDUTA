@@ -161,11 +161,12 @@ export default function ProgressScreen() {
             return (
               <motion.button
                 key={m.id}
-                onClick={() => navigate(`/modulo/${m.id}`)}
+                onClick={() => { if (!locked) navigate(`/modulo/${m.id}`) }}
+                aria-disabled={locked || undefined}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.22 + i * 0.04, duration: 0.25 }}
-                whileTap={{ scale: 0.985 }}
+                whileTap={locked ? undefined : { scale: 0.985 }}
                 className="flex w-full items-center gap-3 px-4 text-left"
                 style={{
                   paddingTop: 13,

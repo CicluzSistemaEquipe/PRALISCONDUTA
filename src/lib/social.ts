@@ -88,7 +88,7 @@ if (typeof window !== 'undefined') {
 /** Todos os posts (admin), mais recentes primeiro. */
 export function getAllPosts(): SocialPost[] {
   return readLS<SocialPost[]>(POSTS_KEY, []).sort((a, b) =>
-    b.updated_at.localeCompare(a.updated_at),
+    (b.updated_at ?? '').localeCompare(a.updated_at ?? ''),
   )
 }
 
@@ -121,7 +121,7 @@ export function postsForEmployee(emp: Employee): SocialPost[] {
     .filter((p) => p.status === 'published' && audienceMatches(p.audience, emp))
     .sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-      return (b.published_at ?? b.created_at).localeCompare(a.published_at ?? a.created_at)
+      return (b.published_at ?? b.created_at ?? '').localeCompare(a.published_at ?? a.created_at ?? '')
     })
 }
 
