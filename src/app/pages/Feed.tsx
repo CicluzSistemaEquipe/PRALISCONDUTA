@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { ArrowRight, Check, Leaf, PenLine, Sparkles } from 'lucide-react'
-import { modulesForRole } from '@/lib/content'
+import { ArrowRight, Check, Leaf, PenLine, Sparkles, GraduationCap, BookOpen, ChefHat, Coffee, Store, Users, type LucideIcon } from 'lucide-react'
+import { modulesForRole, treinamentoForRole } from '@/lib/content'
 import type { Module } from '@/lib/types'
+
+// Ícones do treinamento (mesmas chaves do Editor do Treinamento).
+const TREINO_ICONS: Record<string, LucideIcon> = { grad: GraduationCap, book: BookOpen, chef: ChefHat, cup: Coffee, store: Store, users: Users }
 import { useSession } from '../context/SessionContext'
 import { getSignature } from '@/lib/storage'
 import { ModuleCard, type ModuleStatus } from '../components/ModuleCard'
@@ -107,6 +110,9 @@ export default function Feed() {
       (a, b) => SECTION_ORDER[a.section ?? 'geral'] - SECTION_ORDER[b.section ?? 'geral'],
     )
   }, [employee])
+
+  // Treinamento do cargo (identidade aplicada na Home; fallback Geral).
+  const treinamento = useMemo(() => (employee ? treinamentoForRole(employee.role) : null), [employee])
 
   const isModuleDone = (m: Module) =>
     m.kind === 'signature' ? signed : Boolean(progress[m.id]?.completed)
@@ -292,6 +298,33 @@ export default function Feed() {
           </div>
         ) : (
           <>
+            {/* Identidade do treinamento do cargo — só quando o admin configura
+                (homeText/edição). Sem config, a Home segue idêntica à atual. */}
+            {treinamento && (treinamento.homeText || treinamento.updatedAt) && (() => {
+              const tAccent = treinamento.accent ?? '#f37435'
+              const TIcon = TREINO_ICONS[treinamento.icon ?? 'grad'] ?? GraduationCap
+              return (
+                <motion.div
+                  {...rise(0.08)}
+                  className="mb-3 flex items-center gap-3 rounded-2xl px-3.5 py-3"
+                  style={{
+                    background: isLight ? `${tAccent}12` : `${tAccent}1f`,
+                    border: `1px solid ${tAccent}${isLight ? '33' : '4d'}`,
+                  }}
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `${tAccent}26`, color: tAccent }}>
+                    <TIcon size={20} strokeWidth={2} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-display" style={{ fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.15, overflowWrap: 'anywhere' }}>{treinamento.nome}</p>
+                    {treinamento.homeText && (
+                      <p className="font-body" style={{ fontSize: 11.5, color: 'var(--text-secondary)', marginTop: 1, overflowWrap: 'anywhere' }}>{treinamento.homeText}</p>
+                    )}
+                  </div>
+                </motion.div>
+              )
+            })()}
+
             {/* Lis guia — fala contextual, aponta para o próximo passo */}
             <motion.div className="mb-3 flex items-center gap-2.5" {...rise(0.1)}>
               <span
