@@ -2,6 +2,10 @@
 // Tipos de domínio — Pralis Conduta
 // ============================================================
 
+// Cargos "semente" conhecidos (mantêm autocomplete). O `(string & {})` no final
+// permite cargos PERSONALIZÁVEIS (texto livre) sem quebrar nada — não há nenhum
+// switch exaustivo sobre Role no código. Os 10 primeiros são os selecionáveis;
+// os 4 últimos são segmentos amplos usados em content.ts (ROLE_SEGMENTS).
 export type Role =
   | 'Padeiro'
   | 'Confeiteiro'
@@ -13,13 +17,14 @@ export type Role =
   | 'Estoquista'
   | 'Entregador'
   | 'Serviços Gerais'
-  // Segmentos amplos usados para direcionar módulos em content.ts (não são
-  // cargos selecionáveis — por isso ficam fora de ROLES).
   | 'Preparo de alimentos'
   | 'Atendimento ao cliente'
   | 'Limpeza'
   | 'Função externa'
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | (string & {})
 
+/** Cargos selecionáveis "semente" (retrocompat). A lista viva vem de lib/cargos. */
 export const ROLES: Role[] = [
   'Padeiro',
   'Confeiteiro',
@@ -32,6 +37,18 @@ export const ROLES: Role[] = [
   'Entregador',
   'Serviços Gerais',
 ]
+
+/** Cargo cadastrável (registro local, como Loja). Aditivo e retrocompatível. */
+export interface Cargo {
+  id: string            // slug estável
+  nome: string          // rótulo exibido (ex.: "Caixa") — é o que vai em Employee.role
+  accent?: string       // cor (paleta Pralís)
+  icon?: string         // nome de ícone (lucide/ModuleIconType)
+  ativo?: boolean       // undefined === ativo
+  /** vínculos opcionais (não obrigatórios nesta fase) */
+  gerenteId?: string
+  loja?: string
+}
 
 export type EmployeeStatus = 'ativo' | 'afastado' | 'inativo'
 
@@ -149,6 +166,8 @@ export interface AdminUser {
   loja?: string
   /** WhatsApp/celular de contato */
   whatsapp?: string
+  /** Cargo do gerente (opcional) — usa o registro de cargos */
+  cargo?: string
   /** Status do acesso */
   status?: 'ativo' | 'inativo'
   /** Descricao curta / bio do gerente */
