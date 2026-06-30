@@ -135,18 +135,24 @@ export default function AdminTreinamentoEditor() {
   const accent = t.accent ?? cargo?.accent ?? '#b8860b'
   const IconCur = iconOf(t.icon)
 
-  /** Persiste o treinamento (identidade + ordem own). Não toca modules[]. */
+  /** Persiste o treinamento (identidade + ordem own). Não toca modules[].
+   *  BUGFIX: espalha `...t` primeiro (preserva TODOS os campos atuais — em
+   *  especial hiddenModuleIds) e `...patch` por último (aplica a mudança). Antes,
+   *  o objeto era reconstruído sem hiddenModuleIds e sem `...patch`, então o
+   *  botão Ocultar não gravava nada e edições/reorder apagavam os ocultos. */
   const commit = (patch: Partial<Treinamento> = {}, hList = herdados, eList = especificos) => {
     saveTreinamento({
+      ...t,
       id: idStr,
-      nome: (patch.nome ?? tNome).trim() || t.nome,
       cargoId: t.cargoId,
+      nome: (patch.nome ?? tNome).trim() || t.nome,
       descricao: (patch.descricao ?? tDesc).trim() || undefined,
       homeText: (patch.homeText ?? tHome).trim() || undefined,
       accent: patch.accent ?? t.accent ?? cargo?.accent,
       icon: patch.icon ?? t.icon,
       ativo: patch.ativo ?? t.ativo,
       order: patch.order ?? [...hList.map((m) => m.id), ...eList.map((m) => m.id)],
+      ...patch,
     })
   }
 
