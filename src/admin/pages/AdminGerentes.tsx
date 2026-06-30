@@ -12,9 +12,11 @@ import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader, ModalFooter, Mod
 import { StatusBadge, statusOf } from '../components/StatusBadge'
 import { LojasManager } from '../components/LojasManager'
 import { LojaSelect } from '../components/LojaSelect'
+import { CargoSelect } from '../components/CargoSelect'
 import { ColaboradorDetailModal, acessoLink, waLink } from './AdminColaboradores'
 import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
 import { useLojas, addLoja } from '@/lib/lojas'
+import { useCargos, addCargo } from '@/lib/cargos'
 
 type TeamFilter = 'todos' | 'pendentes' | 'emdia' | 'assinou'
 const TEAM_FILTERS: { id: TeamFilter; label: string }[] = [
@@ -48,6 +50,7 @@ function GerenteFormModal({ gerente, onClose, onSaved }: {
 }) {
   const editing = Boolean(gerente)
   const lojas = useLojas()
+  const cargoNomes = useCargos().filter((c) => c.ativo !== false).map((c) => c.nome)
   const [form, setForm] = useState({
     nome: gerente?.nome ?? '',
     nomePublico: gerente?.nomePublico ?? '',
@@ -55,6 +58,7 @@ function GerenteFormModal({ gerente, onClose, onSaved }: {
     senha: '',
     loja: gerente?.loja ?? '',
     whatsapp: gerente?.whatsapp ?? '',
+    cargo: gerente?.cargo ?? '',
     descricao: gerente?.descricao ?? '',
     status: (gerente?.status ?? 'ativo') as 'ativo' | 'inativo',
     avatarUrl: gerente?.avatarUrl as string | undefined,
@@ -83,9 +87,11 @@ function GerenteFormModal({ gerente, onClose, onSaved }: {
     if (!editing && form.senha.length < 4) { setErr('A senha deve ter ao menos 4 caracteres.'); return }
     setSaving(true)
     if (form.loja.trim()) addLoja(form.loja)   // registra a loja p/ reuso
+    if (form.cargo.trim() && !cargoNomes.includes(form.cargo)) addCargo({ nome: form.cargo })
     const payload = {
       nome, email,
       nomePublico: form.nomePublico, loja: form.loja, whatsapp: form.whatsapp,
+      cargo: form.cargo,
       descricao: form.descricao, status: form.status, avatarUrl: form.avatarUrl,
     }
     if (editing && gerente) updateGerente(gerente.id, payload)
@@ -189,6 +195,10 @@ function GerenteFormModal({ gerente, onClose, onSaved }: {
                 <input id="ng-wa" className="adm-input" placeholder="(00) 00000-0000" style={ICON_PAD}
                   value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} />
               </IconField>
+            </div>
+            <div>
+              <label className="adm-label" htmlFor="ng-cargo">Cargo <span className="font-normal text-[var(--text-muted)]">(opcional)</span></label>
+              <CargoSelect id="ng-cargo" value={form.cargo} onChange={(v) => set('cargo', v)} cargos={cargoNomes} />
             </div>
             <div>
               <label className="adm-label" htmlFor="ng-desc">Descrição curta</label>

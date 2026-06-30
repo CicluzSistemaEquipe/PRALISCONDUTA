@@ -72,6 +72,7 @@ export interface GerenteInput {
   nomePublico?: string
   loja?: string
   whatsapp?: string
+  cargo?: string
   descricao?: string
   status?: 'ativo' | 'inativo'
   avatarUrl?: string
@@ -87,6 +88,7 @@ export function addGerente(input: GerenteInput): AdminUser {
     nomePublico: input.nomePublico?.trim() || undefined,
     loja: input.loja?.trim() || undefined,
     whatsapp: input.whatsapp?.trim() || undefined,
+    cargo: input.cargo?.trim() || undefined,
     descricao: input.descricao?.trim() || undefined,
     status: input.status ?? 'ativo',
     avatarUrl: input.avatarUrl,
@@ -110,6 +112,7 @@ export function updateGerente(id: string, patch: Partial<GerenteInput>): AdminUs
     nomePublico: patch.nomePublico?.trim() || undefined,
     loja: patch.loja?.trim() || undefined,
     whatsapp: patch.whatsapp?.trim() || undefined,
+    cargo: patch.cargo?.trim() || undefined,
     descricao: patch.descricao?.trim() || undefined,
     status: patch.status ?? users[idx].status ?? 'ativo',
     avatarUrl: patch.avatarUrl,
