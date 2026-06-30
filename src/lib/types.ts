@@ -53,6 +53,8 @@ export interface Treinamento {
   accent?: string         // cor/acento próprio (paleta Pralís)
   icon?: string           // ícone próprio
   order?: string[]        // ordem PRÓPRIA dos módulos (moduleIds) — overlay; ausência → ordem global
+  /** módulos GLOBAIS ocultados só NESTE treinamento (não exclui, não afeta outros) */
+  hiddenModuleIds?: string[]
   ativo?: boolean         // undefined === ativo
   updatedAt?: string      // ISO — definido quando o admin edita (Bloco D)
 }

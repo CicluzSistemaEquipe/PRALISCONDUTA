@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Reorder, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, GraduationCap, BookOpen, ChefHat, Coffee, Store, Users, Globe, Layers,
-  Pencil, Plus, GripVertical, AlertTriangle, Eye, IdCard, Palette, ShieldCheck, type LucideIcon,
+  Pencil, Plus, GripVertical, AlertTriangle, Eye, EyeOff, IdCard, Palette, ShieldCheck, type LucideIcon,
 } from 'lucide-react'
 import { getTreinamentos, treinamentoIncludes, orderForTreinamento } from '@/lib/content'
 import { useCargos, useCargosVersion } from '@/lib/cargos'
@@ -37,19 +37,32 @@ function SectionHead({ icon: Icon, label, hint, tone }: { icon: LucideIcon; labe
   )
 }
 
-function ModuleRow({ m, kind, accent, onEdit }: { m: Module; kind: 'global' | 'especifico'; accent: string; onEdit: () => void }) {
+function ModuleRow({ m, kind, accent, onEdit, hidden, onToggleHidden }: {
+  m: Module; kind: 'global' | 'especifico'; accent: string; onEdit: () => void
+  hidden?: boolean; onToggleHidden?: () => void
+}) {
   return (
     <Reorder.Item value={m} className="list-none">
-      <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 transition-colors hover:border-[var(--border-strong)]">
+      <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 transition-colors hover:border-[var(--border-strong)]"
+        style={hidden ? { opacity: 0.55 } : undefined}>
         <span className="flex shrink-0 cursor-grab items-center text-[var(--text-disabled)]" aria-hidden><GripVertical size={16} /></span>
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[0.7rem] font-bold text-white" style={{ background: m.accent ?? accent }}>{m.number}</span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className={`adm-badge ${kind === 'global' ? 'adm-badge--gold' : 'adm-badge--muted'}`}>{kind === 'global' ? 'Global' : 'Específico'}</span>
             {m.status === 'draft' && <span className="adm-badge adm-badge--muted">Rascunho</span>}
+            {hidden && <span className="adm-badge adm-badge--red">Oculto neste treinamento</span>}
           </div>
           <p className="mt-0.5 truncate text-[0.875rem] font-semibold text-[var(--ink)]">{m.title}</p>
         </div>
+        {onToggleHidden && (
+          <button type="button" onClick={onToggleHidden} onPointerDown={(e) => e.stopPropagation()}
+            title={hidden ? 'Mostrar neste treinamento' : 'Ocultar neste treinamento'}
+            aria-label={hidden ? 'Mostrar neste treinamento' : 'Ocultar neste treinamento'}
+            className={`adm-btn h-8 shrink-0 ${hidden ? 'border-[var(--accent)] text-[var(--accent-text)]' : ''}`}>
+            {hidden ? <><Eye className="h-[14px] w-[14px]" /> Mostrar</> : <><EyeOff className="h-[14px] w-[14px]" /> Ocultar</>}
+          </button>
+        )}
         <button type="button" onClick={onEdit} onPointerDown={(e) => e.stopPropagation()} className="adm-btn h-8 shrink-0">
           <Pencil className="h-[14px] w-[14px]" /> Editar
         </button>
@@ -139,6 +152,13 @@ export default function AdminTreinamentoEditor() {
 
   const reorderHerdados = (nl: Module[]) => { setHerdados(nl); commit({}, nl, especificos) }
   const reorderEspecificos = (nl: Module[]) => { setEspecificos(nl); commit({}, herdados, nl) }
+
+  // ocultar/mostrar um módulo GLOBAL só neste treinamento (overlay; não exclui)
+  const hiddenIds = t.hiddenModuleIds ?? []
+  const toggleHidden = (moduleId: string) => {
+    const next = hiddenIds.includes(moduleId) ? hiddenIds.filter((x) => x !== moduleId) : [...hiddenIds, moduleId]
+    commit({ hiddenModuleIds: next })
+  }
 
   const criarEspecifico = () => {
     if (!cargoNome) return
@@ -241,7 +261,8 @@ export default function AdminTreinamentoEditor() {
           ) : (
             <Reorder.Group axis="y" values={herdados} onReorder={reorderHerdados} className="m-0 flex list-none flex-col gap-2 p-0">
               {herdados.map((m) => (
-                <ModuleRow key={m.id} m={m} kind="global" accent={accent} onEdit={() => setWarnModule(m)} />
+                <ModuleRow key={m.id} m={m} kind="global" accent={accent} onEdit={() => setWarnModule(m)}
+                  hidden={hiddenIds.includes(m.id)} onToggleHidden={() => toggleHidden(m.id)} />
               ))}
             </Reorder.Group>
           )}
@@ -283,7 +304,7 @@ export default function AdminTreinamentoEditor() {
             </div>
           </div>
           <ol className="flex flex-col gap-1.5">
-            {[...herdados, ...especificos].map((m, i) => (
+            {[...herdados.filter((m) => !hiddenIds.includes(m.id)), ...especificos].map((m, i) => (
               <li key={m.id} className="flex items-center gap-2.5 rounded-lg border border-[var(--border)] bg-white px-3 py-2">
                 <span className="text-[0.72rem] font-bold text-[var(--text-muted)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{String(i + 1).padStart(2, '0')}</span>
                 <span className="min-w-0 flex-1 truncate text-[0.82rem] font-medium text-[var(--ink)]">{m.title}</span>
