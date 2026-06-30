@@ -16,7 +16,7 @@
 import { useCallback, useSyncExternalStore } from 'react'
 import { MODULES, TERMS } from './content'
 import { syncModules } from './contentRepo'
-import type { Module } from './types'
+import type { Module, Treinamento } from './types'
 
 export const ADMIN_DATA_KEY = 'pralis_admin_data'
 
@@ -33,6 +33,9 @@ export interface SplashConfig {
 
 export interface AdminData {
   modules: Module[]
+  /** Treinamentos por Cargo (aditivo/opcional). Ausente → defaults sintéticos
+   *  em content.ts; comportamento atual preservado. Persistido no Bloco D. */
+  treinamentos?: Treinamento[]
   termsText: string
   termsVersion: string
   termsEffectiveDate: string // ISO date (YYYY-MM-DD)

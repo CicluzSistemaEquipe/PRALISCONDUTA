@@ -38,6 +38,24 @@ export const ROLES: Role[] = [
   'Serviços Gerais',
 ]
 
+/**
+ * Treinamento por Cargo — camada ORGANIZADORA sobre os módulos existentes
+ * (não duplica conteúdo). Pertencimento continua por `Module.roles`
+ * ('all' = herdado por todos; cargo/segmento = específico). Aditivo: sem
+ * treinamentos persistidos, o app age exatamente como hoje.
+ */
+export interface Treinamento {
+  id: string              // 'geral' | <cargoId>
+  nome: string            // "Treinamento Caixa"
+  cargoId?: string        // cargo vinculado (slug do registro de cargos); ausente em 'geral'
+  descricao?: string      // descrição curta (card do admin)
+  homeText?: string       // texto institucional da Home do treinamento
+  accent?: string         // cor/acento próprio (paleta Pralís)
+  icon?: string           // ícone próprio
+  order?: string[]        // ordem PRÓPRIA dos módulos (moduleIds) — overlay; ausência → ordem global
+  ativo?: boolean         // undefined === ativo
+}
+
 /** Cargo cadastrável (registro local, como Loja). Aditivo e retrocompatível. */
 export interface Cargo {
   id: string            // slug estável
