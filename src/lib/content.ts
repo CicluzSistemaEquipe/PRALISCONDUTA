@@ -1380,11 +1380,25 @@ export function treinamentoForRole(role: string | null): Treinamento {
   return list.find((x) => x.id === 'geral') ?? { id: 'geral', nome: 'Treinamento Geral', ativo: true }
 }
 
-/** Módulos de um treinamento: globais herdados + específicos do cargo, na ordem própria. */
+/** Módulos de um treinamento (visão do COLABORADOR): só publicados/ativos, na
+ *  ordem própria. Usado quando a Home passar a consumir (Bloco E). */
 export function modulesForTreinamento(treinamentoId: string): Module[] {
   const t = getTreinamentos().find((x) => x.id === treinamentoId)
   const cargos = t?.cargoId ? [cargoNomeOf(t.cargoId)] : []
   return applyOrder(activeModules().filter(membershipFor(cargos)), t?.order)
+}
+
+/** ADMIN: o módulo pertence a este treinamento? (sobre QUALQUER módulo, incl.
+ *  rascunhos/inativos — para o editor/cards do admin). */
+export function treinamentoIncludes(treinamentoId: string, m: Module): boolean {
+  const t = getTreinamentos().find((x) => x.id === treinamentoId)
+  return membershipFor(t?.cargoId ? [cargoNomeOf(t.cargoId)] : [])(m)
+}
+
+/** ADMIN: ordena uma lista de módulos pela ordem própria do treinamento (overlay). */
+export function orderForTreinamento(treinamentoId: string, mods: Module[]): Module[] {
+  const t = getTreinamentos().find((x) => x.id === treinamentoId)
+  return applyOrder(mods, t?.order)
 }
 
 /**

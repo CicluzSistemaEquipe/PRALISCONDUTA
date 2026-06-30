@@ -31,6 +31,7 @@ const AdminDashboard = lazyWithRetry(() => import('./admin/pages/AdminDashboard'
 const AdminModulos = lazyWithRetry(() => import('./admin/pages/AdminModulos'))
 const AdminModuloEditor = lazyWithRetry(() => import('./admin/pages/AdminModuloEditor'))
 const AdminTreinamentos = lazyWithRetry(() => import('./admin/pages/AdminTreinamentos'))
+const AdminTreinamentoEditor = lazyWithRetry(() => import('./admin/pages/AdminTreinamentoEditor'))
 const AdminInicio = lazyWithRetry(() => import('./admin/pages/AdminInicio'))
 const AdminColaboradores = lazyWithRetry(() => import('./admin/pages/AdminColaboradores'))
 const AdminGerentes = lazyWithRetry(() => import('./admin/pages/AdminGerentes'))
@@ -135,7 +136,7 @@ function AnimatedRoutes() {
               {/* Somente Dono */}
               <Route path="gerentes" element={<AdminGuard requireDono><AdminGerentes /></AdminGuard>} />
               <Route path="treinamentos" element={<AdminGuard requireDono><AdminTreinamentos /></AdminGuard>} />
-              <Route path="treinamentos/:id" element={<AdminGuard requireDono><AdminTreinamentos /></AdminGuard>} />
+              <Route path="treinamentos/:id" element={<AdminGuard requireDono><AdminTreinamentoEditor /></AdminGuard>} />
               <Route path="modulos" element={<AdminGuard requireDono><AdminModulos /></AdminGuard>} />
               <Route path="modulos/:id" element={<AdminGuard requireDono><AdminModuloEditor /></AdminGuard>} />
               <Route path="termos" element={<AdminGuard requireDono><AdminTermos /></AdminGuard>} />

@@ -210,6 +210,20 @@ export function useAdminStore() {
     [update],
   )
 
+  /** Upsert de um Treinamento em AdminData.treinamentos (overlay sobre os
+   *  sintéticos do content.ts). Não toca modules[]. */
+  const saveTreinamento = useCallback(
+    (t: Treinamento) => {
+      const list = (load().treinamentos ?? []).slice()
+      const idx = list.findIndex((x) => x.id === t.id)
+      const next: Treinamento = { ...t, updatedAt: new Date().toISOString() }
+      if (idx >= 0) list[idx] = next
+      else list.push(next)
+      update({ treinamentos: list })
+    },
+    [update],
+  )
+
   const setSplash = useCallback(
     (patch: Partial<SplashConfig>) =>
       update({ splashConfig: { ...load().splashConfig, ...patch } }),
@@ -231,6 +245,7 @@ export function useAdminStore() {
     deleteModule,
     toggleActive,
     reorderModules,
+    saveTreinamento,
     setSplash,
     setTerms,
     resetAll,

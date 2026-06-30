@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { GraduationCap, Users, Layers, Pencil, ArrowLeft, Globe, ChevronRight, Clock } from 'lucide-react'
-import { getTreinamentos, modulesForTreinamento } from '@/lib/content'
+import { GraduationCap, Users, Layers, Pencil, Globe, ChevronRight, Clock } from 'lucide-react'
+import { getTreinamentos, treinamentoIncludes } from '@/lib/content'
 import { useCargos, useCargosVersion } from '@/lib/cargos'
 import { useAdminStore } from '@/lib/adminStore'
 import type { Cargo, Treinamento } from '@/lib/types'
@@ -33,7 +33,7 @@ function useTreinoViews(): TreinoView[] {
   const cargos = useCargos()
   return useMemo(() => {
     return getTreinamentos().map((t) => {
-      const all = modulesForTreinamento(t.id)
+      const all = data.modules.filter((m) => treinamentoIncludes(t.id, m))
       const herdados = all.filter((m) => m.roles === 'all').length
       const total = all.length
       const cargo = t.cargoId ? cargos.find((c) => c.id === t.cargoId) : undefined
@@ -104,33 +104,9 @@ function TreinamentoCard({ v, onOpen }: { v: TreinoView; onOpen: () => void }) {
   )
 }
 
-/** Placeholder do Editor do Treinamento (Bloco D). Rota simples por enquanto. */
-function TreinamentoPlaceholder({ id }: { id: string }) {
-  const views = useTreinoViews()
-  const v = views.find((x) => x.t.id === id)
-  return (
-    <div className="mx-auto w-full max-w-[760px]">
-      <Link to="/admin/treinamentos" className="mb-4 inline-flex items-center gap-1.5 text-[0.8125rem] font-semibold text-[var(--text-muted)] no-underline transition-colors hover:text-[var(--ink)]">
-        <ArrowLeft size={15} /> Treinamentos
-      </Link>
-      <AdminPageHeader eyebrow="Conteúdo" title={v?.t.nome ?? 'Treinamento'} description={v ? `${v.total} módulos · ${v.herdados} herdados · ${v.especificos} específicos` : ''} />
-      <div className="adm-card p-8">
-        <EmptyState
-          icon={GraduationCap}
-          title="Editor do treinamento — em breve"
-          hint="A edição completa (identidade, quem vê, módulos herdados/específicos, ordem própria e preview) chega no próximo bloco. Por enquanto, esta é a rota do treinamento."
-        />
-      </div>
-    </div>
-  )
-}
-
 export default function AdminTreinamentos() {
   const navigate = useNavigate()
-  const { id } = useParams()
   const views = useTreinoViews()
-
-  if (id) return <TreinamentoPlaceholder id={id} />
 
   return (
     <div className="mx-auto w-full max-w-[1100px]">
