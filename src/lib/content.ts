@@ -1,7 +1,8 @@
-import type { Module, ModuleIconType, Story } from './types'
+import type { Module, ModuleIconType, Story, Treinamento } from './types'
 import { isDevMode } from './devMode'
 import { hasSupabase } from './supabase'
 import { readContentCache } from './contentRepo'
+import { cargosAtivos, getCargos } from './cargos'
 
 // ============================================================
 // CONTEÚDO DOS MÓDULOS
@@ -1301,16 +1302,101 @@ const ROLE_SEGMENTS: Record<string, string[]> = {
   'Serviços Gerais': ['Limpeza'],
 }
 
-/** Módulos visíveis para um cargo: gerais + os específicos do cargo/segmento. */
-export function modulesForRole(role: string | null): Module[] {
-  const segments = role ? ROLE_SEGMENTS[role] ?? [] : []
-  return activeModules().filter((m) => {
+// ============================================================
+// TREINAMENTOS POR CARGO — camada organizadora sobre modules[] (Bloco B)
+//
+// NÃO duplica conteúdo: o pertencimento continua por `Module.roles` (global
+// 'all' ∪ cargo ∪ segmento). Treinamento adiciona apenas IDENTIDADE (descrição/
+// cor/ícone) e ORDEM própria (overlay de ids). Sem treinamentos persistidos, o
+// app age EXATAMENTE como hoje (defaults sintéticos + ordem global). O progresso
+// é por module.id — nada muda aqui.
+// ============================================================
+
+/** Filtro de pertencimento de um módulo a um conjunto de cargos.
+ *  Com cargos=[role], é IDÊNTICO ao filtro anterior de modulesForRole. */
+function membershipFor(cargos: string[]): (m: Module) => boolean {
+  const segments = cargos.flatMap((c) => ROLE_SEGMENTS[c] ?? [])
+  return (m) => {
     if (m.roles === 'all') return true
-    if (!role) return false
+    if (!cargos.length) return false
     const roles = m.roles as string[]
-    if (roles.includes(role)) return true
+    if (cargos.some((c) => roles.includes(c))) return true
     return segments.some((seg) => roles.includes(seg))
-  })
+  }
+}
+
+/** Overlay de ordem (ids). Sem ordem → mantém a ordem atual (estável). */
+function applyOrder(mods: Module[], order?: string[]): Module[] {
+  if (!order || !order.length) return mods
+  const pos = new Map(order.map((id, i) => [id, i]))
+  return [...mods].sort(
+    (a, b) => (pos.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (pos.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+  )
+}
+
+/** Resolve o NOME do cargo a partir do id (registro de cargos). */
+function cargoNomeOf(cargoId: string): string {
+  return getCargos().find((c) => c.id === cargoId)?.nome ?? cargoId
+}
+
+/** Treinamentos sintéticos (default, idempotente): Geral + 1 por cargo ativo. */
+function syntheticTreinamentos(): Treinamento[] {
+  const geral: Treinamento = { id: 'geral', nome: 'Treinamento Geral', ativo: true }
+  const porCargo: Treinamento[] = cargosAtivos().map((c) => ({
+    id: c.id, nome: `Treinamento ${c.nome}`, cargoId: c.id, accent: c.accent, icon: c.icon, ativo: true,
+  }))
+  return [geral, ...porCargo]
+}
+
+/** Treinamentos persistidos pelo admin (Bloco D), lidos direto do localStorage
+ *  (mesmo padrão de activeModules — sem dependência circular do adminStore). */
+function readPersistedTreinamentos(): Treinamento[] {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(ADMIN_DATA_KEY) : null
+    if (raw) {
+      const parsed = JSON.parse(raw) as { treinamentos?: Treinamento[] }
+      if (Array.isArray(parsed.treinamentos)) return parsed.treinamentos
+    }
+  } catch { /* ignore */ }
+  return []
+}
+
+/** Lista efetiva de treinamentos: sintéticos + overrides persistidos (por id). */
+export function getTreinamentos(): Treinamento[] {
+  const byId = new Map<string, Treinamento>()
+  for (const t of syntheticTreinamentos()) byId.set(t.id, t)
+  for (const t of readPersistedTreinamentos()) byId.set(t.id, { ...byId.get(t.id), ...t })
+  return [...byId.values()]
+}
+
+/** Treinamento vinculado ao cargo; fallback = Geral / Todos. */
+export function treinamentoForRole(role: string | null): Treinamento {
+  const list = getTreinamentos()
+  if (role) {
+    const r = role.trim().toLowerCase()
+    const t = list.find((x) => x.ativo !== false && x.cargoId && cargoNomeOf(x.cargoId).trim().toLowerCase() === r)
+    if (t) return t
+  }
+  return list.find((x) => x.id === 'geral') ?? { id: 'geral', nome: 'Treinamento Geral', ativo: true }
+}
+
+/** Módulos de um treinamento: globais herdados + específicos do cargo, na ordem própria. */
+export function modulesForTreinamento(treinamentoId: string): Module[] {
+  const t = getTreinamentos().find((x) => x.id === treinamentoId)
+  const cargos = t?.cargoId ? [cargoNomeOf(t.cargoId)] : []
+  return applyOrder(activeModules().filter(membershipFor(cargos)), t?.order)
+}
+
+/**
+ * Módulos visíveis para um cargo — FACHADA compatível.
+ * Sem treinamento/ordem configurados, devolve EXATAMENTE o comportamento atual:
+ * com cargos=[role], `membershipFor` é idêntico ao filtro anterior e a ordem é a
+ * mesma (overlay no-op). Não duplica conteúdo; progresso por module.id intacto.
+ */
+export function modulesForRole(role: string | null): Module[] {
+  const cargos = role ? [role] : []
+  const mods = activeModules().filter(membershipFor(cargos))
+  return applyOrder(mods, treinamentoForRole(role).order)
 }
 
 export function getModule(id: string): Module | undefined {
