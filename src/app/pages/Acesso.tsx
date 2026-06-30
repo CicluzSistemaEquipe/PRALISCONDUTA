@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useSession } from '../context/SessionContext'
-import { ROLES, type Role } from '@/lib/types'
+import { type Role } from '@/lib/types'
 import { getEmployeeById } from '@/lib/storage'
 import { registrarEvento } from '@/lib/tracking'
 import { hasRequiredOnboarding } from '@/lib/onboarding'
@@ -48,7 +48,9 @@ export default function Acesso() {
     const mat = params.get('mat') || params.get('t') || ''
     const nome = params.get('nome') || ''
     const cargoRaw = params.get('cargo') || ''
-    const cargo = (ROLES as string[]).includes(cargoRaw) ? (cargoRaw as Role) : null
+    // Cargo agora é texto livre (cargos cadastráveis) — aceita qualquer cargo
+    // não vazio vindo do link. Os 10 cargos semente seguem válidos.
+    const cargo: Role | null = cargoRaw.trim() || null
 
     if (!mat || !nome || !cargo) {
       setError(true)

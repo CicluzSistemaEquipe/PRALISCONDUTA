@@ -14,7 +14,10 @@ import { getAdminSession, isDono, listGerentes } from '../auth'
 import { enviarNotificacao } from '@/lib/notifications'
 import { fileToDownscaledDataURL, ALLOWED_LABEL } from '@/lib/image'
 import { useLojas, addLoja } from '@/lib/lojas'
+import { useCargos, addCargo } from '@/lib/cargos'
 import { LojaSelect } from '../components/LojaSelect'
+import { CargoSelect } from '../components/CargoSelect'
+import { CargosManager } from '../components/CargosManager'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { StatusBadge, statusOf } from '../components/StatusBadge'
 import { EmptyState, Skeleton, Avatar, ModalShell, ModalHeader, ModalFooter, ModalSection } from '../components/ui'
@@ -193,6 +196,7 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
   const [imgBusy, setImgBusy] = useState(false)
   const [saving, setSaving] = useState(false)
   const lojas = useLojas()
+  const cargoNomes = useCargos().filter((c) => c.ativo !== false).map((c) => c.nome)
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
 
   const handlePhoto = async (file?: File) => {
@@ -213,6 +217,7 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) { setErr('E-mail inválido.'); return }
     setSaving(true)
     if (form.store.trim()) addLoja(form.store)
+    if (form.role.trim() && !cargoNomes.includes(form.role)) addCargo({ nome: form.role })
     try {
       const emp = await createEmployee({
         name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined,
@@ -300,9 +305,7 @@ function NovoColaboradorModal({ onClose, onSaved, gerentes, defaultGerenteId, lo
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="adm-label" htmlFor="nc-role">Cargo</label>
-                <select id="nc-role" className="adm-input" value={form.role} onChange={(e) => set({ role: e.target.value as Role })}>
-                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+                <CargoSelect id="nc-role" value={form.role} onChange={(v) => set({ role: v })} cargos={cargoNomes} />
               </div>
               <div>
                 <label className="adm-label" htmlFor="nc-status">Situação</label>
@@ -382,6 +385,7 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
   })
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
   const lojas = useLojas()
+  const cargoNomes = useCargos().filter((c) => c.ativo !== false).map((c) => c.nome)
   const [saving, setSaving] = useState(false)
   const [imgBusy, setImgBusy] = useState(false)
   const [confirm, setConfirm] = useState(false)
@@ -407,6 +411,7 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email.trim())) { setErr('E-mail inválido.'); return }
     setSaving(true)
     if (form.store.trim()) addLoja(form.store)
+    if (form.role.trim() && !cargoNomes.includes(form.role)) addCargo({ nome: form.role })
     try {
       await updateEmployee(emp.id, {
         name, phone: cpf, role: form.role, gerenteId: form.gerenteId || undefined,
@@ -488,9 +493,7 @@ function EditColaboradorModal({ row, onClose, onSaved, onDeleted, gerentes, lock
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="adm-label" htmlFor="ed-role">Cargo</label>
-                <select id="ed-role" className="adm-input" value={form.role} onChange={(e) => set({ role: e.target.value as Role })}>
-                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+                <CargoSelect id="ed-role" value={form.role} onChange={(v) => set({ role: v })} cargos={cargoNomes} />
               </div>
               <div>
                 <label className="adm-label" htmlFor="ed-status">Situação</label>
@@ -923,6 +926,7 @@ export default function AdminColaboradores() {
 
   const [rows, setRows] = useState<EmployeeRow[] | null>(null)
   const [openForm, setOpenForm] = useState(false)
+  const [cargosOpen, setCargosOpen] = useState(false)
   const [success, setSuccess] = useState<{ name: string; role: string; link: string } | null>(null)
   const [editing, setEditing] = useState<EmployeeRow | null>(null)
   const [viewing, setViewing] = useState<EmployeeRow | null>(null)
@@ -954,9 +958,14 @@ export default function AdminColaboradores() {
         title="Colaboradores"
         description="Cadastre, acompanhe e envie o link de treinamento para cada colaborador."
         action={
-          <button className="adm-btn adm-btn--primary" onClick={() => setOpenForm(true)}>
-            <Plus className="h-[18px] w-[18px]" strokeWidth={2} /> Novo colaborador
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="adm-btn" onClick={() => setCargosOpen(true)}>
+              <Briefcase className="h-[18px] w-[18px]" /> Cargos
+            </button>
+            <button className="adm-btn adm-btn--primary" onClick={() => setOpenForm(true)}>
+              <Plus className="h-[18px] w-[18px]" strokeWidth={2} /> Novo colaborador
+            </button>
+          </div>
         }
       />
 
@@ -1038,6 +1047,9 @@ export default function AdminColaboradores() {
       )}
 
       {/* modais */}
+      <AnimatePresence>
+        {cargosOpen && <CargosManager onClose={() => setCargosOpen(false)} />}
+      </AnimatePresence>
       <AnimatePresence>
         {openForm && (
           <NovoColaboradorModal onClose={() => setOpenForm(false)} onSaved={(emp) => { setOpenForm(false); setSuccess(emp); reload() }}
