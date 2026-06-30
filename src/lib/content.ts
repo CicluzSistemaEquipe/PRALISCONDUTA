@@ -1325,6 +1325,12 @@ function membershipFor(cargos: string[]): (m: Module) => boolean {
   }
 }
 
+/** Exclui módulos GLOBAIS ocultados neste treinamento (só globais podem ser ocultos). */
+function notHidden(t?: Treinamento): (m: Module) => boolean {
+  const hidden = new Set(t?.hiddenModuleIds ?? [])
+  return (m) => !(m.roles === 'all' && hidden.has(m.id))
+}
+
 /** Overlay de ordem (ids). Sem ordem → mantém a ordem atual (estável). */
 function applyOrder(mods: Module[], order?: string[]): Module[] {
   if (!order || !order.length) return mods
@@ -1385,7 +1391,7 @@ export function treinamentoForRole(role: string | null): Treinamento {
 export function modulesForTreinamento(treinamentoId: string): Module[] {
   const t = getTreinamentos().find((x) => x.id === treinamentoId)
   const cargos = t?.cargoId ? [cargoNomeOf(t.cargoId)] : []
-  return applyOrder(activeModules().filter(membershipFor(cargos)), t?.order)
+  return applyOrder(activeModules().filter(membershipFor(cargos)).filter(notHidden(t)), t?.order)
 }
 
 /** ADMIN: o módulo pertence a este treinamento? (sobre QUALQUER módulo, incl.
@@ -1408,9 +1414,10 @@ export function orderForTreinamento(treinamentoId: string, mods: Module[]): Modu
  * mesma (overlay no-op). Não duplica conteúdo; progresso por module.id intacto.
  */
 export function modulesForRole(role: string | null): Module[] {
+  const t = treinamentoForRole(role)
   const cargos = role ? [role] : []
-  const mods = activeModules().filter(membershipFor(cargos))
-  return applyOrder(mods, treinamentoForRole(role).order)
+  const mods = activeModules().filter(membershipFor(cargos)).filter(notHidden(t))
+  return applyOrder(mods, t.order)
 }
 
 export function getModule(id: string): Module | undefined {
