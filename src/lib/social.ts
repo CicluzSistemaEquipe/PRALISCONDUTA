@@ -140,6 +140,8 @@ export interface SocialPostInput {
   created_by_name?: string
   created_by_role?: SocialPost['created_by_role']
   image?: string
+  imageWidth?: number
+  imageHeight?: number
   cardColor?: string
   textColor?: string
 }
@@ -164,6 +166,8 @@ export function savePost(input: SocialPostInput): SocialPost {
       published_at:
         status === 'published' ? prev.published_at ?? now : prev.published_at,
       image: input.image,
+      imageWidth: input.imageWidth,
+      imageHeight: input.imageHeight,
       cardColor: input.cardColor,
       textColor: input.textColor,
       updated_at: now,
@@ -187,6 +191,8 @@ export function savePost(input: SocialPostInput): SocialPost {
     created_by_name: input.created_by_name,
     created_by_role: input.created_by_role,
     image: input.image,
+    imageWidth: input.imageWidth,
+    imageHeight: input.imageHeight,
     cardColor: input.cardColor,
     textColor: input.textColor,
     created_at: now,

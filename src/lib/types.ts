@@ -234,6 +234,10 @@ export interface SocialPost {
   created_by_role?: UserRole
   /** imagem opcional (data URL base64 no modo localStorage; Storage/CDN na producao) */
   image?: string
+  /** dimensoes naturais da imagem — reservam espaco no feed (evita CLS). Opcionais
+   *  p/ retrocompat: posts antigos sem isso caem no comportamento atual. */
+  imageWidth?: number
+  imageHeight?: number
   /** cor do card (override do preset do tipo); undefined = usa preset */
   cardColor?: string
   /** cor do texto sobre o card (validada por contraste) */

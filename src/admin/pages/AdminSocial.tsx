@@ -35,6 +35,8 @@ interface FormState {
   managerId: string
   pinned: boolean
   image?: string
+  imageWidth?: number
+  imageHeight?: number
   cardColor?: string
   textColor?: string
 }
@@ -74,7 +76,7 @@ export default function AdminSocial() {
     setImgErr(''); setSaveErr(''); setImgBusy(true)
     try {
       const res = await fileToDownscaledDataURL(file)
-      setModal((m) => (m ? { ...m, image: res.dataUrl } : m))
+      setModal((m) => (m ? { ...m, image: res.dataUrl, imageWidth: res.width, imageHeight: res.height } : m))
       setImgMeta({ name: file.name, format: res.format, sizeKB: Math.max(1, Math.round(res.bytes / 1024)) })
     } catch (e) {
       setImgErr(e instanceof Error ? e.message : 'Falha ao processar a imagem.')
@@ -83,7 +85,7 @@ export default function AdminSocial() {
       if (fileRef.current) fileRef.current.value = ''
     }
   }
-  const removeImage = () => { setImgMeta(null); setImgErr(''); setModal((m) => (m ? { ...m, image: undefined } : m)) }
+  const removeImage = () => { setImgMeta(null); setImgErr(''); setModal((m) => (m ? { ...m, image: undefined, imageWidth: undefined, imageHeight: undefined } : m)) }
 
   const audienceLabel = (p: SocialPost): string => {
     const a = p.audience
@@ -108,7 +110,7 @@ export default function AdminSocial() {
       role: p.audience.kind === 'role' ? p.audience.value : ROLES[0],
       employeeId: p.audience.kind === 'employee' ? p.audience.value : '',
       managerId: p.audience.kind === 'manager' ? p.audience.value : '',
-      image: p.image, cardColor: p.cardColor, textColor: p.textColor,
+      image: p.image, imageWidth: p.imageWidth, imageHeight: p.imageHeight, cardColor: p.cardColor, textColor: p.textColor,
     })
   }
 
@@ -131,7 +133,7 @@ export default function AdminSocial() {
       audience, pinned: f.pinned, status,
       created_by: session.id, created_by_name: session.nome,
       created_by_role: session.role,
-      image: f.image, cardColor: f.cardColor, textColor: f.textColor,
+      image: f.image, imageWidth: f.imageWidth, imageHeight: f.imageHeight, cardColor: f.cardColor, textColor: f.textColor,
       })
       setModal(null)
     } catch (e) {

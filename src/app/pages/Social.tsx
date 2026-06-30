@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Megaphone, RefreshCw } from 'lucide-react'
 import { useSession } from '../context/SessionContext'
 import { AnimatedBackground } from '../components/AnimatedBackground'
@@ -14,6 +14,7 @@ import { getAdminUserById } from '@/admin/auth'
 
 export default function Social() {
   const navigate = useNavigate()
+  const reduce = useReducedMotion()
   const { employee } = useSession()
   const version = useSocialVersion()
   const [tick, setTick] = useState(0)
@@ -43,7 +44,7 @@ export default function Social() {
 
       <div
         className="relative z-10 flex-1 overflow-y-auto no-scrollbar"
-        style={{ paddingTop: 'calc(var(--safe-top) + 22px)', paddingBottom: 104 }}
+        style={{ paddingTop: 'calc(var(--safe-top) + 22px)', paddingBottom: 'calc(104px + var(--safe-bottom))' }}
       >
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', padding: '0 18px' }}>
           <header className="flex items-end justify-between gap-3" style={{ marginBottom: 18 }}>
@@ -91,14 +92,15 @@ export default function Social() {
               {posts.map((p) => (
                 <motion.div
                   key={p.id}
-                  variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
-                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  variants={{ hidden: { opacity: 0, y: reduce ? 0 : 12 }, show: { opacity: 1, y: 0 } }}
+                  transition={{ duration: reduce ? 0.001 : 0.35, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <SocialPostCard
                     post={p}
                     isNew={newIds.has(p.id)}
                     confirmed={employee ? hasConfirmed(p.id, employee.id) : false}
                     onOpen={() => setOpenId(p.id)}
+                    onAck={() => employee && recordAck(employee, p.id)}
                     authorAvatar={getAdminUserById(p.created_by)?.avatarUrl}
                   />
                 </motion.div>
