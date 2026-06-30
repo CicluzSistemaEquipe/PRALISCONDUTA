@@ -26,6 +26,11 @@ export function slugCargo(nome: string): string {
 const SEED_CARGOS: Cargo[] = ROLES.map((nome) => ({ id: slugCargo(nome), nome, ativo: true }))
 const SEED_IDS = SEED_CARGOS.map((c) => c.id)
 
+/** É um cargo padrão (semente)? Sementes não podem ser removidas, só desativadas. */
+export function isSeedCargo(id: string): boolean {
+  return SEED_IDS.includes(id)
+}
+
 function readLS(): Cargo[] {
   try {
     const raw = localStorage.getItem(KEY)
