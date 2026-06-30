@@ -54,6 +54,7 @@ export interface Treinamento {
   icon?: string           // ícone próprio
   order?: string[]        // ordem PRÓPRIA dos módulos (moduleIds) — overlay; ausência → ordem global
   ativo?: boolean         // undefined === ativo
+  updatedAt?: string      // ISO — definido quando o admin edita (Bloco D)
 }
 
 /** Cargo cadastrável (registro local, como Loja). Aditivo e retrocompatível. */

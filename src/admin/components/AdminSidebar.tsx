@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   LayoutDashboard,
   BookOpen,
+  GraduationCap,
   Users,
   ShieldCheck,
   ScrollText,
@@ -38,6 +39,7 @@ const NAV_DONO: NavGroup[] = [
   {
     label: 'Conteúdo',
     items: [
+      { to: '/admin/treinamentos', label: 'Treinamentos', icon: GraduationCap },
       { to: '/admin/modulos', label: 'Módulos', icon: BookOpen },
       { to: '/admin/termos', label: 'Termos', icon: ScrollText },
     ],
