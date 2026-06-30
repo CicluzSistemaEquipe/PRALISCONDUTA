@@ -59,6 +59,8 @@ export default function AdminSocial() {
   const [modal, setModal] = useState<FormState | null>(null)
   const [imgErr, setImgErr] = useState('')
   const [imgBusy, setImgBusy] = useState(false)
+  const [imgMeta, setImgMeta] = useState<{ name: string; format: string; sizeKB: number } | null>(null)
+  const [saveErr, setSaveErr] = useState('')
   const [reportId, setReportId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -69,10 +71,11 @@ export default function AdminSocial() {
 
   const handleImage = async (file: File | undefined) => {
     if (!file) return
-    setImgErr(''); setImgBusy(true)
+    setImgErr(''); setSaveErr(''); setImgBusy(true)
     try {
       const res = await fileToDownscaledDataURL(file)
       setModal((m) => (m ? { ...m, image: res.dataUrl } : m))
+      setImgMeta({ name: file.name, format: res.format, sizeKB: Math.max(1, Math.round(res.bytes / 1024)) })
     } catch (e) {
       setImgErr(e instanceof Error ? e.message : 'Falha ao processar a imagem.')
     } finally {
@@ -80,6 +83,7 @@ export default function AdminSocial() {
       if (fileRef.current) fileRef.current.value = ''
     }
   }
+  const removeImage = () => { setImgMeta(null); setImgErr(''); setModal((m) => (m ? { ...m, image: undefined } : m)) }
 
   const audienceLabel = (p: SocialPost): string => {
     const a = p.audience
@@ -94,9 +98,9 @@ export default function AdminSocial() {
     }
   }
 
-  const openNew = () => { setImgErr(''); setModal({ ...EMPTY_FORM }) }
+  const openNew = () => { setImgErr(''); setSaveErr(''); setImgMeta(null); setModal({ ...EMPTY_FORM }) }
   const openEdit = (p: SocialPost) => {
-    setImgErr('')
+    setImgErr(''); setSaveErr(''); setImgMeta(null)
     setModal({
       id: p.id, title: p.title, message: p.message, type: p.type, pinned: p.pinned,
       audienceKind: p.audience.kind,
@@ -121,14 +125,19 @@ export default function AdminSocial() {
       : f.audienceKind === 'employee' ? { kind: 'employee' as const, value: f.employeeId }
       : f.audienceKind === 'manager' ? { kind: 'manager' as const, value: f.managerId }
       : { kind: 'all' as const }
-    savePost({
+    try {
+      savePost({
       id: f.id, title: f.title.trim(), message: f.message.trim(), type: f.type,
       audience, pinned: f.pinned, status,
       created_by: session.id, created_by_name: session.nome,
       created_by_role: session.role,
       image: f.image, cardColor: f.cardColor, textColor: f.textColor,
-    })
-    setModal(null)
+      })
+      setModal(null)
+    } catch (e) {
+      // falha ao salvar (ex.: armazenamento cheio) — avisa em vez de sumir
+      setSaveErr(e instanceof Error ? e.message : 'Nao foi possivel salvar o comunicado.')
+    }
   }
 
   const remove = (p: SocialPost) => {
@@ -416,15 +425,35 @@ export default function AdminSocial() {
             })()}
 
             {/* Imagem opcional */}
-            <ModalSection title="Imagem" description="Opcional. Aparece dentro do comunicado." icon={ImagePlus} tone="brown">
+            <ModalSection title="Imagem" description="Opcional. Aparece dentro do comunicado (object-fit: contain — não corta nem distorce)." icon={ImagePlus} tone="brown">
               {modal.image ? (
-                <div className="relative overflow-hidden rounded-xl border border-[var(--border)]" style={{ background: '#14140f' }}>
-                  <img src={modal.image} alt="Pré-visualização" style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block' }} />
-                  <button type="button" onClick={() => setModal({ ...modal, image: undefined })}
-                    aria-label="Remover imagem"
-                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/55 text-white transition-colors hover:bg-black/75">
-                    <X className="h-4 w-4" />
-                  </button>
+                <div>
+                  <div className="relative overflow-hidden rounded-xl border border-[var(--border)]" style={{ background: '#14140f' }}>
+                    {/* fundo neutro + contain: vertical/horizontal/quadrada aparecem proporcionais */}
+                    <img src={modal.image} alt="Pré-visualização"
+                      style={{ width: '100%', maxHeight: 240, objectFit: 'contain', display: 'block' }}
+                      onError={() => setImgErr('Não foi possível carregar a pré-visualização. Tente outra imagem.')} />
+                    <button type="button" onClick={removeImage} aria-label="Remover imagem"
+                      className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/55 text-white transition-colors hover:bg-black/75">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {/* nome · formato · tamanho (do arquivo otimizado) + trocar/remover */}
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[0.72rem] text-[var(--text-muted)]">
+                    {imgMeta ? (
+                      <span className="inline-flex min-w-0 items-center gap-1.5">
+                        <ImagePlus className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate font-medium text-[var(--text-secondary)]">{imgMeta.name}</span>
+                        <span className="shrink-0">· {imgMeta.format} · {imgMeta.sizeKB} KB</span>
+                      </span>
+                    ) : (
+                      <span>Imagem anexada — otimizada para o navegador.</span>
+                    )}
+                    <button type="button" onClick={() => fileRef.current?.click()} disabled={imgBusy}
+                      className="ml-auto font-semibold text-[var(--accent-text)] hover:underline disabled:opacity-50">
+                      {imgBusy ? 'Processando…' : 'Trocar imagem'}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button type="button" onClick={() => fileRef.current?.click()} disabled={imgBusy}
@@ -432,12 +461,17 @@ export default function AdminSocial() {
                   <ImagePlus className="h-[18px] w-[18px]" /> {imgBusy ? 'Processando...' : 'Adicionar imagem'}
                 </button>
               )}
-              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+              {/* accept image/* permite escolher HEIC e receber um erro CLARO (em vez de sumir) */}
+              <input ref={fileRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => handleImage(e.target.files?.[0])} />
               <p className="mt-1.5 text-[0.72rem] text-[var(--text-muted)]">
-                {ALLOWED_LABEL} — redimensionada automaticamente. Em produção: Supabase Storage/CDN.
+                {ALLOWED_LABEL} — redimensionada automaticamente (~máx 700&nbsp;KB). Em produção: Supabase Storage/CDN.
               </p>
-              {imgErr && <p className="mt-1 text-[0.75rem] font-medium text-[var(--danger)]">{imgErr}</p>}
+              {imgErr && (
+                <p className="mt-1.5 flex items-start gap-1.5 rounded-lg border border-[#f3d2cd] bg-[var(--danger-bg)] px-2.5 py-2 text-[0.75rem] font-medium text-[var(--danger)]">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {imgErr}
+                </p>
+              )}
             </ModalSection>
 
             {/* Fixar no topo */}
@@ -447,6 +481,12 @@ export default function AdminSocial() {
                 <Pin className="h-4 w-4 text-[var(--text-muted)]" /> Fixar no topo do feed
               </span>
             </label>
+
+            {saveErr && (
+              <p className="flex items-start gap-2 rounded-lg border border-[#f3d2cd] bg-[var(--danger-bg)] px-3 py-2.5 text-[0.8rem] font-medium text-[var(--danger)]">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {saveErr}
+              </p>
+            )}
 
             </div>
           </ModalShell>

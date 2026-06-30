@@ -101,8 +101,8 @@ export function SocialPostCard({
           </div>
           {post.image && (
             <img src={post.image} alt="" style={{
-              width: 58, height: 58, flex: 'none', borderRadius: 12, objectFit: 'cover',
-              border: `1px solid ${line}`,
+              width: 58, height: 58, flex: 'none', borderRadius: 12, objectFit: 'contain',
+              background: 'rgba(0,0,0,0.16)', border: `1px solid ${line}`,
             }} />
           )}
         </div>

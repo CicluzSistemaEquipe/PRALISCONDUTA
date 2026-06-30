@@ -40,6 +40,23 @@ function writeLS<T>(key: string, value: T) {
   }
 }
 
+/** Erro de armazenamento (quota) — usado para avisar o admin em vez de falhar mudo. */
+export class StorageFullError extends Error {
+  constructor() {
+    super('Nao foi possivel salvar: o armazenamento local esta cheio. Use uma imagem menor ou remova comunicados antigos com imagem. (Em producao as imagens vao para Storage/CDN.)')
+    this.name = 'StorageFullError'
+  }
+}
+
+/** Grava os posts e PROPAGA falha de quota (diferente de writeLS, que e silencioso). */
+function persistPosts(all: SocialPost[]) {
+  try {
+    localStorage.setItem(POSTS_KEY, JSON.stringify(all))
+  } catch {
+    throw new StorageFullError()
+  }
+}
+
 // ------------------------------------------------------------
 // reatividade (version counter — snapshot estavel)
 // ------------------------------------------------------------
@@ -152,7 +169,7 @@ export function savePost(input: SocialPostInput): SocialPost {
       updated_at: now,
     }
     all[idx] = next
-    writeLS(POSTS_KEY, all)
+    persistPosts(all)
     bump()
     return next
   }
@@ -176,7 +193,7 @@ export function savePost(input: SocialPostInput): SocialPost {
     updated_at: now,
   }
   all.push(created)
-  writeLS(POSTS_KEY, all)
+  persistPosts(all)
   bump()
   return created
 }

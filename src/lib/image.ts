@@ -6,9 +6,10 @@
 // Storage/CDN (a imagem fica como URL, nao base64).
 // ============================================================
 
-export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+export const ALLOWED_EXT = ['jpg', 'jpeg', 'png', 'webp']
 export const ALLOWED_LABEL = 'JPG, PNG ou WebP'
-export const MAX_INPUT_BYTES = 8 * 1024 * 1024 // 8MB de entrada
+export const MAX_INPUT_BYTES = 12 * 1024 * 1024 // 12MB de entrada
 export const MAX_DIM = 1280 // maior lado apos redimensionar
 export const TARGET_MAX_BYTES = 700 * 1024 // ~700KB armazenados (base64)
 
@@ -17,6 +18,8 @@ export interface ImageResult {
   width: number
   height: number
   bytes: number
+  /** rotulo do formato final (WEBP/JPEG) realmente armazenado */
+  format: string
 }
 
 function loadImage(file: File): Promise<HTMLImageElement> {
@@ -44,11 +47,23 @@ function dataUrlBytes(dataUrl: string): number {
  * devolve um data URL pronto para salvar no localStorage. Preserva proporcao.
  */
 export async function fileToDownscaledDataURL(file: File): Promise<ImageResult> {
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    throw new Error(`Formato nao suportado. Use ${ALLOWED_LABEL}.`)
+  const type = (file.type || '').toLowerCase()
+  const ext = (file.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1]) ?? ''
+
+  // HEIC/HEIF (padrao das fotos de iPhone) nao decodifica no <canvas> da maioria
+  // dos navegadores — erro claro com caminho de saida, sem depender de lib.
+  if (type.includes('heic') || type.includes('heif') || ext === 'heic' || ext === 'heif') {
+    throw new Error('Formato HEIC nao e suportado no navegador. No iPhone, exporte como JPG (Ajustes > Camera > "Mais compativel") ou use JPG/PNG/WebP.')
+  }
+  // Aceita pelo MIME (incl. alias image/jpg) OU pela extensao quando o type vem
+  // vazio (acontece com arrastar/soltar e alguns sistemas).
+  const okType = ALLOWED_IMAGE_TYPES.includes(type)
+  const okExt = ALLOWED_EXT.includes(ext)
+  if (!okType && !okExt) {
+    throw new Error(`Formato nao suportado${type ? ` (${type})` : ''}. Use ${ALLOWED_LABEL}.`)
   }
   if (file.size > MAX_INPUT_BYTES) {
-    throw new Error('Imagem muito grande (maximo 8MB).')
+    throw new Error('Imagem muito grande (maximo 12MB). Comprima ou reduza antes de anexar.')
   }
 
   const img = await loadImage(file)
@@ -79,5 +94,12 @@ export async function fileToDownscaledDataURL(file: File): Promise<ImageResult> 
     dataUrl = encode(quality)
   }
 
-  return { dataUrl, width: w, height: h, bytes: dataUrlBytes(dataUrl) }
+  // Canvas vazio/sem suporte (ex.: imagem gigante em alguns navegadores) devolve
+  // um data URL minusculo/invalido — falha clara em vez de salvar imagem quebrada.
+  if (!dataUrl.startsWith('data:image/') || dataUrlBytes(dataUrl) < 64) {
+    throw new Error('Nao foi possivel processar a imagem. Tente outra imagem ou um formato diferente.')
+  }
+
+  const format = dataUrl.slice(11, dataUrl.indexOf(';')).toUpperCase() // ex.: WEBP / JPEG
+  return { dataUrl, width: w, height: h, bytes: dataUrlBytes(dataUrl), format }
 }
